@@ -7,6 +7,65 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script>
+// ── Firebase REST API 헬퍼 (SDK 없이 fetch로 직접 사용) ──
+const FB_URL = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+const fb = {
+  // 값 읽기
+  get: async (path) => {
+    try {
+      const r = await fetch(`${FB_URL}/${path}.json`);
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  },
+  // 값 쓰기 (PUT: 덮어쓰기)
+  set: async (path, data) => {
+    try {
+      await fetch(`${FB_URL}/${path}.json`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+    } catch {}
+  },
+  // 값 병합 (PATCH: 부분 업데이트)
+  update: async (path, data) => {
+    try {
+      await fetch(`${FB_URL}/${path}.json`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+    } catch {}
+  },
+  // 전체 목록 읽기
+  list: async (path) => {
+    try {
+      const r = await fetch(`${FB_URL}/${path}.json`);
+      if (!r.ok) return {};
+      const data = await r.json();
+      return data || {};
+    } catch { return {}; }
+  }
+};
+
+// ── Firebase 경로 정의 ──────────────────────────────
+const fbPath = {
+  info:      (uid)           => `users/${uid}/info`,
+  prog:      (uid,mid,r)     => `users/${uid}/stats/${mid}/prog_${r}`,
+  wrong:     (uid,mid,r)     => `users/${uid}/stats/${mid}/wrong_${r}`,
+  marked:    (uid,mid,r)     => `users/${uid}/stats/${mid}/marked_${r}`,
+  awWrong:   (uid,mid,r)     => `users/${uid}/stats/${mid}/aw_wrong_${r}`,
+  awMark:    (uid,mid,r)     => `users/${uid}/stats/${mid}/aw_mark_${r}`,
+  archRound: (uid,mid)       => `users/${uid}/stats/${mid}/arch_round`,
+  session:   (uid,mid)       => `users/${uid}/stats/${mid}/session`,
+};
+
+// safeId: Firebase 키에서 금지 문자 변환
+function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
+</script>
 <style>
   body { margin: 0; background: #0d1117; }
   #root { min-height: 100vh; }
@@ -135,6 +194,10 @@ const ROUNDS = [1,2,3,4];
 const K_WRONG  = (uid,mid,r) => `hub_${uid}_${mid}_wrong_${r}`;
 const K_MARKED = (uid,mid,r) => `hub_${uid}_${mid}_marked_${r}`;
 const K_PROG   = (uid,mid,r) => `hub_${uid}_${mid}_prog_${r}`;
+const K_AW_ROUND = (uid,mid)  => `hub_${uid}_${mid}_arch_round`;   // 아카이브 현재 회독
+const K_AW_WRONG = (uid,mid,r)=> `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이브 오답 회독별
+const K_AW_MARK  = (uid,mid,r)=> `hub_${uid}_${mid}_aw_mark_${r}`;  // 아카이브 헷갈림 회독별
+const K_SESSION  = (uid,mid)  => `hub_${uid}_${mid}_session`;       // 이어풀기 세션
 
 function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -332,6 +395,28 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .rst-btn:hover{color:var(--er);}
 
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* 이어풀기 배너 */
+.resume-banner{background:var(--sf2);border:1px solid var(--gold);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.resume-info{font-size:13px;color:var(--tx);}
+.resume-info b{color:var(--gold);font-family:'IBM Plex Mono',monospace;}
+.resume-btns{display:flex;gap:8px;}
+.resume-cont{padding:8px 18px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.resume-cont:hover{background:var(--gold2);}
+.resume-new{padding:8px 14px;background:transparent;border:1px solid var(--bd);color:var(--tx2);border-radius:8px;font-size:13px;cursor:pointer;}
+.resume-new:hover{border-color:var(--tx);color:var(--tx);}
+/* 아카이브 회독 */
+.arch-round-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.art{padding:5px 14px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.art:hover{border-color:var(--gold);color:var(--gold);}
+.art.act{background:var(--gold);border-color:var(--gold);color:#0d1117;}
+.art-cnt{font-size:10px;opacity:.75;margin-left:4px;font-family:'IBM Plex Mono',monospace;}
+/* 관리자 */
+.admin-search{display:flex;gap:8px;margin-bottom:14px;}
+.admin-search input{flex:1;font-family:'Pretendard',sans-serif;font-size:13px;padding:9px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--sf2);color:var(--tx);outline:none;}
+.admin-search input:focus{border-color:var(--gold);}
+.admin-search button{padding:9px 16px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.admin-note{font-size:11px;color:var(--tx3);margin-bottom:10px;line-height:1.5;}
+
 /* 인라인 편집 */
 .edit-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;margin-left:auto;}
 .edit-btn:hover{border-color:var(--blue);color:var(--blue);}
@@ -431,8 +516,15 @@ function App() {
     setIsAdmin(isAdm);
     localStorage.setItem("hub_last_uid", id);
 
-    // 유저 목록에 추가
+    // 유저 Firebase 등록 + 마지막 접속 시각 기록
     if (!isAdm) {
+      const safeId = id.replace(/[.#$\[\]]/g, '_'); // Firebase 키 안전 변환
+      await fb.update(`users/${safeId}`, {
+        id: id,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      // localStorage에도 유저 목록 유지 (fallback)
       const list = await gr(K_USERS, []);
       if (!list.includes(id)) await sw(K_USERS, [...list, id]);
       await sw(K_UTIME(id), Date.now());
@@ -448,15 +540,43 @@ function App() {
   // ── 모듈 스토리지 로드
   async function loadModuleData(mid) {
     if (!uid) return;
-    const wm = {}, mm = {}, pm = {};
+    const sid = toSafeId(uid);
+    const wm = {}, mm = {}, pm = {}, awm = {}, amm = {};
+
     for (const r of ROUNDS) {
-      wm[r]  = new Set(await gr(K_WRONG(uid,mid,r), []));
-      mm[r]  = new Set(await gr(K_MARKED(uid,mid,r), []));
-      const p = await gr(K_PROG(uid,mid,r), {answered:[],correct:[],wrong:[]});
-      pm[r] = { answered:new Set(p.answered), correct:new Set(p.correct), wrong:new Set(p.wrong) };
+      // Firebase 우선, 없으면 localStorage 폴백
+      const fbW = await fb.get(fbPath.wrong(sid,mid,r));
+      wm[r] = new Set(fbW || await gr(K_WRONG(uid,mid,r), []));
+
+      const fbM = await fb.get(fbPath.marked(sid,mid,r));
+      mm[r] = new Set(fbM || await gr(K_MARKED(uid,mid,r), []));
+
+      const fbP = await fb.get(fbPath.prog(sid,mid,r));
+      const lsP = await gr(K_PROG(uid,mid,r), {answered:[],correct:[],wrong:[]});
+      const p   = fbP || lsP;
+      pm[r] = { answered:new Set(p.answered||[]), correct:new Set(p.correct||[]), wrong:new Set(p.wrong||[]) };
+
+      const fbAW = await fb.get(fbPath.awWrong(sid,mid,r));
+      awm[r] = new Set(fbAW || await gr(K_AW_WRONG(uid,mid,r), []));
+
+      const fbAM = await fb.get(fbPath.awMark(sid,mid,r));
+      amm[r] = new Set(fbAM || await gr(K_AW_MARK(uid,mid,r), []));
     }
+
     setWrongMap(wm); setMarkedMap(mm); setProgMap(pm);
-    // 수정본 로드 (공유)
+    setAwWrongMap(awm); setAwMarkMap(amm);
+
+    // 아카이브 회독
+    const fbAR = await fb.get(fbPath.archRound(sid,mid));
+    const arVal = fbAR ?? await gr(K_AW_ROUND(uid,mid), 1);
+    setArchRound(arVal);
+
+    // 세션
+    const fbSess = await fb.get(fbPath.session(sid,mid));
+    const lsSess = await gr(K_SESSION(uid,mid), null);
+    setSavedSession(fbSess || lsSess);
+
+    // 수정본 (공유)
     const edits = await gr(K_EDITS(mid), {});
     setUserEdits(edits);
   }
@@ -483,24 +603,75 @@ function App() {
     return { ...q, question: ed.question ?? q.question, explanation: ed.explanation ?? q.explanation };
   };
 
-  const saveWrong  = (r,s) => sw(K_WRONG(uid,activeModule,r),  [...s]);
-  const saveMarked = (r,s) => sw(K_MARKED(uid,activeModule,r), [...s]);
-  const saveProg   = (r,p) => sw(K_PROG(uid,activeModule,r),   {answered:[...p.answered],correct:[...p.correct],wrong:[...p.wrong]});
+  // 이중 저장: Firebase(공유) + localStorage(빠른 읽기)
+  const _fbsw = (path, data) => { fb.set(path, data); }; // fire-and-forget
+
+  const saveWrong = (r,s) => {
+    const arr = [...s];
+    sw(K_WRONG(uid,activeModule,r), arr);
+    _fbsw(fbPath.wrong(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveMarked = (r,s) => {
+    const arr = [...s];
+    sw(K_MARKED(uid,activeModule,r), arr);
+    _fbsw(fbPath.marked(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveProg = (r,p) => {
+    const obj = {answered:[...p.answered],correct:[...p.correct],wrong:[...p.wrong]};
+    sw(K_PROG(uid,activeModule,r), obj);
+    _fbsw(fbPath.prog(toSafeId(uid),activeModule,r), obj);
+  };
+  const saveAwWrong = (r,s) => {
+    const arr = [...s];
+    sw(K_AW_WRONG(uid,activeModule,r), arr);
+    _fbsw(fbPath.awWrong(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveAwMark = (r,s) => {
+    const arr = [...s];
+    sw(K_AW_MARK(uid,activeModule,r), arr);
+    _fbsw(fbPath.awMark(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveArchRound = (r) => {
+    sw(K_AW_ROUND(uid,activeModule), r);
+    _fbsw(fbPath.archRound(toSafeId(uid),activeModule), r);
+  };
+  const saveSession = (sess) => {
+    sw(K_SESSION(uid,activeModule), sess || null);
+    _fbsw(fbPath.session(toSafeId(uid),activeModule), sess || null);
+  };
 
   // ── 퀴즈 시작
-  function launchQuiz(round, mode, topics) {
+  function launchQuiz(round, mode, topics, resumeData=null) {
     const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
     if (!mod) return;
     const all = mod.getData();
     let pool, lbl;
-    if (mode === "wrong") {
+
+    // 아카이브 전용 회독(aw_*): archRound 기준
+    if (mode === "aw_wrong") {
+      const r = archRound;
+      pool = all.filter(q => (awWrongMap[r]||new Set()).has(q.id));
+      if (!pool.length) return;
+      lbl = `아카이브 ${r}회독 · 오답 (${pool.length}문제)`;
+    } else if (mode === "aw_mark") {
+      const r = archRound;
+      pool = all.filter(q => (awMarkMap[r]||new Set()).has(q.id));
+      if (!pool.length) return;
+      lbl = `아카이브 ${r}회독 · 헷갈림 (${pool.length}문제)`;
+    } else if (mode === "aw_all") {
+      const r = archRound;
+      const wids = awWrongMap[r]||new Set(), mids = awMarkMap[r]||new Set();
+      pool = all.filter(q => wids.has(q.id)||mids.has(q.id));
+      if (!pool.length) return;
+      lbl = `아카이브 ${r}회독 · 전체 (${pool.length}문제)`;
+    } else if (mode === "wrong") {
       pool = all.filter(q => (wrongMap[round]||new Set()).has(q.id));
       if (!pool.length) return;
-      lbl = `${round}회독 오답 재시험 (${pool.length}문제)`;
+      lbl = `${round}회독 오답 (${pool.length}문제)`;
     } else if (mode === "marked") {
       pool = all.filter(q => (markedMap[round]||new Set()).has(q.id));
       if (!pool.length) return;
-      lbl = `${round}회독 헷갈리는 문제 (${pool.length}문제)`;
+      lbl = `${round}회독 헷갈림 (${pool.length}문제)`;
     } else if (mode === "rnd100") {
       pool = shuffle([...all]).slice(0, 100);
       lbl = `${round}회독 무작위 100문제`;
@@ -511,13 +682,47 @@ function App() {
       pool = [...all];
       lbl = `${round}회독 전체 ${all.length}문제`;
     }
-    setQueue(shuffle(pool));
-    setQidx(0); setAnswered(null); setUserAns(null); setShowExp(false);
+
+    // 이어풀기: resumeData가 있으면 복원, 없으면 섞어서 시작
+    let finalQueue, startIdx;
+    if (resumeData && resumeData.mode === mode && resumeData.round === round) {
+      // 저장된 큐 순서 복원 (ID 배열로 저장 → 실제 문제 객체로 매핑)
+      const qMap = Object.fromEntries(all.map(q=>[q.id, q]));
+      const restored = (resumeData.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
+      if (restored.length > 0) {
+        finalQueue = restored;
+        startIdx = resumeData.qidx || 0;
+        lbl = resumeData.label || lbl;
+      } else {
+        finalQueue = shuffle(pool);
+        startIdx = 0;
+      }
+    } else {
+      finalQueue = shuffle(pool);
+      startIdx = 0;
+    }
+
+    // 세션 저장
+    const sessData = {
+      mode, round, topics,
+      queueIds: finalQueue.map(q=>q.id),
+      qidx: startIdx,
+      label: lbl,
+      module: activeModule,
+    };
+    saveSession(sessData);
+    setSavedSession(sessData);
+
+    setQueue(finalQueue);
+    setQidx(startIdx); setAnswered(null); setUserAns(null); setShowExp(false);
     setSessCor(0); setSessErr(0); setSessMark(0);
     setDone(false); setLabel(lbl); setInQuiz(true); setScreen("quiz");
   }
 
-  function exitQuiz() { setInQuiz(false); setDone(false); setScreen("quiz"); }
+  function exitQuiz() {
+    // 종료 시 현재 위치 저장 (qidx 갱신된 상태 유지 → 이어풀기용)
+    setInQuiz(false); setDone(false); setScreen("quiz");
+  }
 
   function handleAnswer(choice) {
     if (answered !== null) return;
@@ -536,6 +741,15 @@ function App() {
     setProgMap(pm=>({...pm,[r]:np}));
     setWrongMap(wm=>({...wm,[r]:nw}));
     saveProg(r,np); saveWrong(r,nw);
+
+    // 아카이브 회독용 오답 추가 (메인 오답은 아카이브 현재 회독에도 자동 적재)
+    if (!correct) {
+      const ar = archRound;
+      const nawm = new Set(awWrongMap[ar]||[]);
+      nawm.add(cur.id);
+      setAwWrongMap(m=>({...m,[ar]:nawm}));
+      saveAwWrong(ar, nawm);
+    }
   }
 
   function toggleMark() {
@@ -545,11 +759,31 @@ function App() {
     else { nm.add(cur.id); setSessMark(p=>p+1); }
     setMarkedMap(mm=>({...mm,[r]:nm}));
     saveMarked(r,nm);
+
+    // 아카이브 회독용 헷갈림도 동기화
+    const ar = archRound;
+    const namm = new Set(awMarkMap[ar]||[]);
+    if (nm.has(cur.id)) namm.add(cur.id); else namm.delete(cur.id);
+    setAwMarkMap(m=>({...m,[ar]:namm}));
+    saveAwMark(ar, namm);
   }
 
   function handleNext() {
-    if (qidx+1 >= queue.length) setDone(true);
-    else { setQidx(i=>i+1); setAnswered(null); setUserAns(null); setShowExp(false); }
+    if (qidx+1 >= queue.length) {
+      setDone(true);
+      saveSession(null); // 완료 시 세션 삭제
+      setSavedSession(null);
+    } else {
+      const nextIdx = qidx+1;
+      setQidx(nextIdx);
+      setAnswered(null); setUserAns(null); setShowExp(false);
+      // 세션 qidx 갱신
+      if (savedSession) {
+        const updated = {...savedSession, qidx: nextIdx};
+        setSavedSession(updated);
+        saveSession(updated);
+      }
+    }
   }
 
   async function resetModule() {
@@ -568,6 +802,9 @@ function App() {
   const getAll   = () => getMod()?.getData() || [];
   const wCnt     = r => (wrongMap[r]||new Set()).size;
   const mCnt     = r => (markedMap[r]||new Set()).size;
+  const awCnt    = r => (awWrongMap[r]||new Set()).size;
+  const amCnt    = r => (awMarkMap[r]||new Set()).size;
+  const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
   const tCnt     = k => getAll().filter(q=>q.topic===k).length;
   const tWrong   = (r,k) => getAll().filter(q=>q.topic===k&&(wrongMap[r]||new Set()).has(q.id)).length;
   const TOTAL    = getAll().length;
@@ -587,24 +824,71 @@ function App() {
 
   // 관리자 유저 목록 로드
   async function loadAdminUsers() {
-    const list = await gr(K_USERS, []);
+    // Firebase에서 전체 유저 + 완전한 학습 통계 조회
+    const fbAll = await fb.list('users');
+    if (!fbAll) { setAdminUsers([]); return; }
+
     const users = [];
-    for (const id of list) {
-      const times = await gr(K_UTIME(id), 0);
-      // 각 모듈별 통계 합산
+    for (const [safeId, userData] of Object.entries(fbAll)) {
+      const info = userData?.info || {};
+      const id = info.id || safeId;
+      if (!id || id === ADMIN_ID) continue;
+
+      const stats = userData?.stats || {};
       let total_ans=0, total_cor=0, total_wrg=0;
-      for (const mid of MODULE_REGISTRY.filter(m=>m.status==="active").map(m=>m.id)) {
+      const modStats = [];
+
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+        const modData = stats[mod.id] || {};
+        let m_ans=0, m_cor=0, m_wrg=0;
         for (const r of ROUNDS) {
-          const p = await gr(K_PROG(id,mid,r), {answered:[],correct:[],wrong:[]});
-          total_ans += p.answered.length;
-          total_cor += p.correct.length;
-          total_wrg += p.wrong.length;
+          const p = modData[`prog_${r}`] || {};
+          m_ans += (p.answered||[]).length;
+          m_cor += (p.correct||[]).length;
+          m_wrg += (p.wrong||[]).length;
         }
+        total_ans+=m_ans; total_cor+=m_cor; total_wrg+=m_wrg;
+        if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
+          pct: m_ans>0?Math.round(m_cor/m_ans*100):0});
       }
-      users.push({ id, last: times, ans:total_ans, cor:total_cor, wrg:total_wrg });
+      users.push({ id, last:info.lastSeen||0, lastDate:info.lastDate||'', ans:total_ans, cor:total_cor, wrg:total_wrg, modStats });
     }
-    users.sort((a,b)=>b.ans-a.ans);
+    users.sort((a,b)=>(b.last||0)-(a.last||0));
     setAdminUsers(users);
+  }
+
+  async function adminSearchUser(searchId) {
+    if (!searchId.trim()) return;
+    const id = searchId.trim();
+    const safeId = toSafeId(id);
+
+    // Firebase에서 완전한 데이터 조회
+    const userData = await fb.get(`users/${safeId}`);
+    if (!userData) { setAdminResult({id, notFound:true}); return; }
+
+    const info  = userData.info  || {};
+    const stats = userData.stats || {};
+    let total_ans=0, total_cor=0, total_wrg=0;
+    const modStats = [];
+
+    for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+      const modData = stats[mod.id] || {};
+      let m_ans=0, m_cor=0, m_wrg=0, m_wrg_cnt=0, m_mk_cnt=0;
+      for (const r of ROUNDS) {
+        const p = modData[`prog_${r}`] || {};
+        m_ans += (p.answered||[]).length;
+        m_cor += (p.correct||[]).length;
+        m_wrg += (p.wrong||[]).length;
+        m_wrg_cnt += (modData[`wrong_${r}`]||[]).length;
+        m_mk_cnt  += (modData[`marked_${r}`]||[]).length;
+      }
+      total_ans+=m_ans; total_cor+=m_cor; total_wrg+=m_wrg;
+      if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
+        pct:m_ans>0?Math.round(m_cor/m_ans*100):0, wrongCnt:m_wrg_cnt, markCnt:m_mk_cnt});
+    }
+
+    if (!info.lastSeen && total_ans===0) { setAdminResult({id, notFound:true}); return; }
+    setAdminResult({id, last:info.lastSeen||0, lastDate:info.lastDate||'', ans:total_ans, cor:total_cor, wrg:total_wrg, modStats});
   }
 
   useEffect(() => { if (isAdmin && screen==="admin") loadAdminUsers(); }, [screen, isAdmin]);
@@ -900,6 +1184,48 @@ function App() {
         {/* ════ 오답 아카이브 ════ */}
         {screen==="archive" && (
           <div className="su">
+
+            {/* ── 아카이브 전용 회독 섹션 ── */}
+            <div className="card" style={{marginBottom:16}}>
+              <div className="card-title" style={{marginBottom:12}}>🗂 오답·헷갈림 회독 풀기</div>
+              <div style={{fontSize:12,color:"var(--tx3)",marginBottom:10}}>
+                매 회독에서 틀린·헷갈린 문제가 아카이브 회독에 자동 누적됩니다.
+              </div>
+              <div className="arch-round-tabs">
+                {ROUNDS.map(r=>(
+                  <button key={r} className={`art ${archRound===r?"act":""}`} onClick={()=>{setArchRound(r);saveArchRound(r);}}>
+                    {r}회독
+                    {awTotal(r)>0&&<span className="art-cnt">{awTotal(r)}</span>}
+                  </button>
+                ))}
+              </div>
+              {awTotal(archRound)>0 ? (
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+                  {awCnt(archRound)>0&&(
+                    <button className="retry-btn" style={{flex:1,margin:0}}
+                      onClick={()=>launchQuiz(archRound,"aw_wrong",[])}>
+                      ↺ {archRound}회독 오답 {awCnt(archRound)}문제 풀기
+                    </button>
+                  )}
+                  {amCnt(archRound)>0&&(
+                    <button className="retry-btn mk" style={{flex:1,margin:0}}
+                      onClick={()=>launchQuiz(archRound,"aw_mark",[])}>
+                      ↺ {archRound}회독 헷갈림 {amCnt(archRound)}문제 풀기
+                    </button>
+                  )}
+                  <button className="retry-btn" style={{flex:1,margin:0,borderColor:"var(--gold)",color:"var(--gold)",background:"rgba(212,168,83,.08)"}}
+                    onClick={()=>launchQuiz(archRound,"aw_all",[])}>
+                    ↺ {archRound}회독 전체 ({awTotal(archRound)}문제)
+                  </button>
+                </div>
+              ) : (
+                <div style={{fontSize:13,color:"var(--tx3)",textAlign:"center",padding:"10px 0"}}>
+                  {archRound}회독 아카이브에 문제가 없습니다.
+                </div>
+              )}
+            </div>
+
+            {/* ── 메인 회독별 오답 목록 ── */}
             {ROUNDS.map(r=>{
               const items = archItems(r);
               const wids = wrongMap[r]||new Set(), mids = markedMap[r]||new Set();
@@ -950,23 +1276,73 @@ function App() {
           <div className="su">
             {/* 유저 현황 */}
             <div className="card">
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                 <div className="card-title" style={{marginBottom:0}}>👥 접속 유저 현황</div>
                 <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={loadAdminUsers}>🔄 새로고침</button>
                 <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>총 {adminUsers.length}명</span>
               </div>
+              <div className="admin-note">
+                ⚠️ 같은 기기/브라우저에서 접속한 유저만 자동 표시됩니다. 다른 기기 유저는 아래 ID 검색으로 조회하세요.
+              </div>
+              {/* ID 직접 검색 */}
+              <div className="admin-search">
+                <input placeholder="유저 ID 직접 입력..." value={adminSearch}
+                  onChange={e=>setAdminSearch(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&adminSearchUser(adminSearch)}/>
+                <button onClick={()=>adminSearchUser(adminSearch)}>조회</button>
+              </div>
+              {adminResult && (
+                <div style={{background:adminResult.notFound?"var(--er-bg)":"var(--sf2)",border:`1px solid ${adminResult.notFound?"rgba(248,81,73,.3)":"var(--bd)"}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
+                  {adminResult.notFound ? (
+                    <div style={{color:"var(--er)",fontSize:13}}>유저 '{adminResult.id}'의 기록이 없습니다.</div>
+                  ) : (
+                    <>
+                      <div style={{fontWeight:700,color:"var(--gold)",marginBottom:8}}>👤 {adminResult.id}</div>
+                      <div style={{display:"flex",gap:12,fontSize:12,flexWrap:"wrap"}}>
+                        <span style={{color:"var(--tx3)"}}>시도 <b style={{color:"var(--tx)",fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.ans}</b></span>
+                        <span style={{color:"var(--ok)"}}>정답 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.cor}</b></span>
+                        <span style={{color:"var(--er)"}}>오답 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.wrg}</b></span>
+                        <span style={{color:"var(--gold)"}}>정답률 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.ans>0?Math.round(adminResult.cor/adminResult.ans*100)+"%":"-"}</b></span>
+                        {(adminResult.lastDate||adminResult.last>0)&&<span style={{color:"var(--tx3)"}}>마지막 접속: <b>{adminResult.lastDate||new Date(adminResult.last).toLocaleDateString("ko-KR")}</b></span>}
+                      </div>
+                      {adminResult.modStats?.map(m=>(
+                        <div key={m.mod} style={{fontSize:11,background:"var(--bg)",border:"1px solid var(--bd2)",borderRadius:6,padding:"5px 10px",marginTop:5,color:"var(--tx3)"}}>
+                          <b style={{color:"var(--tx)"}}>{m.mod}</b> ·
+                          시도 <b style={{color:"var(--tx)"}}>{m.ans}</b> ·
+                          정답 <b style={{color:"var(--ok)"}}>{m.cor}</b> ·
+                          오답 <b style={{color:"var(--er)"}}>{m.wrg}</b> ·
+                          정답률 <b style={{color:"var(--gold)"}}>{m.pct}%</b>
+                          {m.wrongCnt>0&&<> · 오답뱅크 <b style={{color:"var(--er)"}}>{m.wrongCnt}</b></>}
+                          {m.markCnt>0&&<> · 헷갈림 <b style={{color:"var(--purple)"}}>{m.markCnt}</b></>}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
               {adminUsers.length === 0 ? (
-                <div style={{textAlign:"center",padding:"30px",color:"var(--tx3)"}}>아직 접속한 유저가 없습니다.</div>
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)"}}>같은 기기에서 접속한 유저가 없습니다.</div>
               ) : adminUsers.map(u=>(
-                <div key={u.id} className="admin-user-card">
-                  <span className="admin-uid">👤 {u.id}</span>
-                  <div className="admin-stats">
-                    <span className="admin-stat">시도 <b>{u.ans}</b></span>
-                    <span className="admin-stat ok">정답 <b>{u.cor}</b></span>
-                    <span className="admin-stat er">오답 <b>{u.wrg}</b></span>
-                    <span className="admin-stat gold">정답률 <b>{u.ans>0?Math.round(u.cor/u.ans*100)+"%" :"-"}</b></span>
-                    {u.last>0&&<span className="admin-stat">마지막 접속: <b>{new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
+                <div key={u.id} className="admin-user-card" style={{flexDirection:"column",alignItems:"flex-start"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,width:"100%",flexWrap:"wrap"}}>
+                    <span className="admin-uid">👤 {u.id}</span>
+                    <div className="admin-stats" style={{flex:1}}>
+                      <span className="admin-stat">시도 <b>{u.ans}</b></span>
+                      <span className="admin-stat ok">정답 <b>{u.cor}</b></span>
+                      <span className="admin-stat er">오답 <b>{u.wrg}</b></span>
+                      <span className="admin-stat gold">정답률 <b>{u.ans>0?Math.round(u.cor/u.ans*100)+"%" :"-"}</b></span>
+                      {(u.lastDate||u.last>0)&&<span className="admin-stat">접속일 <b>{u.lastDate||new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
+                    </div>
                   </div>
+                  {u.modStats && u.modStats.length > 0 && (
+                    <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",width:"100%"}}>
+                      {u.modStats.map(m=>(
+                        <div key={m.mod} style={{fontSize:11,background:"var(--bg)",border:"1px solid var(--bd2)",borderRadius:6,padding:"4px 10px",color:"var(--tx3)"}}>
+                          <b style={{color:"var(--tx)"}}>{m.mod}</b> · 시도 {m.ans} · 정답률 {m.pct}%
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
