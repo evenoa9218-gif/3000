@@ -70,14 +70,14 @@ function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
   body { margin: 0; background: #0d1117; }
   #root { min-height: 100vh; }
   .fact-box {
-  background: rgba(212,168,83,0.07);
+  background: rgba(212,168,83,0.10);
   border-left: 3px solid var(--gold);
   border-radius: 0 8px 8px 0;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  font-size: 13.5px;
-  color: var(--tx2);
-  line-height: 1.7;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  color: var(--tx);
+  line-height: 1.8;
 }
 .fact-label {
   font-size: 10px;
@@ -1249,6 +1249,9 @@ function App() {
                     <span className="qcard-topic">{TOPIC_ICONS[cur.topic]||"📌"} {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</span>
                   </div>
                   {(() => {
+                  function stripPrefix(s) {
+                    return (s||'').replace(/^[ㄱ-ㅎ①-⑳⑴-⑽]\.?\s*/, '').trim();
+                  }
                   const parts = (cur.question || '').split('§');
                   if (parts.length >= 2) {
                     return (
@@ -1257,11 +1260,11 @@ function App() {
                           <div className="fact-label">🗂 사실관계</div>
                           {parts[0].trim()}
                         </div>
-                        <div className="question">{parts[1].trim()}</div>
+                        <div className="question">{stripPrefix(parts[1])}</div>
                       </div>
                     );
                   }
-                  return <div className="question">{cur.question}</div>;
+                  return <div className="question">{stripPrefix(cur.question)}</div>;
                 })()}
                   {answered !== null && (
                     <div className={`reveal ${answered}`}>
