@@ -598,7 +598,7 @@ function App() {
     // 유저 Firebase 등록 + 마지막 접속 시각 기록
     if (!isAdm) {
       const safeId = id.replace(/[.#$\[\]]/g, '_'); // Firebase 키 안전 변환
-      await fb.update(`users/${safeId}`, {
+      await fb.set(`users/${safeId}/info`, {
         id: id,
         lastSeen: Date.now(),
         lastDate: new Date().toLocaleDateString('ko-KR')
@@ -1436,7 +1436,7 @@ function App() {
                 <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>총 {adminUsers.length}명</span>
               </div>
               <div className="admin-note">
-                ⚠️ 같은 기기/브라우저에서 접속한 유저만 자동 표시됩니다. 다른 기기 유저는 아래 ID 검색으로 조회하세요.
+                ✅ Firebase를 통해 모든 기기·브라우저에서 접속한 유저가 자동으로 표시됩니다.
               </div>
               {/* ID 직접 검색 */}
               <div className="admin-search">
@@ -1475,7 +1475,7 @@ function App() {
                 </div>
               )}
               {adminUsers.length === 0 ? (
-                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)"}}>같은 기기에서 접속한 유저가 없습니다.</div>
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)"}}>아직 접속한 유저가 없습니다.</div>
               ) : adminUsers.map(u=>(
                 <div key={u.id} className="admin-user-card" style={{flexDirection:"column",alignItems:"flex-start"}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,width:"100%",flexWrap:"wrap"}}>
@@ -1485,7 +1485,7 @@ function App() {
                       <span className="admin-stat ok">정답 <b>{u.cor}</b></span>
                       <span className="admin-stat er">오답 <b>{u.wrg}</b></span>
                       <span className="admin-stat gold">정답률 <b>{u.ans>0?Math.round(u.cor/u.ans*100)+"%" :"-"}</b></span>
-                      {(u.lastDate||u.last>0)&&<span className="admin-stat">접속일 <b>{u.lastDate||new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
+                      {(u.lastDate||u.last>0)&&<span className="admin-stat">마지막 접속 <b style={{color:"var(--gold)"}}>{u.lastDate||new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
                     </div>
                   </div>
                   {u.modStats && u.modStats.length > 0 && (
