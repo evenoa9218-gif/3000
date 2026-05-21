@@ -534,11 +534,19 @@ function App() {
   const [editDraft, setEditDraft]   = useState({q:"", e:""});
 
   // ── 아카이브
-  const [archExp,    setArchExp]    = useState({});
-  const [archFilter, setArchFilter] = useState("wrong");
+  const [archExp,     setArchExp]     = useState({});
+  const [archFilter,  setArchFilter]  = useState("wrong");
+  const [archRound,   setArchRound]   = useState(1);
+  const [awWrongMap,  setAwWrongMap]  = useState({});
+  const [awMarkMap,   setAwMarkMap]   = useState({});
+
+  // ── 이어풀기 세션
+  const [savedSession, setSavedSession] = useState(null);
 
   // ── 관리자
-  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminUsers,  setAdminUsers]  = useState([]);
+  const [adminSearch, setAdminSearch] = useState("");
+  const [adminResult, setAdminResult] = useState(null);
 
   // ── 테마 (dark / light)
   const [theme, setTheme] = React.useState(() => {
