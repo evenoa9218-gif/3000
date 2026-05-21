@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="questions.js"></script>
 <script>
 // ── Firebase REST API 헬퍼 (SDK 없이 fetch로 직접 사용) ──
 const FB_URL = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -136,14 +137,15 @@ window.storage = window.storage || (() => {
 ═══════════════════════════════════════════════ */
 
 // ── 모듈 레지스트리 ──────────────────────────────────
-// 새 퀴즈 추가 시 여기에 등록 (데이터는 App의 questionsData state로 관리)
+// 새 퀴즈 추가 시 여기에 등록 (문제 데이터는 questions.js가 window.QUESTIONS_DATA에 로드)
 const MODULE_REGISTRY = [
   {
     id: "채권총론",
     label: "채권총론",
     subtitle: "민법 채권총론",
     icon: "⚖",
-    status: "active",  // "active" | "soon"
+    get count() { return (window.QUESTIONS_DATA?.['채권총론'] || []).length; },
+    status: "active",
     color: "#d4a853",
     topics: [
       {key:"채권의목적",label:"채권의 목적"},
@@ -157,10 +159,12 @@ const MODULE_REGISTRY = [
       {key:"변제",label:"변제"},
       {key:"변제자대위",label:"변제자대위"},
     ],
+    getData: () => window.QUESTIONS_DATA?.['채권총론'] || [],
   },
-  { id:"민법총칙", label:"민법총칙", subtitle:"민법 총칙편", icon:"📜", status:"soon", color:"#58a6ff" },
-  { id:"물권법",   label:"물권법",   subtitle:"민법 물권편", icon:"🏠", status:"soon", color:"#3fb950" },
+  { id:"민법총칙", label:"민법총칙", subtitle:"민법 총칙편", icon:"📜", count:0, status:"soon", color:"#58a6ff" },
+  { id:"물권법",   label:"물권법",   subtitle:"민법 물권편", icon:"🏠", count:0, status:"soon", color:"#3fb950" },
   { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"📋",
+    get count() { return (window.QUESTIONS_DATA?.['채권각론'] || []).length; },
     status:"active", color:"#bc8cff",
     topics:[
       {key:"계약의종류·성립",label:"계약의 종류·성립"},
@@ -181,8 +185,9 @@ const MODULE_REGISTRY = [
       {key:"일반불법행위",label:"일반 불법행위"},
       {key:"특수불법행위",label:"특수 불법행위"},
     ],
+    getData: () => window.QUESTIONS_DATA?.['채권각론'] || [],
   },
-  { id:"친족상속", label:"친족·상속", subtitle:"민법 가족편", icon:"👨‍👩‍👧", status:"soon", color:"#f0883e" },
+  { id:"친족상속", label:"친족·상속", subtitle:"민법 가족편", icon:"👨‍👩‍👧", count:0, status:"soon", color:"#f0883e" },
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
@@ -578,30 +583,7 @@ function App() {
     try { localStorage.setItem('quiz_theme', theme); } catch {}
   }, [theme]);
 
-  // ── 문제 데이터 (React state로 관리 - 클로저/전역 의존 없음)
-  const [questionsData, setQuestionsData] = React.useState({});
-  const [dataLoaded, setDataLoaded] = React.useState(false);
-  const [dataError,  setDataError]  = React.useState(null);
-  useEffect(() => {
-    const paths = ['./questions.json', 'questions.json', '/questions.json'];
-    const tryFetch = async () => {
-      for (const path of paths) {
-        try {
-          const r = await fetch(path);
-          if (!r.ok) continue;
-          const data = await r.json();
-          if (data && (data['채권총론'] || data['채권각론'])) {
-            setQuestionsData(data);
-            setDataLoaded(true);
-            return;
-          }
-        } catch {}
-      }
-      setDataError('questions.json을 불러올 수 없습니다. 새로고침 해주세요.');
-      setDataLoaded(true);
-    };
-    tryFetch();
-  }, []);
+  // ── questions.js가 <script src>로 동기 로드되어 window.QUESTIONS_DATA 보장됨
 
   // ── 초기화: 로컬스토리지에서 마지막 uid 복원
   useEffect(() => {
@@ -751,7 +733,7 @@ function App() {
   function launchQuiz(round, mode, topics, resumeData=null) {
     const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
     if (!mod) return;
-    const all = questionsData[activeModule] || [];
+    const all = mod.getData();
     if (!all.length) { alert('문제 데이터를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
     let pool, lbl;
 
@@ -907,7 +889,7 @@ function App() {
 
   // ── 헬퍼
   const getMod   = () => MODULE_REGISTRY.find(m => m.id === activeModule);
-  const getAll   = () => questionsData[activeModule] || [];
+  const getAll   = () => getMod()?.getData() || [];
   const wCnt     = r => (wrongMap[r]||new Set()).size;
   const mCnt     = r => (markedMap[r]||new Set()).size;
   const awCnt    = r => (awWrongMap[r]||new Set()).size;
@@ -1060,10 +1042,6 @@ function App() {
   //  렌더
   // ══════════════════════════════════════════
 
-  // 데이터 로딩 중
-  if (!dataLoaded) return <div className="loading">⚖ 문제 데이터 불러오는 중...</div>;
-  if (dataError)   return <div className="loading" style={{flexDirection:'column',gap:12}}><span>⚠ {dataError}</span><button onClick={()=>location.reload()} style={{padding:'8px 20px',background:'#d4a853',border:'none',borderRadius:6,cursor:'pointer',color:'#0d1117',fontWeight:700}}>새로고침</button></div>;
-
   // 로그인 전
   if (!uid) return (
     <><style>{CSS}</style>
@@ -1142,12 +1120,12 @@ function App() {
                       <div className="module-stats">
                         {isActive ? (
                           <>
-                            <span className="module-stat gold">{(questionsData[mod.id]||[]).length}문제</span>
+                            <span className="module-stat gold">{mod.count}문제</span>
                             {wc>0&&<span className="module-stat er">오답 {wc}</span>}
                             {mc>0&&<span className="module-stat" style={{color:"var(--purple)",borderColor:"rgba(188,140,255,.2)"}}>헷갈림 {mc}</span>}
                           </>
                         ) : (
-                          <span className="module-stat">준비중</span>
+                          <span className="module-stat">{mod.count||"?"} 문제</span>
                         )}
                       </div>
                       {isActive && <div className="module-bar"><div className="module-bar-fill" style={{width:`${p?.pct||0}%`,background:mod.color}}/></div>}
