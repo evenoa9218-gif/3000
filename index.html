@@ -135,20 +135,14 @@ window.storage = window.storage || (() => {
    아이디 로그인 → 범위별 모듈 선택 → 퀴즈 진행
 ═══════════════════════════════════════════════ */
 
-// ── 문제 데이터는 questions.json 에서 fetch로 로드 ──────────────────────────────────
-// 모듈 레벨 변수 (window 의존 없이 항상 동일 참조 사용)
-let _QD = {};
-window.QUESTIONS_DATA = _QD;
-
 // ── 모듈 레지스트리 ──────────────────────────────────
-// 새 퀴즈 추가 시 여기에 등록
+// 새 퀴즈 추가 시 여기에 등록 (데이터는 App의 questionsData state로 관리)
 const MODULE_REGISTRY = [
   {
     id: "채권총론",
     label: "채권총론",
     subtitle: "민법 채권총론",
     icon: "⚖",
-    get count() { return (_QD['채권총론'] || []).length; },
     status: "active",  // "active" | "soon"
     color: "#d4a853",
     topics: [
@@ -163,12 +157,11 @@ const MODULE_REGISTRY = [
       {key:"변제",label:"변제"},
       {key:"변제자대위",label:"변제자대위"},
     ],
-    getData: () => _QD['채권총론'] || [],
   },
-  { id:"민법총칙", label:"민법총칙", subtitle:"민법 총칙편", icon:"📜", count:0, status:"soon", color:"#58a6ff" },
-  { id:"물권법",   label:"물권법",   subtitle:"민법 물권편", icon:"🏠", count:0, status:"soon", color:"#3fb950" },
+  { id:"민법총칙", label:"민법총칙", subtitle:"민법 총칙편", icon:"📜", status:"soon", color:"#58a6ff" },
+  { id:"물권법",   label:"물권법",   subtitle:"민법 물권편", icon:"🏠", status:"soon", color:"#3fb950" },
   { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"📋",
-    get count() { return (_QD['채권각론'] || []).length; }, status:"active", color:"#bc8cff",
+    status:"active", color:"#bc8cff",
     topics:[
       {key:"계약의종류·성립",label:"계약의 종류·성립"},
       {key:"동시이행의항변권",label:"동시이행의 항변권"},
@@ -188,9 +181,8 @@ const MODULE_REGISTRY = [
       {key:"일반불법행위",label:"일반 불법행위"},
       {key:"특수불법행위",label:"특수 불법행위"},
     ],
-    getData: () => _QD['채권각론'] || [],
   },
-  { id:"친족상속", label:"친족·상속", subtitle:"민법 가족편", icon:"👨‍👩‍👧", count:0, status:"soon", color:"#f0883e" },
+  { id:"친족상속", label:"친족·상속", subtitle:"민법 가족편", icon:"👨‍👩‍👧", status:"soon", color:"#f0883e" },
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
@@ -586,7 +578,8 @@ function App() {
     try { localStorage.setItem('quiz_theme', theme); } catch {}
   }, [theme]);
 
-  // ── 문제 데이터 로딩 상태
+  // ── 문제 데이터 (React state로 관리 - 클로저/전역 의존 없음)
+  const [questionsData, setQuestionsData] = React.useState({});
   const [dataLoaded, setDataLoaded] = React.useState(false);
   const [dataError,  setDataError]  = React.useState(null);
   useEffect(() => {
@@ -598,9 +591,7 @@ function App() {
           if (!r.ok) continue;
           const data = await r.json();
           if (data && (data['채권총론'] || data['채권각론'])) {
-            // _QD 객체의 내용을 업데이트 (참조는 유지, 내용만 교체)
-            Object.assign(_QD, data);
-            window.QUESTIONS_DATA = _QD;
+            setQuestionsData(data);
             setDataLoaded(true);
             return;
           }
@@ -760,7 +751,7 @@ function App() {
   function launchQuiz(round, mode, topics, resumeData=null) {
     const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
     if (!mod) return;
-    const all = mod.getData();
+    const all = questionsData[activeModule] || [];
     if (!all.length) { alert('문제 데이터를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
     let pool, lbl;
 
@@ -916,7 +907,7 @@ function App() {
 
   // ── 헬퍼
   const getMod   = () => MODULE_REGISTRY.find(m => m.id === activeModule);
-  const getAll   = () => getMod()?.getData() || [];
+  const getAll   = () => questionsData[activeModule] || [];
   const wCnt     = r => (wrongMap[r]||new Set()).size;
   const mCnt     = r => (markedMap[r]||new Set()).size;
   const awCnt    = r => (awWrongMap[r]||new Set()).size;
@@ -1151,12 +1142,12 @@ function App() {
                       <div className="module-stats">
                         {isActive ? (
                           <>
-                            <span className="module-stat gold">{mod.count}문제</span>
+                            <span className="module-stat gold">{(questionsData[mod.id]||[]).length}문제</span>
                             {wc>0&&<span className="module-stat er">오답 {wc}</span>}
                             {mc>0&&<span className="module-stat" style={{color:"var(--purple)",borderColor:"rgba(188,140,255,.2)"}}>헷갈림 {mc}</span>}
                           </>
                         ) : (
-                          <span className="module-stat">{mod.count||"?"} 문제</span>
+                          <span className="module-stat">준비중</span>
                         )}
                       </div>
                       {isActive && <div className="module-bar"><div className="module-bar-fill" style={{width:`${p?.pct||0}%`,background:mod.color}}/></div>}
