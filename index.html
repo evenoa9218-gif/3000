@@ -1609,7 +1609,14 @@ function LoginScreen({ onLogin }) {
       setStatus({msg:"20자 이내 한글/영문/숫자/_-만 가능합니다.", type:"er"}); return;
     }
     // 관리자는 PIN 없이 바로
-    if (id === ADMIN_ID_L) { onLogin(id); return; }
+    if (id === ADMIN_ID_L) {
+      // 관리자도 PIN 확인
+      setPin(["","","",""]);
+      setStep("pin_check");
+      setStatus({msg:"관리자 PIN을 입력해주세요.", type:"info"});
+      setTimeout(()=>pinRefs[0].current?.focus(), 100);
+      return;
+    }
 
     setLoading(true);
     setStatus({msg:"확인 중...", type:"info"});
@@ -1652,15 +1659,20 @@ function LoginScreen({ onLogin }) {
       setLoading(false);
       setTimeout(()=>onLogin(id), 500);
     } else {
-      // 기존: PIN 검증
-      const existing = await fbGet(`users/${safeId}/info`);
-      if (existing?.pin === pinFull) {
-        // 접속시간 갱신
-        await fbSet(`users/${safeId}/info`, {
-          ...existing,
-          lastSeen: Date.now(),
-          lastDate: new Date().toLocaleDateString('ko-KR')
-        });
+      // 기존: PIN 검증 (관리자는 고정 PIN)
+      const ADMIN_PIN = "2027";
+      const isAdminUser = uid.trim() === ADMIN_ID_L;
+      const existing = isAdminUser ? null : await fbGet(`users/${safeId}/info`);
+      const correctPin = isAdminUser ? ADMIN_PIN : existing?.pin;
+      if (correctPin === pinFull) {
+        // 접속시간 갱신 (관리자 제외)
+        if (!isAdminUser && existing) {
+          await fbSet(`users/${safeId}/info`, {
+            ...existing,
+            lastSeen: Date.now(),
+            lastDate: new Date().toLocaleDateString('ko-KR')
+          });
+        }
         setStatus({msg:"로그인 성공!", type:"ok"});
         setLoading(false);
         setTimeout(()=>onLogin(id), 300);
