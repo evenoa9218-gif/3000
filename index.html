@@ -586,11 +586,26 @@ function App() {
 
   // ── 문제 데이터 로딩 상태
   const [dataLoaded, setDataLoaded] = React.useState(false);
+  const [dataError,  setDataError]  = React.useState(null);
   useEffect(() => {
-    fetch('./questions.json')
-      .then(r => r.json())
-      .then(data => { window.QUESTIONS_DATA = data; setDataLoaded(true); })
-      .catch(() => setDataLoaded(true));
+    const paths = ['./questions.json', 'questions.json', '/questions.json'];
+    const tryFetch = async () => {
+      for (const path of paths) {
+        try {
+          const r = await fetch(path);
+          if (!r.ok) continue;
+          const data = await r.json();
+          if (data && (data['채권총론'] || data['채권각론'])) {
+            window.QUESTIONS_DATA = data;
+            setDataLoaded(true);
+            return;
+          }
+        } catch {}
+      }
+      setDataError('questions.json을 불러올 수 없습니다. 새로고침 해주세요.');
+      setDataLoaded(true);
+    };
+    tryFetch();
   }, []);
 
   // ── 초기화: 로컬스토리지에서 마지막 uid 복원
@@ -1051,6 +1066,7 @@ function App() {
 
   // 데이터 로딩 중
   if (!dataLoaded) return <div className="loading">⚖ 문제 데이터 불러오는 중...</div>;
+  if (dataError)   return <div className="loading" style={{flexDirection:'column',gap:12}}><span>⚠ {dataError}</span><button onClick={()=>location.reload()} style={{padding:'8px 20px',background:'#d4a853',border:'none',borderRadius:6,cursor:'pointer',color:'#0d1117',fontWeight:700}}>새로고침</button></div>;
 
   // 로그인 전
   if (!uid) return (
