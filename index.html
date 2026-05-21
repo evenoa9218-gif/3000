@@ -290,6 +290,19 @@ html.light body { background:var(--bg); color:var(--tx); }
 .fb-admin-date{font-size:10px;color:var(--tx3);margin-left:auto;}
 .fb-admin-q{font-size:12px;color:var(--tx2);margin-bottom:6px;padding:7px 10px;background:var(--sf2);border-radius:6px;line-height:1.5;}
 .fb-admin-body{font-size:13px;color:var(--tx);line-height:1.6;}
+
+/* ── PIN 입력 ─────────────────────────────────────── */
+.pin-row{display:flex;gap:10px;justify-content:center;margin:16px 0;}
+.pin-digit{width:52px;height:60px;border:2px solid var(--bd);border-radius:12px;
+  background:var(--sf2);color:var(--tx);font-size:24px;font-weight:700;
+  text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;
+  transition:border .15s;}
+.pin-digit:focus{border-color:var(--gold);}
+.pin-status{font-size:12px;text-align:center;min-height:18px;margin-bottom:8px;}
+.pin-status.ok{color:var(--ok);}
+.pin-status.er{color:var(--er);}
+.pin-status.info{color:var(--tx3);}
+.login-step{font-size:11px;color:var(--tx3);text-align:center;margin-bottom:14px;letter-spacing:.05em;}
 html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-ui,sans-serif;}
 .app{min-height:100vh;display:flex;flex-direction:column;}
 
@@ -595,17 +608,19 @@ function App() {
     setIsAdmin(isAdm);
     localStorage.setItem("hub_last_uid", id);
 
-    // 유저 Firebase 등록 + 마지막 접속 시각 기록
+    // 접속 시각 갱신 (PIN 로그인에서 이미 info 설정됨, 여기서는 lastSeen만 갱신)
     if (!isAdm) {
-      const safeId = id.replace(/[.#$\[\]]/g, '_'); // Firebase 키 안전 변환
-      await fb.set(`users/${safeId}/info`, {
-        id: id,
-        lastSeen: Date.now(),
-        lastDate: new Date().toLocaleDateString('ko-KR')
-      });
-      // localStorage에도 유저 목록 유지 (fallback)
-      const list = await gr(K_USERS, []);
-      if (!list.includes(id)) await sw(K_USERS, [...list, id]);
+      const safeId = id.replace(/[.#$\[\]]/g, '_');
+      try {
+        const existing = await fb.get(`users/${safeId}/info`);
+        if (existing) {
+          await fb.set(`users/${safeId}/info`, {
+            ...existing,
+            lastSeen: Date.now(),
+            lastDate: new Date().toLocaleDateString('ko-KR')
+          });
+        }
+      } catch {}
       await sw(K_UTIME(id), Date.now());
     }
 
@@ -1477,6 +1492,24 @@ function App() {
                           {m.markCnt>0&&<> · 헷갈림 <b style={{color:"var(--purple)"}}>{m.markCnt}</b></>}
                         </div>
                       ))}
+                      {/* PIN 초기화 버튼 */}
+                      {!adminResult.notFound && (
+                        <button style={{marginTop:10,padding:"6px 14px",fontSize:11,
+                          background:"var(--er-bg)",border:"1px solid rgba(248,81,73,.3)",
+                          color:"var(--er)",borderRadius:8,cursor:"pointer"}}
+                          onClick={async()=>{
+                            if(!confirm(`${adminResult.id}의 PIN을 초기화하시겠습니까?`)) return;
+                            const safeId = adminResult.id.replace(/[.#$[\]]/g,'_');
+                            const info = await fb.get(`users/${safeId}/info`);
+                            if(info) {
+                              const {pin:_,...rest} = info;
+                              await fb.set(`users/${safeId}/info`, rest);
+                              alert('PIN이 초기화되었습니다. 다음 로그인 시 새 PIN을 설정합니다.');
+                            }
+                          }}>
+                          🔑 PIN 초기화
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
@@ -1524,13 +1557,120 @@ function App() {
 
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
 function LoginScreen({ onLogin }) {
-  const [uid, setUid]   = useState(localStorage.getItem("hub_last_uid")||"");
+  const FB_BASE = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
+  const ADMIN_ID_L = "정연석";
 
-  const handleLogin = () => {
+  const [step, setStep]       = React.useState("id");   // id | pin_new | pin_check
+  const [uid,  setUid]        = React.useState(localStorage.getItem("hub_last_uid")||"");
+  const [pin,  setPin]        = React.useState(["","","",""])
+  const [status, setStatus]   = React.useState({msg:"", type:"info"});
+  const [loading, setLoading] = React.useState(false);
+  const pinRefs = [React.useRef(), React.useRef(), React.useRef(), React.useRef()];
+
+  // Firebase 단순 fetch
+  const fbGet = async (path) => {
+    try {
+      const r = await fetch(`${FB_BASE}/${path}.json`);
+      return r.ok ? await r.json() : null;
+    } catch { return null; }
+  };
+  const fbSet = async (path, data) => {
+    try {
+      await fetch(`${FB_BASE}/${path}.json`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+    } catch {}
+  };
+
+  const toSafe = id => id.replace(/[.#$\[\]]/g,'_');
+
+  // PIN 입력 핸들러
+  const handlePinInput = (i, val) => {
+    if (!/^[0-9]?$/.test(val)) return;
+    const next = [...pin];
+    next[i] = val;
+    setPin(next);
+    if (val && i < 3) pinRefs[i+1].current?.focus();
+  };
+  const handlePinKey = (i, e) => {
+    if (e.key === "Backspace" && !pin[i] && i > 0) {
+      pinRefs[i-1].current?.focus();
+    }
+    if (e.key === "Enter") handlePinSubmit();
+  };
+  const pinFull = pin.join("");
+
+  // 1단계: 아이디 확인
+  const handleIdNext = async () => {
     const id = uid.trim();
     if (!id) return;
-    if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) { alert("아이디는 20자 이내 한글/영문/숫자/_-만 가능합니다."); return; }
-    onLogin(id);
+    if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) {
+      setStatus({msg:"20자 이내 한글/영문/숫자/_-만 가능합니다.", type:"er"}); return;
+    }
+    // 관리자는 PIN 없이 바로
+    if (id === ADMIN_ID_L) { onLogin(id); return; }
+
+    setLoading(true);
+    setStatus({msg:"확인 중...", type:"info"});
+    const safeId = toSafe(id);
+    const existing = await fbGet(`users/${safeId}/info`);
+    setLoading(false);
+
+    if (existing && existing.pin) {
+      // 기존 유저 → PIN 확인
+      setPin(["","","",""]);
+      setStep("pin_check");
+      setStatus({msg:"등록된 PIN을 입력해주세요.", type:"info"});
+      setTimeout(()=>pinRefs[0].current?.focus(), 100);
+    } else {
+      // 신규 유저 → PIN 등록
+      setPin(["","","",""]);
+      setStep("pin_new");
+      setStatus({msg:"사용할 4자리 PIN을 설정해주세요.", type:"info"});
+      setTimeout(()=>pinRefs[0].current?.focus(), 100);
+    }
+  };
+
+  // 2단계: PIN 제출
+  const handlePinSubmit = async () => {
+    if (pinFull.length !== 4) {
+      setStatus({msg:"4자리를 모두 입력해주세요.", type:"er"}); return;
+    }
+    const id = uid.trim();
+    const safeId = toSafe(id);
+    setLoading(true);
+
+    if (step === "pin_new") {
+      // 신규: PIN 저장 후 로그인
+      await fbSet(`users/${safeId}/info`, {
+        id, pin: pinFull,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      setStatus({msg:"PIN 설정 완료!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 500);
+    } else {
+      // 기존: PIN 검증
+      const existing = await fbGet(`users/${safeId}/info`);
+      if (existing?.pin === pinFull) {
+        // 접속시간 갱신
+        await fbSet(`users/${safeId}/info`, {
+          ...existing,
+          lastSeen: Date.now(),
+          lastDate: new Date().toLocaleDateString('ko-KR')
+        });
+        setStatus({msg:"로그인 성공!", type:"ok"});
+        setLoading(false);
+        setTimeout(()=>onLogin(id), 300);
+      } else {
+        setStatus({msg:"PIN이 일치하지 않습니다.", type:"er"});
+        setPin(["","","",""]);
+        setLoading(false);
+        setTimeout(()=>pinRefs[0].current?.focus(), 50);
+      }
+    }
   };
 
   return (
@@ -1539,15 +1679,62 @@ function LoginScreen({ onLogin }) {
         <div className="login-header">
           <div className="login-logo">📚 3000제 퀴즈 허브</div>
           <div className="login-title">[민법+민소법] 제4판<br/>선택형 기출 최신빈출지문</div>
-          <div className="login-desc">아이디를 입력하면 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
+          <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
         </div>
         <div className="login-card">
-          <div className="login-label">아이디</div>
-          <input className="login-input" value={uid} placeholder="한글/영문/숫자 20자 이내"
-            onChange={e=>setUid(e.target.value)}
-            onKeyDown={e=>e.key==="Enter"&&handleLogin()} autoFocus />
-          <button className="login-btn" onClick={handleLogin}>시작하기 →</button>
-          <div className="login-hint">아이디가 곧 계정입니다. 같은 아이디로 다른 기기에서도 이어서 풀 수 있습니다.</div>
+          {/* 단계 표시 */}
+          <div className="login-step">
+            {step==="id" ? "① 아이디 입력" : step==="pin_new" ? "② PIN 설정 (신규)" : "② PIN 확인"}
+          </div>
+
+          {/* 아이디 입력 */}
+          {step === "id" && (
+            <>
+              <div className="login-label">아이디</div>
+              <input className="login-input" value={uid}
+                placeholder="한글/영문/숫자 20자 이내"
+                onChange={e=>{ setUid(e.target.value); setStatus({msg:"",type:"info"}); }}
+                onKeyDown={e=>e.key==="Enter"&&handleIdNext()}
+                autoFocus />
+              <div className={`pin-status ${status.type}`}>{status.msg}</div>
+              <button className="login-btn" onClick={handleIdNext} disabled={loading}>
+                {loading ? "확인 중..." : "다음 →"}
+              </button>
+            </>
+          )}
+
+          {/* PIN 입력 */}
+          {(step === "pin_new" || step === "pin_check") && (
+            <>
+              <div className="login-label" style={{textAlign:"center"}}>
+                👤 {uid}
+              </div>
+              <div className="pin-row">
+                {[0,1,2,3].map(i=>(
+                  <input key={i} ref={pinRefs[i]}
+                    className="pin-digit" type="password"
+                    maxLength={1} value={pin[i]}
+                    onChange={e=>handlePinInput(i, e.target.value)}
+                    onKeyDown={e=>handlePinKey(i,e)} />
+                ))}
+              </div>
+              <div className={`pin-status ${status.type}`}>{status.msg}</div>
+              <button className="login-btn" onClick={handlePinSubmit} disabled={loading||pinFull.length!==4}>
+                {loading ? "처리 중..." : step==="pin_new" ? "PIN 설정 완료" : "로그인"}
+              </button>
+              <button style={{width:"100%",background:"none",border:"none",color:"var(--tx3)",
+                fontSize:12,cursor:"pointer",marginTop:8,padding:"6px 0"}}
+                onClick={()=>{ setStep("id"); setPin(["","","",""]); setStatus({msg:"",type:"info"}); }}>
+                ← 아이디 다시 입력
+              </button>
+            </>
+          )}
+
+          <div className="login-hint" style={{marginTop:12}}>
+            {step==="id" ? "처음 입력하는 아이디는 자동으로 계정이 생성됩니다." :
+             step==="pin_new" ? "PIN은 4자리 숫자입니다. 잊지 않도록 메모해두세요." :
+             "PIN을 잊으셨으면 관리자에게 문의해주세요."}
+          </div>
         </div>
       </div>
     </div>
