@@ -136,7 +136,9 @@ window.storage = window.storage || (() => {
 ═══════════════════════════════════════════════ */
 
 // ── 문제 데이터는 questions.json 에서 fetch로 로드 ──────────────────────────────────
-window.QUESTIONS_DATA = {};
+// 모듈 레벨 변수 (window 의존 없이 항상 동일 참조 사용)
+let _QD = {};
+window.QUESTIONS_DATA = _QD;
 
 // ── 모듈 레지스트리 ──────────────────────────────────
 // 새 퀴즈 추가 시 여기에 등록
@@ -146,7 +148,7 @@ const MODULE_REGISTRY = [
     label: "채권총론",
     subtitle: "민법 채권총론",
     icon: "⚖",
-    get count() { return (window.QUESTIONS_DATA['채권총론'] || []).length; },
+    get count() { return (_QD['채권총론'] || []).length; },
     status: "active",  // "active" | "soon"
     color: "#d4a853",
     topics: [
@@ -161,12 +163,12 @@ const MODULE_REGISTRY = [
       {key:"변제",label:"변제"},
       {key:"변제자대위",label:"변제자대위"},
     ],
-    getData: () => window.QUESTIONS_DATA['채권총론'] || [],
+    getData: () => _QD['채권총론'] || [],
   },
   { id:"민법총칙", label:"민법총칙", subtitle:"민법 총칙편", icon:"📜", count:0, status:"soon", color:"#58a6ff" },
   { id:"물권법",   label:"물권법",   subtitle:"민법 물권편", icon:"🏠", count:0, status:"soon", color:"#3fb950" },
   { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"📋",
-    get count() { return (window.QUESTIONS_DATA['채권각론'] || []).length; }, status:"active", color:"#bc8cff",
+    get count() { return (_QD['채권각론'] || []).length; }, status:"active", color:"#bc8cff",
     topics:[
       {key:"계약의종류·성립",label:"계약의 종류·성립"},
       {key:"동시이행의항변권",label:"동시이행의 항변권"},
@@ -186,7 +188,7 @@ const MODULE_REGISTRY = [
       {key:"일반불법행위",label:"일반 불법행위"},
       {key:"특수불법행위",label:"특수 불법행위"},
     ],
-    getData: () => window.QUESTIONS_DATA['채권각론'] || [],
+    getData: () => _QD['채권각론'] || [],
   },
   { id:"친족상속", label:"친족·상속", subtitle:"민법 가족편", icon:"👨‍👩‍👧", count:0, status:"soon", color:"#f0883e" },
 ];
@@ -596,7 +598,9 @@ function App() {
           if (!r.ok) continue;
           const data = await r.json();
           if (data && (data['채권총론'] || data['채권각론'])) {
-            window.QUESTIONS_DATA = data;
+            // _QD 객체의 내용을 업데이트 (참조는 유지, 내용만 교체)
+            Object.assign(_QD, data);
+            window.QUESTIONS_DATA = _QD;
             setDataLoaded(true);
             return;
           }
@@ -757,6 +761,7 @@ function App() {
     const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
     if (!mod) return;
     const all = mod.getData();
+    if (!all.length) { alert('문제 데이터를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'); return; }
     let pool, lbl;
 
     // 아카이브 전용 회독(aw_*): archRound 기준
