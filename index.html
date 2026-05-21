@@ -253,6 +253,43 @@ html.light body { background:var(--bg); color:var(--tx); }
   color:var(--tx2);line-height:1.6;
 }
 .hub-notice-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+
+/* ── 피드백 ───────────────────────────────────────────── */
+.fb-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;}
+.fb-btn:hover{border-color:var(--gold);color:var(--gold);}
+.fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.fb-modal{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
+.fb-modal-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:4px;}
+.fb-modal-sub{font-size:12px;color:var(--tx3);margin-bottom:16px;}
+.fb-qref{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.6;}
+.fb-select-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.fb-type{padding:5px 12px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;cursor:pointer;transition:all .15s;}
+.fb-type:hover{border-color:var(--gold);color:var(--gold);}
+.fb-type.sel{background:var(--gold);border-color:var(--gold);color:#0d1117;font-weight:600;}
+.fb-textarea{width:100%;box-sizing:border-box;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:'Pretendard',sans-serif;padding:10px 12px;resize:vertical;outline:none;line-height:1.6;}
+.fb-textarea:focus{border-color:var(--gold);}
+.fb-row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
+.fb-submit{padding:9px 20px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.fb-submit:hover{background:var(--gold2);}
+.fb-cancel{padding:9px 14px;background:transparent;border:1px solid var(--bd);color:var(--tx3);border-radius:8px;font-size:13px;cursor:pointer;}
+.fb-cancel:hover{border-color:var(--tx);color:var(--tx);}
+/* 피드백 목록 (퀴즈 카드 하단) */
+.fb-list{margin-top:12px;border-top:1px solid var(--bd2);padding-top:10px;}
+.fb-item{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:12px;}
+.fb-item-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.fb-item-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(212,168,83,.15);color:var(--gold);}
+.fb-item-uid{font-size:11px;color:var(--tx3);}
+.fb-item-date{font-size:10px;color:var(--tx3);margin-left:auto;}
+.fb-item-body{color:var(--tx2);line-height:1.6;}
+/* 관리자 피드백 목록 */
+.fb-admin-item{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.fb-admin-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.fb-admin-no{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--blue);}
+.fb-admin-type{font-size:11px;font-weight:700;color:var(--gold);}
+.fb-admin-uid{font-size:11px;color:var(--tx3);}
+.fb-admin-date{font-size:10px;color:var(--tx3);margin-left:auto;}
+.fb-admin-q{font-size:12px;color:var(--tx2);margin-bottom:6px;padding:7px 10px;background:var(--sf2);border-radius:6px;line-height:1.5;}
+.fb-admin-body{font-size:13px;color:var(--tx);line-height:1.6;}
 html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-ui,sans-serif;}
 .app{min-height:100vh;display:flex;flex-direction:column;}
 
@@ -460,28 +497,9 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .admin-note{font-size:11px;color:var(--tx3);margin-bottom:10px;line-height:1.5;}
 
 /* 인라인 편집 */
-.edit-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;margin-left:auto;}
-.edit-btn:hover{border-color:var(--blue);color:var(--blue);}
-.edit-btn.edited{border-color:rgba(88,166,255,.3);color:var(--blue);background:rgba(88,166,255,.08);}
-.edit-panel{margin-top:14px;padding:14px 16px;background:var(--sf2);border:1px solid var(--bd);border-radius:10px;animation:fi .15s ease;}
-.edit-panel-title{font-size:11px;color:var(--tx3);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
-.edit-textarea{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-family:'Noto Serif KR',serif;font-size:14px;line-height:1.75;padding:10px 12px;resize:vertical;outline:none;transition:border-color .15s;}
-.edit-textarea:focus{border-color:var(--blue);}
-.edit-textarea.exp{font-size:12px;font-family:'Pretendard',sans-serif;color:var(--tx2);}
-.edit-row{display:flex;gap:8px;margin-top:10px;align-items:center;}
-.edit-save{padding:8px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .12s;}
 .edit-save:hover{opacity:.85;}
-.edit-cancel{padding:8px 14px;background:transparent;border:1px solid var(--bd);color:var(--tx3);border-radius:8px;font-size:13px;cursor:pointer;}
 .edit-cancel:hover{color:var(--tx);}
-.edit-reset{font-size:11px;color:var(--er);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;margin-left:auto;}
-.edit-hint{font-size:11px;color:var(--tx3);margin-top:6px;}
 /* 관리자 - 수정 내역 */
-.admin-edit-item{background:var(--sf);border:1px solid var(--bd2);border-left:3px solid var(--blue);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
-.admin-edit-id{font-size:11px;color:var(--blue);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;}
-.admin-edit-q{font-size:13px;color:var(--tx);line-height:1.6;font-family:'Noto Serif KR',serif;word-break:keep-all;}
-.admin-edit-orig{font-size:11px;color:var(--tx3);margin-top:4px;text-decoration:line-through;}
-.admin-edit-exp{font-size:12px;color:var(--tx2);margin-top:6px;padding-top:6px;border-top:1px solid var(--bd2);}
-
 @keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .su{animation:su .2s ease;}
 `;
@@ -528,14 +546,16 @@ function App() {
   const [markedMap, setMarkedMap] = useState({});
   const [progMap,   setProgMap]   = useState({});
 
-  // ── 문항 수정
-  const [userEdits, setUserEdits]   = useState({});  // {qId: {question?, explanation?}}
-  const [editOpen,  setEditOpen]    = useState(false);
-  const [editDraft, setEditDraft]   = useState({q:"", e:""});
-
   // ── 아카이브
   const [archExp,     setArchExp]     = useState({});
   const [archFilter,  setArchFilter]  = useState("wrong");
+
+  // ── 피드백
+  const [fbOpen,    setFbOpen]    = useState(false);
+  const [fbType,    setFbType]    = useState("오류 제보");
+  const [fbText,    setFbText]    = useState("");
+  const [fbList,    setFbList]    = useState([]);  // 현재 문항 피드백
+  const [fbLoading, setFbLoading] = useState(false);
   const [archRound,   setArchRound]   = useState(1);
   const [awWrongMap,  setAwWrongMap]  = useState({});
   const [awMarkMap,   setAwMarkMap]   = useState({});
@@ -882,6 +902,54 @@ function App() {
   };
 
   // 관리자 유저 목록 로드
+  // ── 피드백 로드 (현재 문항)
+  async function loadFeedbacks(qid, mid) {
+    try {
+      const data = await fb.list(`feedbacks/${mid}/${qid}`);
+      const items = Object.values(data||{})
+        .filter(Boolean)
+        .sort((a,b)=>(b.ts||0)-(a.ts||0));
+      setFbList(items);
+    } catch { setFbList([]); }
+  }
+
+  // ── 피드백 제출
+  async function submitFeedback(qid, mid) {
+    if (!fbText.trim()) return;
+    setFbLoading(true);
+    try {
+      const key = Date.now().toString();
+      await fb.set(`feedbacks/${mid}/${qid}/${key}`, {
+        uid, type: fbType, text: fbText.trim(),
+        ts: Date.now(),
+        date: new Date().toLocaleDateString('ko-KR'),
+        qid, mid,
+      });
+      setFbText(""); setFbOpen(false);
+      loadFeedbacks(qid, mid);
+    } catch(e) { alert("피드백 저장 실패: " + e.message); }
+    setFbLoading(false);
+  }
+
+  // ── 피드백 전체 로드 (관리자)
+  async function loadAllFeedbacks() {
+    try {
+      const allMods = {};
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+        const modData = await fb.list(`feedbacks/${mod.id}`);
+        const items = [];
+        for (const [qid, qFbs] of Object.entries(modData||{})) {
+          for (const fb_item of Object.values(qFbs||{})) {
+            if (fb_item) items.push({...fb_item, qid, modLabel:mod.label});
+          }
+        }
+        if (items.length) allMods[mod.id] = items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+      }
+      return allMods;
+    } catch { return {}; }
+  }
+
+
   async function loadAdminUsers() {
     // Firebase에서 전체 유저 + 완전한 학습 통계 조회
     const fbAll = await fb.list('users');
@@ -1150,17 +1218,10 @@ function App() {
                 <div className="qcard">
                   <div className="qcard-meta">
                     <span className="qcard-no">No.{cur.id}</span>
-                    <span className="qcard-topic">{TOPIC_ICONS[cur.topic]||"📌"} {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</span>
-                    <button
-                      className={`edit-btn ${userEdits[cur.id]?"edited":""}`}
-                      onClick={()=>{
-                        const orig = queue[qidx];
-                        const ed = userEdits[orig.id]||{};
-                        setEditDraft({q: ed.question ?? orig.question, e: ed.explanation ?? orig.explanation});
-                        setEditOpen(v=>!v);
-                      }}>
-                      ✏️ {userEdits[cur.id]?"수정됨":"오류 수정"}
+                    <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
+                      💬 피드백
                     </button>
+                    <span className="qcard-topic">{TOPIC_ICONS[cur.topic]||"📌"} {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</span>
                   </div>
                   {(() => {
                   const parts = (cur.question || '').split('§');
@@ -1177,37 +1238,6 @@ function App() {
                   }
                   return <div className="question">{cur.question}</div>;
                 })()}
-                  {editOpen && (
-                    <div className="edit-panel">
-                      <div className="edit-panel-title">✏️ 문항 수정</div>
-                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:6}}>질문</div>
-                      <textarea className="edit-textarea" rows={4}
-                        value={editDraft.q}
-                        onChange={e=>setEditDraft(d=>({...d,q:e.target.value}))}/>
-                      <div style={{fontSize:11,color:"var(--tx3)",margin:"8px 0 6px"}}>해설</div>
-                      <textarea className="edit-textarea exp" rows={3}
-                        value={editDraft.e}
-                        onChange={e=>setEditDraft(d=>({...d,e:e.target.value}))}/>
-                      <div className="edit-row">
-                        <button className="edit-save" onClick={async()=>{
-                          const orig = queue[qidx];
-                          await saveEdit(orig.id, editDraft.q, editDraft.e);
-                          setEditOpen(false);
-                        }}>저장</button>
-                        <button className="edit-cancel" onClick={()=>setEditOpen(false)}>취소</button>
-                        {userEdits[cur.id] && (
-                          <button className="edit-reset" onClick={async()=>{
-                            if(confirm("수정 내용을 원래대로 되돌리시겠습니까?")) {
-                              const orig = queue[qidx];
-                              await saveEdit(orig.id, null, null);
-                              setEditOpen(false);
-                            }
-                          }}>원본으로 복원</button>
-                        )}
-                      </div>
-                      <div className="edit-hint">저장 즉시 모든 기기에 반영됩니다.</div>
-                    </div>
-                  )}
                   {answered !== null && (
                     <div className={`reveal ${answered}`}>
                       <div className="rv-label">
@@ -1227,7 +1257,50 @@ function App() {
                       </div>
                     </div>
                   )}
+                  {/* 피드백 목록 - 정답 확인 후 표시 */}
+                  {fbList.length > 0 && answered !== null && (
+                    <div className="fb-list">
+                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8,fontWeight:700}}>💬 이 문항 피드백 {fbList.length}건</div>
+                      {fbList.slice(0,3).map((f,i)=>(
+                        <div key={i} className="fb-item">
+                          <div className="fb-item-head">
+                            <span className="fb-item-type">{f.type}</span>
+                            <span className="fb-item-uid">👤 {f.uid}</span>
+                            <span className="fb-item-date">{f.date}</span>
+                          </div>
+                          <div className="fb-item-body">{f.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+                {/* 피드백 모달 */}
+                {fbOpen && (
+                  <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setFbOpen(false);}}>
+                    <div className="fb-modal">
+                      <div className="fb-modal-title">💬 피드백 작성</div>
+                      <div className="fb-modal-sub">No.{cur.id} · {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</div>
+                      <div className="fb-qref">{(cur.question||'').split('§').pop().trim().slice(0,100)}...</div>
+                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8}}>유형 선택</div>
+                      <div className="fb-select-row">
+                        {["오류 제보","정답 이의","해설 보완","기능 요청","기타"].map(t=>(
+                          <button key={t} className={`fb-type ${fbType===t?"sel":""}`} onClick={()=>setFbType(t)}>{t}</button>
+                        ))}
+                      </div>
+                      <textarea className="fb-textarea" rows={4}
+                        placeholder="내용을 입력해주세요..."
+                        value={fbText}
+                        onChange={e=>setFbText(e.target.value)}/>
+                      <div className="fb-row">
+                        <button className="fb-cancel" onClick={()=>setFbOpen(false)}>취소</button>
+                        <button className="fb-submit" disabled={fbLoading||!fbText.trim()}
+                          onClick={()=>submitFeedback(cur.id, activeModule)}>
+                          {fbLoading?"저장 중...":"제출"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="ox-row">
                   <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>○</button>
                   <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>✕</button>
@@ -1429,7 +1502,6 @@ function App() {
             </div>
 
             {/* 수정 내역 */}
-            <AdminEdits gr={gr} sw={sw} modules={MODULE_REGISTRY} />
           </div>
         )}
 
@@ -1441,83 +1513,6 @@ function App() {
 
 
 /* ── 관리자: 수정 내역 컴포넌트 ─────────────────────────── */
-function AdminEdits({ gr, sw, modules }) {
-  const [editsByMod, setEditsByMod] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { loadEdits(); }, []);
-
-  async function loadEdits() {
-    setLoading(true);
-    const result = {};
-    for (const mod of modules.filter(m=>m.status==="active")) {
-      try {
-        const key = `hub_edits_${mod.id}`;
-        const r = await window.storage.get(key);
-        if (r && r.value) {
-          const edits = JSON.parse(r.value);
-          const ids = Object.keys(edits);
-          if (ids.length > 0) {
-            const all = mod.getData();
-            result[mod.id] = ids.map(id => ({
-              id: Number(id),
-              orig: all.find(q=>q.id===Number(id)),
-              ed: edits[id]
-            }));
-          }
-        }
-      } catch {}
-    }
-    setEditsByMod(result);
-    setLoading(false);
-  }
-
-  async function revertEdit(modId, qid) {
-    if (!confirm("이 수정을 원본으로 복원하시겠습니까?")) return;
-    try {
-      const key = `hub_edits_${modId}`;
-      const r = await window.storage.get(key);
-      if (!r) return;
-      const edits = JSON.parse(r.value);
-      delete edits[qid];
-      await window.storage.set(key, JSON.stringify(edits));
-      loadEdits();
-    } catch {}
-  }
-
-  const totalEdits = Object.values(editsByMod).reduce((s,a)=>s+a.length,0);
-
-  return (
-    <div className="card">
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-        <div className="card-title" style={{marginBottom:0}}>✏️ 수정된 문항 ({totalEdits}건)</div>
-        <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={loadEdits}>🔄 새로고침</button>
-      </div>
-      {loading ? (
-        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>불러오는 중...</div>
-      ) : totalEdits === 0 ? (
-        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>수정된 문항이 없습니다.</div>
-      ) : Object.entries(editsByMod).map(([modId, items])=>(
-        <div key={modId} style={{marginBottom:16}}>
-          <div style={{fontSize:12,color:"var(--blue)",fontWeight:700,marginBottom:8}}>{modId} ({items.length}건)</div>
-          {items.map(({id,orig,ed})=>(
-            <div key={id} className="admin-edit-item">
-              <div className="admin-edit-id">No.{id}</div>
-              {ed.question && <div className="admin-edit-q">{ed.question}</div>}
-              {orig && ed.question && <div className="admin-edit-orig">원본: {orig.question}</div>}
-              {ed.explanation && ed.explanation !== (orig?.explanation||"") && (
-                <div className="admin-edit-exp">해설: {ed.explanation}</div>
-              )}
-              <div style={{marginTop:8}}>
-                <button className="edit-reset" onClick={()=>revertEdit(modId,id)}>원본으로 복원</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
@@ -1552,6 +1547,59 @@ function LoginScreen({ onLogin }) {
   );
 }
 
+
+function AdminFeedbacks({ loadAllFeedbacks }) {
+  const [data, setData] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+  const [filter, setFilter] = React.useState("전체");
+
+  async function load() {
+    setLoading(true);
+    const d = await loadAllFeedbacks();
+    setData(d);
+    setLoading(false);
+  }
+  React.useEffect(()=>{ load(); }, []);
+
+  const allItems = Object.values(data).flat();
+  const filtered = filter==="전체" ? allItems : allItems.filter(f=>f.type===filter);
+  const total = allItems.length;
+
+  return (
+    <div className="card" style={{marginTop:16}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+        <div className="card-title" style={{marginBottom:0}}>💬 피드백 목록 ({total}건)</div>
+        <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={load}>🔄 새로고침</button>
+      </div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+        {["전체","오류 제보","정답 이의","해설 보완","기능 요청","기타"].map(t=>(
+          <button key={t}
+            style={{padding:"4px 12px",borderRadius:14,border:"1px solid var(--bd)",
+              background:filter===t?"var(--gold)":"var(--sf2)",
+              color:filter===t?"#0d1117":"var(--tx3)",
+              fontSize:11,cursor:"pointer",fontWeight:filter===t?700:400}}
+            onClick={()=>setFilter(t)}>{t}</button>
+        ))}
+      </div>
+      {loading ? (
+        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>불러오는 중...</div>
+      ) : filtered.length===0 ? (
+        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>피드백이 없습니다.</div>
+      ) : filtered.map((f,i)=>(
+        <div key={i} className="fb-admin-item">
+          <div className="fb-admin-meta">
+            <span className="fb-admin-no">No.{f.qid}</span>
+            <span className="fb-admin-type">{f.type}</span>
+            <span className="fb-admin-uid">👤 {f.uid}</span>
+            <span className="fb-admin-date">{f.date}</span>
+          </div>
+          <div className="fb-admin-q">{(f.mid||"")} · 문항 {f.qid}</div>
+          <div className="fb-admin-body">{f.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // 앱 마운트
 const container = document.getElementById('root');
