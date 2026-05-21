@@ -957,9 +957,13 @@ function App() {
 
     const users = [];
     for (const [safeId, userData] of Object.entries(fbAll)) {
-      const info = userData?.info || {};
-      const id = info.id || safeId;
+      if (!userData || typeof userData !== 'object') continue;
+      // info 서브키 있는 경우(신규)와 없는 경우(구버전) 모두 지원
+      const info = userData.info || {};
+      const id = info.id || userData.id || safeId;
       if (!id || id === ADMIN_ID) continue;
+      const lastSeen = info.lastSeen || userData.lastSeen || 0;
+      const lastDate = info.lastDate || userData.lastDate || '';
 
       const stats = userData?.stats || {};
       let total_ans=0, total_cor=0, total_wrg=0;
@@ -978,7 +982,7 @@ function App() {
         if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
           pct: m_ans>0?Math.round(m_cor/m_ans*100):0});
       }
-      users.push({ id, last:info.lastSeen||0, lastDate:info.lastDate||'', ans:total_ans, cor:total_cor, wrg:total_wrg, modStats });
+      users.push({ id, last:lastSeen, lastDate, ans:total_ans, cor:total_cor, wrg:total_wrg, modStats });
     }
     users.sort((a,b)=>(b.last||0)-(a.last||0));
     setAdminUsers(users);
@@ -993,8 +997,11 @@ function App() {
     const userData = await fb.get(`users/${safeId}`);
     if (!userData) { setAdminResult({id, notFound:true}); return; }
 
+    // info 서브키 있는 경우(신규)와 없는 경우(구버전) 모두 지원
     const info  = userData.info  || {};
     const stats = userData.stats || {};
+    const lastSeen_ = info.lastSeen || userData.lastSeen || 0;
+    const lastDate_ = info.lastDate || userData.lastDate || '';
     let total_ans=0, total_cor=0, total_wrg=0;
     const modStats = [];
 
@@ -1014,8 +1021,8 @@ function App() {
         pct:m_ans>0?Math.round(m_cor/m_ans*100):0, wrongCnt:m_wrg_cnt, markCnt:m_mk_cnt});
     }
 
-    if (!info.lastSeen && total_ans===0) { setAdminResult({id, notFound:true}); return; }
-    setAdminResult({id, last:info.lastSeen||0, lastDate:info.lastDate||'', ans:total_ans, cor:total_cor, wrg:total_wrg, modStats});
+    if (!lastSeen_ && total_ans===0) { setAdminResult({id, notFound:true}); return; }
+    setAdminResult({id, last:lastSeen_, lastDate:lastDate_, ans:total_ans, cor:total_cor, wrg:total_wrg, modStats});
   }
 
   useEffect(() => { if (isAdmin && screen==="admin") loadAdminUsers(); }, [screen, isAdmin]);
