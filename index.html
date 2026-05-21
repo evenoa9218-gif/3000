@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>3000제 퀴즈 허브 — 민법 채권법 전범위</title>
+<title>3000제 퀴즈 허브 — [민법+민소법] 제4판: 선택형 기출 최신빈출지문</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -222,9 +222,37 @@ const CSS = `
 :root{
   --bg:#0d1117;--sf:#161b22;--sf2:#1c2333;--bd:#30363d;--bd2:#21262d;
   --gold:#d4a853;--gold2:#f0c96e;--tx:#e6edf3;--tx2:#8b949e;--tx3:#6e7681;
+  --purple:#bc8cff;--ok:#3fb950;--er:#f85149;--er-bg:rgba(248,81,73,.1);
   --ok:#3fb950;--er:#f85149;--ok-bg:#0d2316;--er-bg:#2d1217;
   --blue:#58a6ff;--purple:#bc8cff;
 }
+
+/* ── 라이트 테마 ───────────────────────────────────── */
+html.light {
+  --bg:#f6f8fa;--sf:#ffffff;--sf2:#f0f2f5;--bd:#d0d7de;--bd2:#e8ecf0;
+  --gold:#a87c2a;--gold2:#c9952f;--tx:#1f2328;--tx2:#57606a;--tx3:#8c959f;
+  --purple:#7c4dba;--ok:#1a7f37;--er:#d1242f;--er-bg:rgba(209,36,47,.08);
+}
+html.light body { background:var(--bg); color:var(--tx); }
+
+/* ── 테마 토글 버튼 ────────────────────────────────── */
+.theme-toggle {
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:8px;cursor:pointer;
+  background:var(--sf2);border:1px solid var(--bd);
+  font-size:15px;transition:background .15s,border .15s;
+  flex-shrink:0;
+}
+.theme-toggle:hover{background:var(--bd);border-color:var(--tx3);}
+
+/* ── 허브 노티스 ───────────────────────────────────── */
+.hub-notice {
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--sf2);border:1px solid var(--bd);border-radius:10px;
+  padding:11px 14px;margin-bottom:14px;font-size:12px;
+  color:var(--tx2);line-height:1.6;
+}
+.hub-notice-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
 html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-ui,sans-serif;}
 .app{min-height:100vh;display:flex;flex-direction:column;}
 
@@ -511,6 +539,15 @@ function App() {
 
   // ── 관리자
   const [adminUsers, setAdminUsers] = useState([]);
+
+  // ── 테마 (dark / light)
+  const [theme, setTheme] = React.useState(() => {
+    try { return localStorage.getItem('quiz_theme') || 'dark'; } catch { return 'dark'; }
+  });
+  React.useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light');
+    try { localStorage.setItem('quiz_theme', theme); } catch {}
+  }, [theme]);
 
   // ── 초기화: 로컬스토리지에서 마지막 uid 복원
   useEffect(() => {
@@ -926,9 +963,13 @@ function App() {
       <div className="hdr">
         <div className="hdr-left">
           <div className="hdr-title">📚 3000제 퀴즈 허브</div>
-          <div className="hdr-sub">민법 채권법 전범위 · 1~4회독 오답관리</div>
+          <div className="hdr-sub">[민법+민소법] 제4판: 선택형 기출 최신빈출지문</div>
         </div>
         <div className="hdr-user">
+          <button className="theme-toggle" title="테마 전환"
+            onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+            {theme==='dark' ? '☀️' : '🌙'}
+          </button>
           <span className="uid-badge">👤 {uid}</span>
           <button className="logout-btn" onClick={()=>{ setUid(null); setIsAdmin(false); localStorage.removeItem("hub_last_uid"); }}>로그아웃</button>
         </div>
@@ -956,6 +997,10 @@ function App() {
           <div className="su">
             <div style={{marginBottom:14}}>
               <div className="card-title">학습 범위 선택</div>
+              <div className="hub-notice">
+                <span className="hub-notice-icon">📖</span>
+                <span>정연석 3000제 문제를 100% 구현. 누락·오류 검수 1차 완료 후 문제 업데이트. 기타 문제 발견이나 원하는 기능은 페이지 내 피드백 기능을 이용해주세요.</span>
+              </div>
               <div className="hub-grid">
                 {MODULE_REGISTRY.map(mod => {
                   const isActive = mod.status==="active";
@@ -1483,7 +1528,7 @@ function LoginScreen({ onLogin }) {
       <div className="login-box">
         <div className="login-header">
           <div className="login-logo">📚 3000제 퀴즈 허브</div>
-          <div className="login-title">민법 채권법 전범위</div>
+          <div className="login-title">[민법+민소법] 제4판<br/>선택형 기출 최신빈출지문</div>
           <div className="login-desc">아이디를 입력하면 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
         </div>
         <div className="login-card">
