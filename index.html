@@ -759,14 +759,11 @@ function App() {
       pool = all.filter(q => wids.has(q.id)||mids.has(q.id));
       if (!pool.length) return;
       lbl = `아카이브 ${r}회독 · 전체 (${pool.length}문제)`;
-    } else if (mode === "wrong") {
-      pool = all.filter(q => (wrongMap[round]||new Set()).has(q.id));
+    } else if (mode === "wrong+marked") {
+      const wids = wrongMap[round]||new Set(), mids = markedMap[round]||new Set();
+      pool = all.filter(q => wids.has(q.id) || mids.has(q.id));
       if (!pool.length) return;
-      lbl = `${round}회독 오답 (${pool.length}문제)`;
-    } else if (mode === "marked") {
-      pool = all.filter(q => (markedMap[round]||new Set()).has(q.id));
-      if (!pool.length) return;
-      lbl = `${round}회독 헷갈림 (${pool.length}문제)`;
+      lbl = `${round}회독 오답+헷갈림 (${pool.length}문제)`;
     } else if (mode === "rnd100") {
       pool = shuffle([...all]).slice(0, 100);
       lbl = `${round}회독 무작위 100문제`;
@@ -897,6 +894,7 @@ function App() {
   const getAll   = () => getMod()?.getData() || [];
   const wCnt     = r => (wrongMap[r]||new Set()).size;
   const mCnt     = r => (markedMap[r]||new Set()).size;
+  const wmCnt    = r => new Set([...(wrongMap[r]||new Set()), ...(markedMap[r]||new Set())]).size;
   const awCnt    = r => (awWrongMap[r]||new Set()).size;
   const amCnt    = r => (awMarkMap[r]||new Set()).size;
   const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
@@ -905,7 +903,7 @@ function App() {
   const TOTAL    = getAll().length;
   const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
   const canStart = cfgMode !== "topic" || cfgTopics.length > 0;
-  const startCnt = cfgMode==="all" ? TOTAL : cfgMode==="rnd100" ? 100 : cfgMode==="topic" ? getAll().filter(q=>cfgTopics.includes(q.topic)).length : cfgMode==="wrong" ? wCnt(cfgRound) : mCnt(cfgRound);
+  const startCnt = cfgMode==="all" ? TOTAL : cfgMode==="rnd100" ? 100 : cfgMode==="topic" ? getAll().filter(q=>cfgTopics.includes(q.topic)).length : cfgMode==="wrong+marked" ? wmCnt(cfgRound) : 0;
   const cur      = applyEdit(queue[qidx]);
   const curMark  = cur && (markedMap[cfgRound]||new Set()).has(cur.id);
 
@@ -1172,14 +1170,9 @@ function App() {
                     <button className={`pill ${cfgMode==="topic"?"act":""}`} onClick={()=>setCfgMode("topic")}>
                       주제 선택
                     </button>
-                    {wCnt(cfgRound)>0&&(
-                      <button className={`pill red ${cfgMode==="wrong"?"act":""}`} onClick={()=>{setCfgMode("wrong");setCfgTopics([]);}}>
-                        오답만 <span className="cnt-badge">{wCnt(cfgRound)}문제</span>
-                      </button>
-                    )}
-                    {mCnt(cfgRound)>0&&(
-                      <button className={`pill purple ${cfgMode==="marked"?"act":""}`} onClick={()=>{setCfgMode("marked");setCfgTopics([]);}}>
-                        헷갈리는 문제 <span className="cnt-badge">{mCnt(cfgRound)}문제</span>
+                    {wmCnt(cfgRound)>0&&(
+                      <button className={`pill red ${cfgMode==="wrong+marked"?"act":""}`} onClick={()=>{setCfgMode("wrong+marked");setCfgTopics([]);}}>
+                        오답+헷갈림 <span className="cnt-badge">{wmCnt(cfgRound)}문제</span>
                       </button>
                     )}
                   </div>
@@ -1349,8 +1342,7 @@ function App() {
                 <div className="act-row">
                   <button className="act-btn" onClick={exitQuiz}>← 설정으로</button>
                   <button className="act-btn" onClick={()=>launchQuiz(cfgRound,cfgMode,cfgTopics)}>다시 풀기</button>
-                  {wCnt(cfgRound)>0&&<button className="act-btn" style={{borderColor:"rgba(248,81,73,.4)",color:"var(--er)"}} onClick={()=>launchQuiz(cfgRound,"wrong",[])}>오답 {wCnt(cfgRound)}문제</button>}
-                  {mCnt(cfgRound)>0&&<button className="act-btn" style={{borderColor:"rgba(188,140,255,.4)",color:"var(--purple)"}} onClick={()=>launchQuiz(cfgRound,"marked",[])}>헷갈림 {mCnt(cfgRound)}문제</button>}
+                  {wmCnt(cfgRound)>0&&<button className="act-btn" style={{borderColor:"rgba(248,81,73,.4)",color:"var(--er)"}} onClick={()=>launchQuiz(cfgRound,"wrong+marked",[])}>오답+헷갈림 {wmCnt(cfgRound)}문제</button>}
                   <button className="act-btn pri" onClick={()=>{setScreen("hub");exitQuiz();}}>모듈 선택</button>
                 </div>
               </div>
