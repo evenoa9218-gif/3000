@@ -624,6 +624,7 @@ const ADMIN_ID = "정연석";
 const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
 const K_USERS  = "hub_userlist";           // shared: 전체 유저 목록
 const K_UTIME  = (uid) => `hub_utime_${uid}`; // 마지막 접속 시각
+const K_EDITS  = (mid) => `hub_edits_${mid}`; // 문항 수정본
 
 const ROUNDS = [1,2,3,4];
 const K_WRONG  = (uid,mid,r) => `hub_${uid}_${mid}_wrong_${r}`;
