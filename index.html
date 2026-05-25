@@ -2035,7 +2035,70 @@ function LoginScreen({ onLogin }) {
   const pinFull = pin.join("");
 
   // 1단계: 아이디 확인
+  const handleUnifiedLogin = async () => {
+    const id = uid.trim();
+    if (!id) { setStatus({msg:"아이디를 입력해주세요.", type:"er"}); return; }
+    if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) {
+      setStatus({msg:"20자 이내 한글/영문/숫자/_-만 가능합니다.", type:"er"}); return;
+    }
+    if (pinFull.length !== 4) { setStatus({msg:"PIN 4자리를 모두 입력해주세요.", type:"er"}); return; }
+
+    setLoading(true);
+    setStatus({msg:"확인 중...", type:"info"});
+    const safeId = toSafe(id);
+    const ADMIN_PIN = "2027";
+    const isAdminUser = id === ADMIN_ID_L;
+
+    if (isAdminUser) {
+      // 관리자
+      if (pinFull !== ADMIN_PIN) {
+        setLoading(false);
+        setStatus({msg:"PIN이 올바르지 않습니다.", type:"er"});
+        setPin(["","","",""]);
+        setTimeout(()=>pinRefs[0].current?.focus(), 50);
+        return;
+      }
+      setStatus({msg:"로그인 성공!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 300);
+      return;
+    }
+
+    const existing = await fbGet(`users/${safeId}/info`);
+
+    if (existing && existing.pin) {
+      // 기존 유저 — PIN 대조
+      if (existing.pin !== pinFull) {
+        setLoading(false);
+        setStatus({msg:"PIN이 올바르지 않습니다.", type:"er"});
+        setPin(["","","",""]);
+        setTimeout(()=>pinRefs[0].current?.focus(), 50);
+        return;
+      }
+      // PIN 일치 — 접속시간 갱신 후 로그인
+      await fbSet(`users/${safeId}/info`, {
+        ...existing,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      setStatus({msg:"로그인 성공!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 300);
+    } else {
+      // 신규 유저 — PIN 저장 후 로그인
+      await fbSet(`users/${safeId}/info`, {
+        id, pin: pinFull,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      setStatus({msg:"계정 생성 완료!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 500);
+    }
+  };
+
   const handleIdNext = async () => {
+
     const id = uid.trim();
     if (!id) return;
     if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) {
@@ -2149,7 +2212,7 @@ function LoginScreen({ onLogin }) {
             ))}
           </div>
           <div className={`pin-status ${status.type}`}>{status.msg}</div>
-          <button className="login-btn" onClick={()=>{ if(!uid.trim()){setStatus({msg:"아이디를 입력해주세요.",type:"er"});return;} if(step==="id") handleIdNext(); else handlePinSubmit(); }} disabled={loading}>
+          <button className="login-btn" onClick={handleUnifiedLogin} disabled={loading}>
             {loading ? "처리 중..." : "로그인"}
           </button>
 
