@@ -541,13 +541,13 @@ const 채권총론_RAW = [
 ["142.③", "丙이 乙과 보증계약을 체결하면서 甲의 채무를 중첩적으로 인수하기로 약정한 경우, 특별한 사정이 없는 한 丙은 위 대여금채무를 변제하더라도 甲을 상대로 구상권을 행사할 수 없다.", false, "▸ 채권자와 보증인 사이에 보증인이 주채무를 중첩적으로 인수하기로 약정하였다 하더라도 특별한 사정이 없는 한 보증인은 주채무자에 대한 관계에서는 종전의 보증인의 지위를 그대로 유지 [2003다37730]", "보증채무"],
 ["142.④", "甲이 乙에게 위 대여금 채무 전액을 변제한 후 이를 丙에게 통지하지 않고 있던 중에 丙이 사전통지를 하지 않은 채 보증채무를 이행한 경우, 丙은 甲을 상대로 자신의 변제행위가 유효함을 주장할 수 있다.", true, "▸ 수탁보증에서 주채무자가 면책행위 하고도 보증인에게 사후통지 않던 중 보증인도 사전통지 아니하고 이중의 면책행위 한 경우, 보증인은 주채무자에 대해 446조에 의한 자기 면책행위의 유효 주장 X → 이중변제의 기본 원칙으로 돌아가면 먼저 이뤄진 주채무자의 면책행위 유효, 보증인의 면책행위 무효, 보증인은 주채무자에게 구상권 X ∵ 446조는 445조의 사전통지를 전제로, 사전통지 않은 보증인까지 보호하려는 취지 X [95다46265] → 보증인은 채권자를 상대로 부당이득반환청구 O", "보증채무"]
 ]
-const 채권총론_DATA = 채권총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t}));
+const 채권총론_DATA = 채권총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS.has(String(id))}));
 
 
 // ── 채권각론 데이터 ────────────────────────────────────
 const 채권각론_RAW = [];
 
-const 채권각론_DATA = 채권각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t}));
+const 채권각론_DATA = 채권각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS.has(String(id))}));
 
 // ── 모듈 레지스트리 ──────────────────────────────────
 // 새 퀴즈 추가 시 여기에 등록
@@ -624,7 +624,9 @@ const K_AW_WRONG = (uid,mid,r)=> `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이
 const K_AW_MARK  = (uid,mid,r)=> `hub_${uid}_${mid}_aw_mark_${r}`;  // 아카이브 헷갈림 회독별
 const K_SESSION  = (uid,mid)  => `hub_${uid}_${mid}_session`;       // 이어풀기 세션
 
-function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function 
+const STAR_IDS = new Set(["100.⑤", "101.ㄱ", "101.ㄷ", "102.ㄴ", "103.①", "103.②", "104.ㄱ", "104.ㄴ", "104.ㄷ", "106.ㄱ", "106.ㄴ", "106.ㄷ", "107.ㄷ", "109.①", "109.③", "109.⑤", "110.ㄴ", "110.ㄹ", "112.ㄱ", "112.ㄴ", "113.①", "114.ㄴ", "115.③", "115.⑤", "116.ㄴ", "116.ㄷ", "120.ㄱ", "120.ㄴ", "120.ㄷ", "122.ㄱ", "122.ㄹ", "123.ㄱ", "123.ㄴ", "123.ㄷ", "124.①", "124.③", "125.ㄱ", "126.①", "126.⑤", "127.ㄹ", "128.⑤", "129.ㄴ", "130.②", "130.③", "131.ㄱ", "131.ㄴ", "131.ㄷ", "132.③", "132.④", "132.⑤", "133.ㄷ", "134.ㄱ", "134.ㄷ", "135.ㅁ", "136.ㄱ", "136.ㄴ", "137.①", "138.①", "138.③", "139.ㄱ", "140.ㄴ", "140.ㄷ", "140.ㄹ", "140.ㅁ", "142.③", "142.④", "20.②", "21.⑤", "22.ㄱ", "22.ㄴ", "23.ㄱ", "23.ㄴ", "23.ㄷ", "23.ㄹ", "24.ㄷ", "25.③", "26.ㄱ", "27.②", "28.ㄷ", "28.ㄹ", "30.②", "31.ㄷ", "32.②", "33.③", "34.ㄴ", "34.ㄷ", "34.ㄹ", "35.①", "35.③", "36.⑤", "37.ㄴ", "37.ㄷ", "38.②", "38.④", "38.⑤", "39.ㄹ", "40.ㄴ", "41.⑤", "42.②", "42.③", "43.ㄱ", "43.ㄹ", "44.ㄱ", "44.ㄴ", "44.ㄹ", "45.⑤", "46.ㄷ", "47.ㄱ", "48.③", "48.④", "49.ㄴ", "50.ㄱ", "51.①", "51.②", "51.⑤", "52.ㄴ", "53.ㄱ", "53.ㄴ", "53.ㄷ", "53.ㄹ", "54.④", "55.⑤", "56.②", "57.②", "57.⑤", "60.①", "61.ㄱ", "61.ㄴ", "61.ㄷ", "61.ㄹ", "62.ㄴ", "63.④", "65.③", "65.⑤", "66.②", "67.ㄹ", "68.ㄹ", "70.②", "70.③", "71.①", "72.②", "73.②", "74.②", "75.①", "76.②", "76.③", "77.①", "78.ㄱ", "78.ㄴ", "78.ㄷ", "79.③", "80.ㄱ", "81.③", "82.ㄴ", "83.⑤", "84.ㄱ", "85.③", "86.①", "88.③", "88.④", "90.ㄷ", "92.①", "93.ㄱ", "94.③", "94.⑤", "95.④", "97.②", "98.③", "99.①", "99.④", "99.⑤", "SS1.②", "SS1.③", "SS1.④", "SS12.③", "SS12.⑤", "SS14.③", "SS14.④", "SS14.⑤", "SS15.②", "SS15.③", "SS17.ㄱ", "SS17.ㄷ", "SS2.ㄴ", "SS20.①", "SS22.ㄱ", "SS23.ㄷ", "SS23.ㄹ", "SS3.ㄴ", "SS4.①", "SS4.②", "SS4.⑤", "SS6.ㄱ", "SS7.⑤", "SS8.ㄱ", "SS8.ㄴ"]);
+shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 /* ── CSS ─────────────────────────────────────────── */
 const CSS = `
@@ -784,6 +786,9 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .pill.purple{border-color:rgba(188,140,255,.35);color:var(--purple);}
 .pill.purple.act{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple);}
 .cnt-badge{font-size:10px;opacity:.75;font-family:'IBM Plex Mono',monospace;}
+.star-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:6px;padding:2px 7px;margin-right:6px;letter-spacing:.3px;}
+.pill.star{border-color:#f59e0b;color:#f59e0b;}
+.pill.star.act{background:#f59e0b;color:#0d1117;}
 .wrong-badge{font-size:10px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
 .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:12px;}
 .tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;}
@@ -1180,6 +1185,10 @@ function App() {
     } else if (mode === "rnd100") {
       pool = shuffle([...all]).slice(0, 100);
       lbl = `${round}회독 무작위 100문제`;
+    } else if (mode === "star") {
+      pool = all.filter(q => q.star);
+      if (!pool.length) return;
+      lbl = `${round}회독 · ⭐ 중요문제 (${pool.length}문제)`;
     } else if (mode === "topic") {
       pool = topics.length > 0 ? all.filter(q => topics.includes(q.topic)) : [...all];
       lbl = `${round}회독 · ${topics.length > 0 ? topics.map(t=>mod.topics.find(x=>x.key===t)?.label||t).join(', ') : '전체'} (${pool.length}문제)`;
@@ -1583,6 +1592,9 @@ function App() {
                     <button className={`pill ${cfgMode==="topic"?"act":""}`} onClick={()=>setCfgMode("topic")}>
                       주제 선택
                     </button>
+                    <button className={`pill star ${cfgMode==="star"?"act":""}`} onClick={()=>{setCfgMode("star");setCfgTopics([]);}}>
+                      ⭐ 중요문제 <span className="cnt-badge">{getAll().filter(q=>q.star).length}문제</span>
+                    </button>
                     {wmCnt(cfgRound)>0&&(
                       <button className={`pill red ${cfgMode==="wrong+marked"?"act":""}`} onClick={()=>{setCfgMode("wrong+marked");setCfgTopics([]);}}>
                         오답+헷갈림 <span className="cnt-badge">{wmCnt(cfgRound)}문제</span>
@@ -1647,6 +1659,7 @@ function App() {
                 <div className="qcard">
                   <div className="qcard-meta">
                     <span className="qcard-no">No.{cur.id}</span>
+                    {cur.star && <span className="star-badge">⭐ 중요</span>}
                     <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
                       💬 피드백
                     </button>
@@ -1836,6 +1849,7 @@ function App() {
                           <div key={q.id} className={`arch-item ${archExp[k]?"exp":""} ${isMk&&!isW?"mk-item":""}`}
                             onClick={()=>setArchExp(p=>({...p,[k]:!p[k]}))}>
                             <div className="arch-q">No.{q.id} {q.question}</div>
+                            {q.star && <span className="star-badge">⭐ 중요</span>}
                             <div className="arch-ans">정답: {q.answer?"○ 옳은 지문":"× 틀린 지문"}</div>
                             <span className="arch-tag">{TOPIC_ICONS[q.topic]||"📌"} {getMod()?.topics.find(t=>t.key===q.topic)?.label||q.topic}</span>
                             {isW&&<span className="arch-tag">오답</span>}
