@@ -2127,58 +2127,34 @@ function LoginScreen({ onLogin }) {
           <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
         </div>
         <div className="login-card">
-          {/* 단계 표시 */}
-          <div className="login-step">
-            {step==="id" ? "① 아이디 입력" : step==="pin_new" ? "② PIN 설정 (신규)" : "② PIN 확인"}
-          </div>
-
           {/* 아이디 입력 */}
-          {step === "id" && (
-            <>
-              <div className="login-label">아이디</div>
-              <input className="login-input" value={uid}
-                placeholder="한글/영문/숫자 20자 이내"
-                onChange={e=>{ setUid(e.target.value); setStatus({msg:"",type:"info"}); }}
-                onKeyDown={e=>e.key==="Enter"&&handleIdNext()}
-                autoFocus />
-              <div className={`pin-status ${status.type}`}>{status.msg}</div>
-              <button className="login-btn" onClick={handleIdNext} disabled={loading}>
-                {loading ? "확인 중..." : "다음 →"}
-              </button>
-            </>
-          )}
+          <div className="login-label">아이디</div>
+          <input className="login-input" value={uid}
+            placeholder="한글/영문/숫자 20자 이내"
+            onChange={e=>{ setUid(e.target.value); setStatus({msg:"",type:"info"}); }}
+            onKeyDown={e=>{ if(e.key==="Enter") pinRefs[0].current?.focus(); }}
+            autoFocus />
 
           {/* PIN 입력 */}
-          {(step === "pin_new" || step === "pin_check") && (
-            <>
-              <div className="login-label" style={{textAlign:"center"}}>
-                👤 {uid}
-              </div>
-              <div className="pin-row">
-                {[0,1,2,3].map(i=>(
-                  <input key={i} ref={pinRefs[i]}
-                    className="pin-digit" type="password"
-                    maxLength={1} value={pin[i]}
-                    onChange={e=>handlePinInput(i, e.target.value)}
-                    onKeyDown={e=>handlePinKey(i,e)} />
-                ))}
-              </div>
-              <div className={`pin-status ${status.type}`}>{status.msg}</div>
-              <button className="login-btn" onClick={handlePinSubmit} disabled={loading||pinFull.length!==4}>
-                {loading ? "처리 중..." : step==="pin_new" ? "PIN 설정 완료" : "로그인"}
-              </button>
-              <button style={{width:"100%",background:"none",border:"none",color:"var(--tx3)",
-                fontSize:12,cursor:"pointer",marginTop:8,padding:"6px 0"}}
-                onClick={()=>{ setStep("id"); setPin(["","","",""]); setStatus({msg:"",type:"info"}); }}>
-                ← 아이디 다시 입력
-              </button>
-            </>
-          )}
+          <div className="login-label" style={{marginTop:4}}>
+            PIN {step==="pin_new" ? <span style={{color:"var(--tx3)",fontWeight:400}}>(신규 — 4자리 숫자 설정)</span> : ""}
+          </div>
+          <div className="pin-row" style={{marginTop:4}}>
+            {[0,1,2,3].map(i=>(
+              <input key={i} ref={pinRefs[i]}
+                className="pin-digit" type="password"
+                maxLength={1} value={pin[i]}
+                onChange={e=>handlePinInput(i, e.target.value)}
+                onKeyDown={e=>handlePinKey(i,e)} />
+            ))}
+          </div>
+          <div className={`pin-status ${status.type}`}>{status.msg}</div>
+          <button className="login-btn" onClick={()=>{ if(!uid.trim()){setStatus({msg:"아이디를 입력해주세요.",type:"er"});return;} if(step==="id") handleIdNext(); else handlePinSubmit(); }} disabled={loading}>
+            {loading ? "처리 중..." : "로그인"}
+          </button>
 
           <div className="login-hint" style={{marginTop:12}}>
-            {step==="id" ? "처음 입력하는 아이디는 자동으로 계정이 생성됩니다." :
-             step==="pin_new" ? "PIN은 4자리 숫자입니다. 잊지 않도록 메모해두세요." :
-             "PIN을 잊으셨으면 관리자에게 문의해주세요."}
+            처음 사용하는 아이디는 자동으로 계정이 생성됩니다. PIN을 잊으셨으면 관리자에게 문의해주세요.
           </div>
         </div>
       </div>
