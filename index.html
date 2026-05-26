@@ -635,26 +635,9 @@ const MODULE_REGISTRY = [
       {key:"연대채무",label:"연대채무"},
       {key:"부진정연대채무",label:"부진정연대채무"},
       {key:"보증채무",label:"보증채무"},
+      {key:"15V",label:"📝 제15회 변호사시험"},
     ],
     getData: () => 채권총론_DATA,
-  },
-    { id:"변시기출", label:"제15회 변호사시험", subtitle:"채권총론 기출문제", icon:"📝",
-    get count() { return this.getData().length; },
-    status:"active", color:"#f0883e",
-    topics:[
-      {key:"보증채무",      label:"보증채무·소멸시효 (문11·14)"},
-      {key:"채권자취소권",  label:"채권자취소권 (문12)"},
-      {key:"채무인수",      label:"채무인수 (문15)"},
-      {key:"채권자대위권",  label:"채권자대위권 (문17)"},
-      {key:"손해배상",      label:"손해배상의 범위·위약금 (문19·21)"},
-      {key:"변제자대위",    label:"변제자대위 (문20)"},
-      {key:"채무불이행",    label:"채무불이행 (문23)"},
-      {key:"채권양도",      label:"채권양도 (문24)"},
-      {key:"변제",          label:"채권의 소멸원인 - 변제 (문27)"},
-      {key:"상계",          label:"채권의 소멸원인 - 상계 (문27)"},
-      {key:"대물변제공탁경개면제혼동", label:"채권의 소멸원인 - 경개 등 (문27)"},
-    ],
-    getData: () => 채권총론_DATA.filter(q => String(q.id).startsWith('15V')),
   },
   { id:"민법총칙", label:"민법총칙", subtitle:"민법 총칙편", icon:"📜", count:0, status:"soon", color:"#58a6ff" },
   { id:"물권법",   label:"물권법",   subtitle:"민법 물권편", icon:"🏠", count:0, status:"soon", color:"#3fb950" },
@@ -1265,7 +1248,7 @@ function App() {
       if (!pool.length) return;
       lbl = `${round}회독 · ⭐ 중요문제 (${pool.length}문제)`;
     } else if (mode === "topic") {
-      pool = topics.length > 0 ? all.filter(q => topics.includes(q.topic)) : [...all];
+      pool = topics.length > 0 ? all.filter(q => topics.some(t => t === "15V" ? String(q.id).startsWith("15V") : q.topic === t)) : [...all];
       lbl = `${round}회독 · ${topics.length > 0 ? topics.map(t=>mod.topics.find(x=>x.key===t)?.label||t).join(', ') : '전체'} (${pool.length}문제)`;
     } else {
       pool = [...all];
