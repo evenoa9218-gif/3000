@@ -1610,6 +1610,34 @@ function App() {
     </>
   );
 
+  function renderExp(exp) {
+    if (!exp) return null;
+    const lines = exp.split(/(?=▸)/);
+    return lines.map((line, li) => {
+      const parts = line.split(/(제\d+조[^가-힣\n]{5,150}[가-힣]|\[법조문\][^\n]+)/g);
+      return (
+        <div key={li} style={{marginBottom: li < lines.length-1 ? 6 : 0}}>
+          {parts.map((p, pi) => {
+            if (/^제\d+조/.test(p) || /^\[법조문\]/.test(p)) {
+              return <div key={pi} style={{
+                background:'var(--sf2)',
+                border:'1px solid var(--bd2)',
+                borderLeft:'3px solid var(--blue)',
+                borderRadius:6,
+                padding:'6px 10px',
+                margin:'4px 0',
+                fontSize:12,
+                color:'var(--tx2)',
+                fontFamily:"'Noto Sans KR', sans-serif"
+              }}>{p}</div>;
+            }
+            return <span key={pi}>{p}</span>;
+          })}
+        </div>
+      );
+    });
+  }
+
   return (
     <><style>{CSS}</style>
     <div className="app">
@@ -1818,37 +1846,6 @@ function App() {
                     <span className="qcard-topic">{TOPIC_ICONS[cur.topic]||"📌"} {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</span>
                   </div>
                   {(() => {
-                  function renderExp(exp) {
-                    if (!exp) return null;
-                    // ▸ 기호 앞에서 줄바꿈 분리
-                    const lines = exp.split(/(?=▸)/);
-                    return lines.map((line, li) => {
-                      // 조문 박스: 제NNN조 또는 [법조문] 또는 제목(조문) 패턴
-                      const boxMatch = line.match(/^(▸\s*)?(제\d+조[^▸\n]{0,200})$/m);
-                      // 줄 내 조문 블록 추출: "제NNN조(...)" 패턴
-                      const parts = line.split(/(제\d+조[^가-힣\n]{5,150}[가-힣]|\[법조문\][^\n]+)/g);
-                      return (
-                        <div key={li} style={{marginBottom: li < lines.length-1 ? 6 : 0}}>
-                          {parts.map((p, pi) => {
-                            if (/^제\d+조/.test(p) || /^\[법조문\]/.test(p)) {
-                              return <div key={pi} style={{
-                                background:'var(--sf2)',
-                                border:'1px solid var(--bd2)',
-                                borderLeft:'3px solid var(--blue)',
-                                borderRadius:6,
-                                padding:'6px 10px',
-                                margin:'4px 0',
-                                fontSize:12,
-                                color:'var(--tx2)',
-                                fontFamily:"'Noto Sans KR', sans-serif"
-                              }}>{p}</div>;
-                            }
-                            return <span key={pi}>{p}</span>;
-                          })}
-                        </div>
-                      );
-                    });
-                  }
                   function stripPrefix(s) {
                     return (s||'').replace(/^[ㄱ-ㅎ①-⑳⑴-⑽]\.?\s*/, '').trim();
                   }
