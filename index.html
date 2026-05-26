@@ -1378,8 +1378,8 @@ function App() {
   const awCnt    = r => (awWrongMap[r]||new Set()).size;
   const amCnt    = r => (awMarkMap[r]||new Set()).size;
   const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
-  const tCnt     = k => getAll().filter(q=>q.topic===k).length;
-  const tWrong   = (r,k) => getAll().filter(q=>q.topic===k&&(wrongMap[r]||new Set()).has(q.id)).length;
+  const tCnt     = k => getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k).length;
+  const tWrong   = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(wrongMap[r]||new Set()).has(q.id)).length;
   const TOTAL    = getAll().length;
   const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
   const canStart = cfgMode !== "topic" || cfgTopics.length > 0;
