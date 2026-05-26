@@ -1960,6 +1960,13 @@ function App() {
                       <span className="admin-stat gold">정답률 <b>{u.ans>0?Math.round(u.cor/u.ans*100)+"%" :"-"}</b></span>
                       {(u.lastDate||u.last>0)&&<span className="admin-stat">마지막 접속 <b style={{color:"var(--gold)"}}>{u.lastDate||new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
                     </div>
+                    <button style={{padding:"4px 10px",fontSize:11,background:"var(--er-bg)",border:"1px solid rgba(248,81,73,.3)",color:"var(--er)",borderRadius:6,cursor:"pointer",flexShrink:0}}
+                      onClick={async()=>{
+                        if(!confirm(`'${u.id}' 접속 기록을 삭제하시겠습니까?`)) return;
+                        const safeId = u.id.replace(/[.#$[\]]/g,'_');
+                        await fb.set(`users/${safeId}`, null);
+                        setAdminUsers(prev=>prev.filter(x=>x.id!==u.id));
+                      }}>🗑 삭제</button>
                   </div>
                   {u.modStats && u.modStats.length > 0 && (
                     <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",width:"100%"}}>
