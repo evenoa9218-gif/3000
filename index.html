@@ -1612,25 +1612,38 @@ function App() {
 
   function renderExp(exp) {
     if (!exp) return null;
-    const lines = exp.split(/(?=▸)/);
-    return lines.map((line, li) => {
-      const parts = line.split(/(제\d+조[^가-힣\n]{5,150}[가-힣]|\[법조문\][^\n]+)/g);
+    const boxStyle = {
+      background:'var(--sf2)', border:'1px solid var(--bd2)',
+      borderLeft:'3px solid var(--blue)', borderRadius:6,
+      padding:'6px 10px', margin:'4px 0', fontSize:12,
+      color:'var(--tx2)', fontFamily:"'Noto Sans KR', sans-serif", lineHeight:1.6
+    };
+    // ▸ 앞 또는 \n[AI해설] 앞에서 분리
+    const segs = exp.split(/(?=▸)|\n(?=\[AI해설\])/).filter(s => s.trim());
+    return segs.map((seg, si) => {
+      const t = seg.trim();
+      // [AI해설] 섹션
+      if (t.startsWith('[AI해설]')) {
+        return (
+          <div key={si} style={{marginTop:10,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,.1)',fontSize:12,color:'var(--tx3)',lineHeight:1.7}}>
+            <span style={{display:'inline-block',background:'rgba(82,167,254,.15)',color:'var(--blue)',borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,marginRight:6}}>AI해설</span>
+            {t.slice('[AI해설]'.length).trim()}
+          </div>
+        );
+      }
+      // [조문] 전체 섹션 → 박스
+      if (t.startsWith('[조문]')) {
+        return <div key={si} style={{...boxStyle, marginBottom: si < segs.length-1 ? 6 : 0}}>{t.slice('[조문]'.length).trim()}</div>;
+      }
+      // 일반 ▸ 섹션 — 인라인 제NNN조 / [법조문] / [조문] 박스 처리
+      const parts = seg.split(/(제\d+조[^가-힣\n]{5,150}[가-힣]|\[법조문\][^\n]+|\[조문\][^\n]+)/g);
+      const nextIsAI = segs[si+1]?.trim().startsWith('[AI해설]');
       return (
-        <div key={li} style={{marginBottom: li < lines.length-1 ? 6 : 0}}>
+        <div key={si} style={{marginBottom: si < segs.length-1 && !nextIsAI ? 10 : 0}}>
           {parts.map((p, pi) => {
-            if (/^제\d+조/.test(p) || /^\[법조문\]/.test(p)) {
-              return <div key={pi} style={{
-                background:'var(--sf2)',
-                border:'1px solid var(--bd2)',
-                borderLeft:'3px solid var(--blue)',
-                borderRadius:6,
-                padding:'6px 10px',
-                margin:'4px 0',
-                fontSize:12,
-                color:'var(--tx2)',
-                fontFamily:"'Noto Sans KR', sans-serif"
-              }}>{p}</div>;
-            }
+            const pt = p.trim();
+            if (/^제\d+조/.test(pt) || /^\[법조문\]/.test(pt)) return <div key={pi} style={boxStyle}>{p}</div>;
+            if (/^\[조문\]/.test(pt)) return <div key={pi} style={boxStyle}>{p.replace(/^\[조문\]\s*/,'')}</div>;
             return <span key={pi}>{p}</span>;
           })}
         </div>
