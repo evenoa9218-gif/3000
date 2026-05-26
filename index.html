@@ -1794,7 +1794,7 @@ function App() {
                 </div>
                 <div className="qcard">
                   <div className="qcard-meta">
-                    <span className="qcard-no">
+                    <span className="qcard-no" style={{display:"flex",flexDirection:"column",gap:1}}>
                       {(() => {
                         const id = String(cur.id);
                         const ssMatch = id.match(/^SS(\d+)\.(.+)$/);
@@ -1802,13 +1802,13 @@ function App() {
                         if (ssMatch) {
                           const ssKey = "SS" + ssMatch[1];
                           const ssYr = SS_EXAM[ssKey] || ssKey;
-                          return `${ssYr} · ${ssMatch[2]}`;
+                          return (<><span style={{color:"var(--blue)",fontWeight:600}}>{ssYr}</span><span>{id}</span></>);
                         }
                         if (numMatch) {
                           const yr = EXAM_YEAR[numMatch[1].padStart(3,"0")] || "";
-                          return yr ? `${yr} · ${numMatch[2]}` : `No.${numMatch[1]} · ${numMatch[2]}`;
+                          return (<>{yr && <span style={{color:"var(--blue)",fontWeight:600}}>{yr}</span>}<span>{id}</span></>);
                         }
-                        return `No.${id}`;
+                        return <span>{id}</span>;
                       })()}
                     </span>
                     {cur.star && <span className="star-badge">⭐ 중요</span>}
