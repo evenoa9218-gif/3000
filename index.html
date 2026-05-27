@@ -996,7 +996,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .reveal.ok .rv-label{color:var(--ok);}
 .reveal.er .rv-label{color:var(--er);}
 .rv-verdict{font-size:12px;font-weight:600;opacity:.8;}
-.rv-exp{font-size:13px;line-height:1.7;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
+.rv-exp{font-size:15px;line-height:1.7;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
 .rv-toggle{font-size:12px;color:var(--blue);cursor:pointer;margin-top:5px;display:inline-block;text-decoration:underline;text-underline-offset:2px;}
 .mark-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:20px;border:1px solid rgba(188,140,255,.4);background:transparent;color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .mark-btn:hover,.mark-btn.marked{background:rgba(188,140,255,.15);border-color:var(--purple);}
@@ -1050,7 +1050,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .arch-ans{font-size:11px;color:var(--tx3);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
 .arch-tag{font-size:10px;color:var(--tx3);background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:1px 6px;display:inline-block;margin-top:4px;margin-right:4px;}
 .arch-tag.mk{border-color:rgba(188,140,255,.3);color:var(--purple);background:rgba(188,140,255,.08);}
-.arch-exp{font-size:12px;color:var(--tx2);margin-top:7px;padding-top:7px;border-top:1px solid var(--bd2);line-height:1.65;display:none;word-break:keep-all;}
+.arch-exp{font-size:14px;color:var(--tx2);margin-top:7px;padding-top:7px;border-top:1px solid var(--bd2);line-height:1.65;display:none;word-break:keep-all;}
 .arch-item.exp .arch-exp{display:block;}
 
 /* 관리자 */
@@ -1642,7 +1642,7 @@ function App() {
     const boxStyle = {
       background:'var(--sf2)', border:'1px solid var(--bd2)',
       borderLeft:'3px solid var(--blue)', borderRadius:6,
-      padding:'6px 10px', margin:'4px 0', fontSize:12,
+      padding:'6px 10px', margin:'4px 0', fontSize:14,
       color:'var(--tx2)', fontFamily:"'Noto Sans KR', sans-serif", lineHeight:1.6
     };
     // ▸ 앞 또는 \n[AI해설] 앞에서 분리
@@ -1652,7 +1652,7 @@ function App() {
       // [AI해설] 섹션
       if (t.startsWith('[AI해설]')) {
         return (
-          <div key={si} style={{marginTop:10,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,.1)',fontSize:12,color:'var(--tx3)',lineHeight:1.7}}>
+          <div key={si} style={{marginTop:10,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,.1)',fontSize:14,color:'var(--tx3)',lineHeight:1.7}}>
             <span style={{display:'inline-block',background:'rgba(82,167,254,.15)',color:'var(--blue)',borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,marginRight:6}}>AI해설</span>
             {t.slice('[AI해설]'.length).trim()}
           </div>
