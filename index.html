@@ -876,6 +876,8 @@ html.light body { background:var(--bg); color:var(--tx); }
 /* ── 피드백 ───────────────────────────────────────────── */
 .fb-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;}
 .fb-btn:hover{border-color:var(--gold);color:var(--gold);}
+.fb-float-btn{position:fixed;bottom:18px;right:18px;z-index:900;display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;border:1px solid var(--bd);background:var(--sf);color:var(--tx3);font-size:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:all .15s;}
+.fb-float-btn:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 3px 12px rgba(212,168,83,.2);}
 .fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
 .fb-modal{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
 .fb-modal-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:4px;}
@@ -1004,6 +1006,13 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .tc-name{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px;}
 .tc-cnt{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
 .tc-wc{font-size:10px;color:var(--er);margin-top:2px;}
+.tc-prog-wrap{margin-top:6px;display:flex;align-items:center;gap:6px;}
+.tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
+.tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .3s;}
+.tc-prog-pct{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;min-width:30px;text-align:right;}
+.tc.done-tc{border-color:var(--gold)!important;background:rgba(212,168,83,.12)!important;}
+.tc.done-tc .tc-prog-bar-fill{background:#4caf50;}
+.tc.done-tc .tc-prog-pct{color:#4caf50;font-weight:700;}
 .start-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .start-btn{padding:11px 28px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all .12s;}
 .start-btn:hover{background:var(--gold2);}
@@ -1360,7 +1369,7 @@ function App() {
   };
 
   // ── 퀴즈 시작
-  function launchQuiz(round, mode, topics, resumeData=null) {
+  function launchQuiz(round, mode, topics, resumeData=null, forceNew=false) {
     const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
     if (!mod) return;
     const all = mod.getData();
@@ -1405,7 +1414,10 @@ function App() {
 
     // 이어풀기: resumeData가 있으면 복원, 없으면 섞어서 시작
     let finalQueue, startIdx;
-    if (resumeData && resumeData.mode === mode && resumeData.round === round) {
+    // forceNew=false이고 resumeData 없으면 savedSession 자동 사용
+    const effectiveResume = forceNew ? null : (resumeData || savedSession);
+    if (effectiveResume && effectiveResume.mode === mode && effectiveResume.round === round
+      && effectiveResume.module === activeModule) {
       // 저장된 큐 순서 복원 (ID 배열로 저장 → 실제 문제 객체로 매핑)
       const qMap = Object.fromEntries(all.map(q=>[q.id, q]));
       const restored = (resumeData.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
@@ -1528,9 +1540,16 @@ function App() {
   const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
   const tCnt     = k => getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k).length;
   const tWrong   = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(wrongMap[r]||new Set()).has(q.id)).length;
+  const tProg    = (r,k) => { const all=getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k); const ans=(progMap[r]?.answered||new Set()); const done=all.filter(q=>ans.has(q.id)).length; return {done, total:all.length, pct:all.length?Math.round(done/all.length*100):0}; };
   const TOTAL    = getAll().length;
   const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
   const canStart = cfgMode !== "topic" || cfgTopics.length > 0;
+  // 이어풀기 세션이 현재 설정과 매칭되는지 확인
+  const hasResume = savedSession && savedSession.round===cfgRound && savedSession.mode===cfgMode
+    && savedSession.module===activeModule
+    && (cfgMode!=="topic" || (savedSession.topics||[]).join(",")===[...cfgTopics].sort().join(","))
+    && (savedSession.qidx||0) > 0
+    && (savedSession.queueIds||[]).length > (savedSession.qidx||0);
   const startCnt = cfgMode==="all" ? TOTAL : cfgMode==="rnd100" ? 100 : cfgMode==="topic" ? getAll().filter(q=>cfgTopics.includes(q.topic)).length : cfgMode==="wrong+marked" ? wmCnt(cfgRound) : 0;
   const cur      = applyEdit(queue[qidx]);
   const curMark  = cur && (markedMap[cfgRound]||new Set()).has(cur.id);
@@ -1853,13 +1872,18 @@ function App() {
                       {getMod().topics.map(t=>{
                         const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), sel=cfgTopics.includes(t.key);
                         const icon = TOPIC_ICONS[t.key]||"📌";
+                        const {done:tDone,total:tTotal,pct:tPct}=tProg(cfgRound,t.key);
+                        const isAllDone = tPct===100;
                         return (
-                          <div key={t.key} className={`tc ${sel?"act":""}`}
+                          <div key={t.key} className={`tc ${sel?"act":""} ${isAllDone?"done-tc":""}`}
                             onClick={()=>setCfgTopics(p=>p.includes(t.key)?p.filter(x=>x!==t.key):[...p,t.key])}>
                             <div className="tc-icon">{icon}</div>
                             <div className="tc-name">{t.label}</div>
-                            <div className="tc-cnt">{cnt}문제</div>
-                            {wc>0&&<div className="tc-wc">오답 {wc}</div>}
+                            <div className="tc-cnt">{cnt}문제 {wc>0&&<span style={{color:'var(--er)',marginLeft:4}}>오답 {wc}</span>}</div>
+                            <div className="tc-prog-wrap">
+                              <div className="tc-prog-bar-bg"><div className="tc-prog-bar-fill" style={{width:tPct+'%'}}></div></div>
+                              <span className="tc-prog-pct">{tPct}%</span>
+                            </div>
                           </div>
                         );
                       })}
@@ -1868,8 +1892,14 @@ function App() {
                   <div className="start-row">
                     <button className="start-btn" disabled={!canStart}
                       onClick={()=>launchQuiz(cfgRound, cfgMode, cfgTopics)}>
-                      {canStart ? `▶ 시작 (${cfgMode==="rnd100"?100:startCnt}문제)` : "주제를 선택하세요"}
+                      {canStart ? (hasResume ? `▶ 이어풀기 (${(savedSession.queueIds||[]).length-(savedSession.qidx||0)}문제 남음)` : `▶ 시작 (${cfgMode==="rnd100"?100:startCnt}문제)`) : "주제를 선택하세요"}
                     </button>
+                    {hasResume && (
+                      <button className="start-btn" style={{background:'var(--sf2)',color:'var(--tx2)',border:'1px solid var(--bd)',fontWeight:400}}
+                        onClick={()=>launchQuiz(cfgRound, cfgMode, cfgTopics, null, true)}>
+                        처음부터
+                      </button>
+                    )}
                     {cfgMode==="topic"&&cfgTopics.length>0&&(
                       <span className="start-hint">
                         {cfgTopics.map(k=>getMod()?.topics.find(t=>t.key===k)?.label||k).join(", ")}
@@ -1987,6 +2017,13 @@ function App() {
                     </div>
                   )}
                 </div>
+                {/* 퀴즈 화면 외 플로팅 피드백 버튼 */}
+                {!(inQuiz && !done) && (
+                  <button className="fb-float-btn" onClick={()=>{ setFbOpen(true); setFbText(""); setFbType("일반 피드백"); }}>
+                    💬 피드백
+                  </button>
+                )}
+
                 {/* 피드백 모달 */}
                 {fbOpen && (
                   <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setFbOpen(false);}}>
