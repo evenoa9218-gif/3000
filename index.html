@@ -1802,11 +1802,11 @@ function App() {
       && effectiveResume.module === activeModule) {
       // 저장된 큐 순서 복원 (ID 배열로 저장 → 실제 문제 객체로 매핑)
       const qMap = Object.fromEntries(all.map(q=>[q.id, q]));
-      const restored = (resumeData.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
+      const restored = (effectiveResume.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
       if (restored.length > 0) {
         finalQueue = restored;
-        startIdx = resumeData.qidx || 0;
-        lbl = resumeData.label || lbl;
+        startIdx = effectiveResume.qidx || 0;
+        lbl = effectiveResume.label || lbl;
       } else {
         finalQueue = shuffle(pool);
         startIdx = 0;
