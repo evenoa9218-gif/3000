@@ -3143,6 +3143,22 @@ function App() {
                       <div className="hub-divider-line"/>
                     </div>
                   );
+                  // soon 카드: 전체 폭 차지 후 flex 중앙 정렬
+                  if (mod.status==="soon") {
+                    const cardWidth = "calc(25% - 9px)";
+                    return (
+                      <div key={mod.id} style={{gridColumn:"1/-1",display:"flex",justifyContent:"center"}}>
+                        <div className="module-card soon" style={{width:cardWidth}}>
+                          <div className="module-accent" style={{background:mod.color}}/>
+                          <span className="soon-badge">준비중</span>
+                          <div className="module-icon">{mod.icon}</div>
+                          <div className="module-name">{mod.label}</div>
+                          <div className="module-sub">{mod.subtitle}</div>
+                          <div className="module-stats"><span className="module-stat">{mod.count||"?"} 문제</span></div>
+                        </div>
+                      </div>
+                    );
+                  }
                   const isActive = mod.status==="active";
                   const hs = hubStats[mod.id] || {};
                   const wc = hs.wc || 0;
