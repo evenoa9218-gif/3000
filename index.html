@@ -1984,7 +1984,8 @@ const MODULE_REGISTRY = [
     ],
     getData: () => 채권각론_DATA,
   },
-  { id:"친족상속", label:"친족·상속", subtitle:"민법 가족편", icon:"👨‍👩‍👧", count:0, status:"soon", color:"#f0883e" },
+  { id:"divider", label:"", subtitle:"", icon:"", count:0, status:"divider", color:"" },
+  { id:"민사소송법", label:"민사소송법", subtitle:"민소법 핵심 판례", icon:"⚖️", count:0, status:"soon", color:"#79c0ff" },
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
@@ -2276,6 +2277,10 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 
 /* 허브 모듈 그리드 */
 .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px;}
+.hub-divider{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:4px 0;}
+.hub-divider-line{flex:1;height:1px;background:var(--border);}
+.hub-divider-label{font-size:11px;color:var(--muted);letter-spacing:.06em;white-space:nowrap;}
+.module-prog-text{font-size:11px;color:var(--muted);margin-top:3px;}
 .module-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
 .module-card.active:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
 .module-card.soon{opacity:.55;cursor:not-allowed;}
@@ -2499,6 +2504,7 @@ function App() {
   const [label,    setLabel]    = useState("");
 
   // ── 스토리지 (모듈별 회독별)
+  const [hubStats,  setHubStats]  = useState({});  // {modId: {wc, mc, pct}}
   const [wrongMap,  setWrongMap]  = useState({});
   const [markedMap, setMarkedMap] = useState({});
   const [progMap,   setProgMap]   = useState({});
@@ -2576,9 +2582,36 @@ function App() {
     if (firstMod) setActiveModule(firstMod.id);
 
     setScreen("hub");
+    loadHubStats(id);
   }
 
   // ── 모듈 스토리지 로드
+  async function loadHubStats(userId) {
+    if (!userId) return;
+    const sid = toSafeId(userId);
+    const stats = {};
+    for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+      const allWrong = new Set(), allMarked = new Set();
+      let answered=0, total=mod.count||0;
+      for (const r of ROUNDS) {
+        const fbW = await fb.get(fbPath.wrong(sid,mod.id,r));
+        const w = fbW || await gr(K_WRONG(userId,mod.id,r), []);
+        w.forEach(id=>allWrong.add(id));
+        const fbM = await fb.get(fbPath.marked(sid,mod.id,r));
+        const m2 = fbM || await gr(K_MARKED(userId,mod.id,r), []);
+        m2.forEach(id=>allMarked.add(id));
+      }
+      // 진행률: 1회독 기준
+      const fbP = await fb.get(fbPath.prog(sid,mod.id,1));
+      const lsP = await gr(K_PROG(userId,mod.id,1), {answered:[]});
+      const p = fbP || lsP;
+      answered = (p.answered||[]).length;
+      const pct = total ? Math.round(answered/total*100) : 0;
+      stats[mod.id] = {wc: allWrong.size, mc: allMarked.size, answered, pct};
+    }
+    setHubStats(stats);
+  }
+
   async function loadModuleData(mid) {
     if (!uid) return;
     const sid = toSafeId(uid);
@@ -3101,14 +3134,24 @@ function App() {
               </div>
               <div className="hub-grid">
                 {MODULE_REGISTRY.map(mod => {
+                  // 구별선
+                  if (mod.status==="divider") return (
+                    <div key="divider" className="hub-divider">
+                      <div className="hub-divider-line"/>
+                      <span className="hub-divider-label">민사소송법</span>
+                      <div className="hub-divider-line"/>
+                    </div>
+                  );
                   const isActive = mod.status==="active";
-                  const p = isActive ? getProg(cfgRound) : null;
-                  const wc = isActive ? ROUNDS.reduce((s,r)=>s+wCnt(r),0) : 0;
-                  const mc = isActive ? ROUNDS.reduce((s,r)=>s+mCnt(r),0) : 0;
+                  const hs = hubStats[mod.id] || {};
+                  const wc = hs.wc || 0;
+                  const mc = hs.mc || 0;
+                  const pct = hs.pct || 0;
+                  const answered = hs.answered || 0;
                   const isSel = activeModule===mod.id;
                   return (
                     <div key={mod.id}
-                      className={`module-card ${isActive?"active":"soon"} ${isSel?"":""}` }
+                      className={`module-card ${isActive?"active":"soon"}`}
                       style={isSel&&isActive?{border:`1px solid ${mod.color}`,background:`rgba(${mod.color.match(/\w\w/g)?.map(h=>parseInt(h,16)).join(',')},0.05)`}:{}}
                       onClick={()=>{
                         if(!isActive) return;
@@ -3132,7 +3175,12 @@ function App() {
                           <span className="module-stat">{mod.count||"?"} 문제</span>
                         )}
                       </div>
-                      {isActive && <div className="module-bar"><div className="module-bar-fill" style={{width:`${p?.pct||0}%`,background:mod.color}}/></div>}
+                      {isActive && (
+                        <>
+                          <div className="module-bar"><div className="module-bar-fill" style={{width:`${pct}%`,background:mod.color}}/></div>
+                          <div className="module-prog-text">{answered}/{mod.count} 풀이 ({pct}%)</div>
+                        </>
+                      )}
                     </div>
                   );
                 })}
