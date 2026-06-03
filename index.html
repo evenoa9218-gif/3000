@@ -2151,10 +2151,10 @@ const CSS = `
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#10192a;--sf:#172238;--sf2:#1d2d48;--bd:#284060;--bd2:#1e3254;
-  --gold:#6aabc8;--gold2:#84bcd8;--gf:#2a5c7a;--tx:#b8d6ec;--tx2:#5898b8;--tx3:#305870;
-  --purple:#b48eff;--ok:#52a870;--er:#d07070;--er-bg:rgba(208,112,112,.08);
-  --ok:#52a870;--er:#d07070;--ok-bg:rgba(82,168,112,.08);--er-bg:rgba(208,112,112,.08);
-  --blue:#6aabc8;--purple:#b48eff;--muted:#305870;
+  --gold:#7ab8d8;--gold2:#9acce8;--gf:#2e6282;--tx:#cce6f8;--tx2:#6aa8cc;--tx3:#366078;
+  --purple:#b48eff;--ok:#4ade80;--er:#f87171;--er-bg:rgba(248,113,113,.08);
+  --ok:#4ade80;--er:#f87171;--ok-bg:rgba(74,222,128,.08);--er-bg:rgba(248,113,113,.08);
+  --blue:#7ab8d8;--purple:#b48eff;--muted:#366078;
 }
 
 /* ── 라이트 테마 ───────────────────────────────────── */
@@ -2298,9 +2298,9 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .module-sub{font-size:11px;color:var(--tx3);margin-bottom:12px;}
 .module-stats{display:flex;gap:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;}
 .module-stat{padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
-.module-stat.ok{color:var(--ok);border-color:rgba(82,168,112,.2);}
-.module-stat.er{color:var(--er);border-color:rgba(208,112,112,.2);}
-.module-stat.gold{color:var(--gold);border-color:rgba(106,171,200,.2);}
+.module-stat.ok{color:var(--ok);border-color:rgba(63,185,80,.2);}
+.module-stat.er{color:var(--er);border-color:rgba(248,81,73,.2);}
+.module-stat.gold{color:var(--gold);border-color:rgba(212,168,83,.2);}
 .soon-badge{position:absolute;top:12px;right:12px;font-size:10px;padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx3);}
 .module-bar{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:10px;}
 .module-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
@@ -2333,9 +2333,9 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
 .tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gf);transition:width .3s;}
 .tc-prog-pct{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;min-width:30px;text-align:right;}
-.tc.done-tc{border-color:var(--gold)!important;background:rgba(106,171,200,.07)!important;}
-.tc.done-tc .tc-prog-bar-fill{background:var(--gf);}
-.tc.done-tc .tc-prog-pct{color:var(--gold2);font-weight:700;}
+.tc.done-tc{border-color:var(--gold)!important;background:rgba(212,168,83,.12)!important;}
+.tc.done-tc .tc-prog-bar-fill{background:#4caf50;}
+.tc.done-tc .tc-prog-pct{color:#4caf50;font-weight:700;}
 .start-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .start-btn{padding:12px 30px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
 .start-btn:hover{background:var(--gold);}
@@ -2363,24 +2363,24 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .qcard-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .qcard-no{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
 .qcard-topic{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
-.question{font-family:'Noto Serif KR',serif;font-size:16px;font-weight:600;line-height:2.0;color:var(--tx);word-break:keep-all;}
+.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;}
 .reveal{margin-top:18px;padding:14px 16px;border-radius:8px;animation:fi .2s ease;}
-.reveal.ok{background:var(--ok-bg);border:1px solid rgba(82,168,112,.25);}
-.reveal.er{background:var(--er-bg);border:1px solid rgba(208,112,112,.25);}
+.reveal.ok{background:var(--ok-bg);border:1px solid rgba(63,185,80,.3);}
+.reveal.er{background:var(--er-bg);border:1px solid rgba(248,81,73,.3);}
 .rv-label{font-size:18px;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:6px;}
 .reveal.ok .rv-label{color:var(--ok);}
 .reveal.er .rv-label{color:var(--er);}
 .rv-verdict{font-size:12px;font-weight:600;opacity:.8;}
-.rv-exp{font-size:16px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
+.rv-exp{font-size:14.5px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
 .rv-toggle{font-size:12px;color:var(--blue);cursor:pointer;margin-top:5px;display:inline-block;text-decoration:underline;text-underline-offset:2px;}
 .mark-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:20px;border:1px solid rgba(188,140,255,.4);background:transparent;color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .mark-btn:hover,.mark-btn.marked{background:rgba(188,140,255,.15);border-color:var(--purple);}
 .ox-row{display:flex;gap:10px;margin-top:16px;}
-.ox{flex:1;padding:18px 16px;border-radius:14px;border:2px solid transparent;font-size:38px;font-weight:700;cursor:pointer;transition:all .15s cubic-bezier(.2,.8,.2,1);background:var(--sf2);display:flex;align-items:center;justify-content:center;}
-.ox.o{border-color:transparent;color:var(--ok);}
-.ox.o:not(:disabled):hover{background:var(--ok-bg);border-color:transparent;transform:translateY(-2px);}
-.ox.x{border-color:transparent;color:var(--er);}
-.ox.x:not(:disabled):hover{background:var(--er-bg);border-color:transparent;transform:translateY(-2px);}
+.ox{flex:1;padding:16px;border-radius:14px;border:2px solid transparent;font-size:28px;font-weight:700;cursor:pointer;transition:all .15s cubic-bezier(.2,.8,.2,1);background:var(--sf2);}
+.ox.o{border-color:rgba(63,185,80,.3);color:var(--ok);}
+.ox.o:not(:disabled):hover{background:var(--ok-bg);border-color:var(--ok);transform:translateY(-2px);}
+.ox.x{border-color:rgba(248,81,73,.3);color:var(--er);}
+.ox.x:not(:disabled):hover{background:var(--er-bg);border-color:var(--er);transform:translateY(-2px);}
 .ox:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .ox.sel-o{background:var(--ok-bg);border-color:var(--ok);}
 .ox.sel-x{background:var(--er-bg);border-color:var(--er);}
@@ -3416,8 +3416,8 @@ function App() {
                   </div>
                 )}
                 <div className="ox-row">
-                  <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>O</button>
-                  <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>X</button>
+                  <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>○</button>
+                  <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>✕</button>
                 </div>
                 {answered !== null && (
                   <button className="next-btn" onClick={handleNext}>{qidx+1<queue.length?"다음 문제 →":"결과 보기"}</button>
