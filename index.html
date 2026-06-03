@@ -2333,8 +2333,12 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .tc:hover{border-color:var(--gold);}
 .tc.act{border-color:var(--gold);background:rgba(106,171,200,.1);border-width:2px;box-shadow:0 0 0 2px rgba(106,171,200,.25);}
 .tc-icon{font-size:22px;margin-bottom:6px;color:var(--gold);}
-.tc-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px;}
-.tc-cnt{font-size:13px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;font-weight:500;}
+.tc-name{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px;}
+.tc-cnt{font-size:11.5px;color:var(--tx2);font-family:system-ui,sans-serif;margin-bottom:3px;font-weight:600;display:none;}
+.tc-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px;}
+.tc-stat{display:inline-flex;align-items:center;font-size:11.5px;font-family:system-ui,sans-serif;font-weight:600;padding:2px 7px;border-radius:12px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;}
+.tc-stat.er{color:var(--er);background:rgba(195,90,90,.07);border-color:rgba(195,90,90,.22);}
+.tc-stat.mk{color:var(--purple);background:rgba(148,110,220,.07);border-color:rgba(148,110,220,.22);}
 .tc-wc{font-size:12px;color:var(--er);margin-top:2px;}
 .tc-prog-wrap{margin-top:auto;padding-top:8px;display:flex;align-items:center;gap:6px;}
 .tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
@@ -2917,6 +2921,7 @@ function App() {
   const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
   const tCnt     = k => getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k).length;
   const tWrong   = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(wrongMap[r]||new Set()).has(q.id)).length;
+  const tMark    = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(markedMap[r]||new Set()).has(q.id)).length;
   const tProg    = (r,k) => { const all=getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k); const ans=(progMap[r]?.answered||new Set()); const done=all.filter(q=>ans.has(q.id)).length; return {done, total:all.length, pct:all.length?Math.round(done/all.length*100):0}; };
   const TOTAL    = getAll().length;
   const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
@@ -3255,7 +3260,7 @@ function App() {
                   {cfgMode==="topic" && getMod()?.topics && (
                     <div className="topic-grid">
                       {getMod().topics.map(t=>{
-                        const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), sel=cfgTopics.includes(t.key);
+                        const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), mc=tMark(cfgRound,t.key), sel=cfgTopics.includes(t.key);
                         const icon = TOPIC_ICONS[t.key]||"📌";
                         const {done:tDone,total:tTotal,pct:tPct}=tProg(cfgRound,t.key);
                         const isAllDone = tPct===100;
@@ -3264,7 +3269,11 @@ function App() {
                             onClick={()=>setCfgTopics(p=>p.includes(t.key)?p.filter(x=>x!==t.key):[...p,t.key])}>
                             <div className="tc-icon">{icon}</div>
                             <div className="tc-name">{t.label}</div>
-                            <div className="tc-cnt">{cnt}문제 {wc>0&&<span style={{color:'var(--er)',marginLeft:4}}>오답 {wc}</span>}</div>
+                            <div className="tc-stats">
+                              <span className="tc-stat">{cnt}문제</span>
+                              {wc>0&&<span className="tc-stat er">오답 {wc}</span>}
+                              {mc>0&&<span className="tc-stat mk">헷갈 {mc}</span>}
+                            </div>
                             <div className="tc-prog-wrap">
                               <div className="tc-prog-bar-bg"><div className="tc-prog-bar-fill" style={{width:tPct+'%'}}></div></div>
                               <span className="tc-prog-pct">{tPct}%</span>
