@@ -2276,7 +2276,8 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .login-hint{font-size:11px;color:var(--tx3);text-align:center;margin-top:10px;}
 
 /* 허브 모듈 그리드 */
-.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:20px;}
+.hub-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
 .hub-divider{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:4px 0;}
 .hub-divider-line{flex:1;height:1px;background:var(--border);}
 .hub-divider-label{font-size:11px;color:var(--muted);letter-spacing:.06em;white-space:nowrap;}
