@@ -2170,6 +2170,9 @@ html.light .logout-btn{color:#b8d8f5;}
 html.light .uid-badge{color:#d0ecfa;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
 html.light .module-card{background:#ffffff;box-shadow:none;border-color:#c0d8ec;}
 html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100,160,.12);}
+html.light .tc.done-tc{background:#f4f0e6!important;border-color:var(--gold)!important;}
+html.light .tc.done-tc .tc-prog-bar-fill{background:#5a8ab5;}
+html.light .tc.done-tc .tc-prog-pct{color:#5a8ab5;font-weight:700;}
 
 /* ── 테마 토글 버튼 ────────────────────────────────── */
 .theme-toggle {
@@ -2317,25 +2320,25 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .pill.purple{border-color:rgba(188,140,255,.35);color:var(--purple);}
 .pill.purple.act{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple);}
 .cnt-badge{font-size:10px;opacity:.75;font-family:'IBM Plex Mono',monospace;}
-.star-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:6px;padding:2px 7px;margin-right:6px;letter-spacing:.3px;}
-.pill.star{border-color:#f59e0b;color:#f59e0b;}
-.pill.star.act{background:#f59e0b;color:#0d1117;}
+.star-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--gold),var(--gf));border-radius:6px;padding:2px 7px;margin-right:6px;letter-spacing:.3px;}
+.pill.star{border-color:var(--gold);color:var(--gold);}
+.pill.star.act{background:var(--gf);border-color:var(--gf);color:#fff;}
 .wrong-badge{font-size:10px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
 .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:12px;}
 .tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;}
 .tc:hover{border-color:var(--gold);}
-.tc.act{border-color:var(--gold);background:rgba(212,168,83,.1);}
-.tc-icon{font-size:16px;margin-bottom:4px;}
-.tc-name{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px;}
+.tc.act{border-color:var(--gold);background:rgba(106,171,200,.1);}
+.tc-icon{font-size:22px;margin-bottom:6px;color:var(--gold);}
+.tc-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px;}
 .tc-cnt{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
 .tc-wc{font-size:10px;color:var(--er);margin-top:2px;}
 .tc-prog-wrap{margin-top:6px;display:flex;align-items:center;gap:6px;}
 .tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
-.tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gf);transition:width .3s;}
-.tc-prog-pct{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;min-width:30px;text-align:right;}
-.tc.done-tc{border-color:var(--gold)!important;background:rgba(106,171,200,.07)!important;}
-.tc.done-tc .tc-prog-bar-fill{background:var(--gf);}
-.tc.done-tc .tc-prog-pct{color:var(--gold2);font-weight:700;}
+.tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .3s;}
+.tc-prog-pct{font-size:12px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;min-width:34px;text-align:right;font-weight:600;}
+.tc.done-tc{border-color:var(--gold)!important;background:rgba(106,171,200,.18)!important;}
+.tc.done-tc .tc-prog-bar-fill{background:rgba(255,255,255,.85);}
+.tc.done-tc .tc-prog-pct{color:#ffffff;font-weight:700;}
 .start-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .start-btn{padding:12px 30px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
 .start-btn:hover{background:var(--gold);}
@@ -2473,14 +2476,20 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 
 // ── 헬퍼 ─────────────────────────────────────────────
 const TOPIC_ICONS = {
-  "계약의종류·성립":"📝","동시이행의항변권":"⚖","위험부담":"⚠",
-  "제3자를위한계약":"🤝","해제":"🔓","증여":"🎁","매매일반효력":"🏷",
-  "매도인의담보책임":"🛡","민법상임대차":"🏠","주택임대차보호법":"🏡",
-  "상가건물임대차보호법":"🏢","도급":"🔨","기타전형계약":"📋",
-  "사무관리":"📂","부당이득":"💸","일반불법행위":"⚡","특수불법행위":"🚗",
-  "신의성실의원칙":"⚖","권리능력·행위능력":"👶","부재와실종":"🔍","법인":"🏛","권리능력없는사단":"👥",
-  "물건":"📦","법률행위":"📝","의사표시":"💬","대리":"🤝","무효와취소":"🔄","조건과기한":"⏳","소멸시효":"⌛",
-  "채권의목적":"⚖","채무불이행":"⚡","손해배상":"💰","채권자지체":"⏰","채권자대위권":"🔗","채권자취소권":"✂","채권양도":"📤","채무인수":"📥","변제":"✅","대물변제":"🔄","상계":"↔","분할·불가분채권관계":"🔀","연대채무":"👥","보증채무":"🛡"};
+  "계약의종류·성립":"§","동시이행의항변권":"⚖︎","위험부담":"⊗",
+  "제3자를위한계약":"⊕","해제":"↩","증여":"◇","매매일반효력":"≡",
+  "매도인의담보책임":"◎","민법상임대차":"⌂","주택임대차보호법":"⌂",
+  "상가건물임대차보호법":"□","도급":"◆","기타전형계약":"¶",
+  "사무관리":"◈","부당이득":"⊖","일반불법행위":"⊘","특수불법행위":"⊗",
+  "신의성실의원칙":"§","권리능력·행위능력":"○","부재와실종":"◇","법인":"□","권리능력없는사단":"⊙",
+  "물건":"◈","법률행위":"§","의사표시":"○","대리":"⊕","무효와취소":"↩","조건과기한":"○","소멸시효":"⊘",
+  "채권의목적":"⚖︎","채무불이행":"⊗","손해배상":"◎","채권자지체":"○",
+  "채권자대위권":"⇄","채권자취소권":"↩","채권양도":"⊕","채무인수":"⊕",
+  "변제":"⊖","변제자대위":"⇄","대물변제공탁경개면제혼동":"≡",
+  "상계":"⇄","서론분할불가분":"≡","연대채무":"⊕","부진정연대채무":"⊕","보증채무":"◎","15V":"⚖︎",
+  "물권의소멸·소유권서론기타":"§","등기제도":"□","점유권":"◎","취득시효":"⊘",
+  "명의신탁":"⊗","법정지상권":"⌂","전세권":"⌂","유치권":"◈","질권":"◆","저당권":"§",
+  "공동저당·특수저당":"§","가등기담보법":"§"};
 
 // ── 메인 앱 ───────────────────────────────────────────
 function App() {
@@ -3321,7 +3330,7 @@ function App() {
                         return <span>{id}</span>;
                       })()}
                     </span>
-                    {cur.star && <span className="star-badge">⭐ 중요</span>}
+                    {cur.star && <span className="star-badge">★ 중요</span>}
                     <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
                       💬 피드백
                     </button>
@@ -3518,7 +3527,7 @@ function App() {
                           <div key={q.id} className={`arch-item ${archExp[k]?"exp":""} ${isMk&&!isW?"mk-item":""}`}
                             onClick={()=>setArchExp(p=>({...p,[k]:!p[k]}))}>
                             <div className="arch-q">No.{q.id} {q.question}</div>
-                            {q.star && <span className="star-badge">⭐ 중요</span>}
+                            {q.star && <span className="star-badge">★ 중요</span>}
                             <div className="arch-ans">정답: {q.answer?"○ 옳은 지문":"× 틀린 지문"}</div>
                             <span className="arch-tag">{TOPIC_ICONS[q.topic]||"📌"} {getMod()?.topics.find(t=>t.key===q.topic)?.label||q.topic}</span>
                             {isW&&<span className="arch-tag">오답</span>}
