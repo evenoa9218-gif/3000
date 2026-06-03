@@ -2172,7 +2172,7 @@ html.light .uid-badge{color:#d0ecfa;background:rgba(255,255,255,.12);border-colo
 html.light .module-card{background:#ffffff;box-shadow:none;border-color:#c0d8ec;}
 html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100,160,.12);}
 html.light .tc.done-tc{background:#fef8ee!important;border-color:#ddd0b5!important;}
-html.light .tc.done-tc.act{background:#eef4f7!important;border-color:#a8cad8!important;border-width:2px;box-shadow:0 0 0 2px rgba(140,190,215,.25);}
+html.light .tc.done-tc.act{background:#f7fbfd!important;border-color:#a8cad8!important;border-width:2px;box-shadow:0 0 0 2px rgba(140,190,215,.28);}
 html.light .tc.done-tc .tc-prog-bar-fill{background:#b4e0f4;}
 html.light .tc.done-tc .tc-prog-pct{color:#9ac0d8;font-weight:600;}
 
@@ -2421,10 +2421,14 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(212,168,83,.08);font-weight:700;border-width:2px;}
 .arch-filter.purple.act{border-color:var(--purple);color:var(--purple);background:rgba(188,140,255,.08);}
 .arch-filter.er.act{border-color:var(--er);color:var(--er);background:rgba(208,112,112,.12);}
-html.light .arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(36,100,160,.08);font-weight:700;border-width:2px;}
+html.light .arch-filter.act{border-color:#ddd0b5;color:#7a6040;background:#fef8ee;font-weight:700;border-width:2px;}
 html.light .arch-filter.er.act{border-color:var(--er);color:var(--er);background:rgba(220,38,38,.1);}
 html.light .arch-filter.purple.act{border-color:var(--purple);color:var(--purple);background:rgba(180,142,255,.12);}
 .retry-btn{width:100%;padding:10px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:7px;color:var(--er);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .12s;}
+.retry-btn.all-btn{background:rgba(106,171,200,.15);border-color:var(--gold);color:var(--gold);}
+.retry-btn.all-btn:hover{background:rgba(106,171,200,.28);}
+html.light .retry-btn.all-btn{background:#fef8ee;border-color:#ddd0b5;color:#7a6040;}
+html.light .retry-btn.all-btn:hover{background:#f5edd8;}
 .retry-btn:hover{background:rgba(248,81,73,.2);}
 .retry-btn.mk{background:rgba(188,140,255,.1);border-color:rgba(188,140,255,.3);color:var(--purple);}
 .retry-btn.mk:hover{background:rgba(188,140,255,.2);}
@@ -2465,7 +2469,7 @@ html.light .arch-filter.purple.act{border-color:var(--purple);color:var(--purple
 .arch-round-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
 .art{padding:5px 14px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .art:hover{border-color:var(--gold);color:var(--gold);}
-.art.act{background:var(--gold);border-color:var(--gold);color:#0d1117;}
+.art.act{background:var(--gold);border-color:var(--gold);color:#ffffff;}
 .art-cnt{font-size:10px;opacity:.75;margin-left:4px;font-family:'IBM Plex Mono',monospace;}
 /* 관리자 */
 .admin-search{display:flex;gap:8px;margin-bottom:14px;}
@@ -3497,7 +3501,7 @@ function App() {
                       ↺ {archRound}회독 헷갈림 {amCnt(archRound)}문제 풀기
                     </button>
                   )}
-                  <button className="retry-btn" style={{flex:1,margin:0,borderColor:"rgba(36,100,160,.25)",color:"var(--gold)",background:"rgba(36,100,160,.06)"}}
+                  <button className="retry-btn all-btn" style={{flex:1,margin:0}}
                     onClick={()=>launchQuiz(archRound,"aw_all",[])}>
                     ↺ {archRound}회독 전체 ({awTotal(archRound)}문제)
                   </button>
