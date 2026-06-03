@@ -2276,11 +2276,11 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .login-hint{font-size:11px;color:var(--tx3);text-align:center;margin-top:10px;}
 
 /* 허브 모듈 그리드 */
-.hub-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-@media(max-width:600px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
-.hub-divider{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:4px 0;}
-.hub-divider-line{flex:1;height:1px;background:var(--border);}
-.hub-divider-label{font-size:11px;color:var(--muted);letter-spacing:.06em;white-space:nowrap;}
+.hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
+.hub-divider{display:flex;align-items:center;justify-content:center;padding:0 4px;}
+.hub-divider-line{width:1px;height:60%;background:var(--border);margin:auto 0;}
+.hub-divider-label{display:none;}
 .module-prog-text{font-size:11px;color:var(--muted);margin-top:3px;}
 .module-card{background:var(--sf);border:1px solid var(--bd);border-radius:14px;padding:20px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;}
 .module-card.active:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
@@ -3139,26 +3139,9 @@ function App() {
                   if (mod.status==="divider") return (
                     <div key="divider" className="hub-divider">
                       <div className="hub-divider-line"/>
-                      <span className="hub-divider-label">민사소송법</span>
-                      <div className="hub-divider-line"/>
                     </div>
                   );
-                  // soon 카드: 전체 폭 차지 후 flex 중앙 정렬
-                  if (mod.status==="soon") {
-                    const cardWidth = "calc(25% - 9px)";
-                    return (
-                      <div key={mod.id} style={{gridColumn:"1/-1",display:"flex",justifyContent:"center"}}>
-                        <div className="module-card soon" style={{width:cardWidth}}>
-                          <div className="module-accent" style={{background:mod.color}}/>
-                          <span className="soon-badge">준비중</span>
-                          <div className="module-icon">{mod.icon}</div>
-                          <div className="module-name">{mod.label}</div>
-                          <div className="module-sub">{mod.subtitle}</div>
-                          <div className="module-stats"><span className="module-stat">{mod.count||"?"} 문제</span></div>
-                        </div>
-                      </div>
-                    );
-                  }
+
                   const isActive = mod.status==="active";
                   const hs = hubStats[mod.id] || {};
                   const wc = hs.wc || 0;
