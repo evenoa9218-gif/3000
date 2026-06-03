@@ -2329,14 +2329,15 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .wrong-badge{font-size:12px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
 .pill.act .wrong-badge{background:rgba(240,70,60,.55);border-color:rgba(240,70,60,.8);color:#fff;font-weight:700;}
 .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:12px;}
-.tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;}
+.tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;min-height:132px;}
 .tc:hover{border-color:var(--gold);}
 .tc.act{border-color:var(--gold);background:rgba(106,171,200,.1);border-width:2px;box-shadow:0 0 0 2px rgba(106,171,200,.25);}
 .tc-icon{font-size:22px;margin-bottom:6px;color:var(--gold);}
 .tc-name{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px;}
-.tc-cnt{font-size:11.5px;color:var(--tx2);font-family:system-ui,sans-serif;margin-bottom:3px;font-weight:600;display:none;}
-.tc-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px;}
-.tc-stat{display:inline-flex;align-items:center;font-size:11.5px;font-family:system-ui,sans-serif;font-weight:600;padding:2px 7px;border-radius:12px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;}
+.tc-cnt{display:none;}
+.tc-cnt-sub{font-size:11.5px;color:var(--tx3);font-family:system-ui,sans-serif;font-weight:500;margin-bottom:4px;}
+.tc-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:2px;min-height:18px;}
+.tc-stat{display:inline-flex;align-items:center;font-size:10px;font-family:system-ui,sans-serif;font-weight:700;padding:1px 6px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;}
 .tc-stat.er{color:var(--er);background:rgba(195,90,90,.07);border-color:rgba(195,90,90,.22);}
 .tc-stat.mk{color:var(--purple);background:rgba(148,110,220,.07);border-color:rgba(148,110,220,.22);}
 .tc-wc{font-size:12px;color:var(--er);margin-top:2px;}
@@ -3269,8 +3270,8 @@ function App() {
                             onClick={()=>setCfgTopics(p=>p.includes(t.key)?p.filter(x=>x!==t.key):[...p,t.key])}>
                             <div className="tc-icon">{icon}</div>
                             <div className="tc-name">{t.label}</div>
+                            <div className="tc-cnt-sub">{cnt}문제</div>
                             <div className="tc-stats">
-                              <span className="tc-stat">{cnt}문제</span>
                               {wc>0&&<span className="tc-stat er">오답 {wc}</span>}
                               {mc>0&&<span className="tc-stat mk">헷갈 {mc}</span>}
                             </div>
