@@ -1898,7 +1898,7 @@ const MODULE_REGISTRY = [
     icon: "⚖",
     count: 채권총론_DATA.length,
     status: "active",  // "active" | "soon"
-    color: "#d4a853",
+    color: "#5a9cc5",
     topics: [
       {key:"채권의목적",label:"채권의 목적"},
       {key:"채무불이행",label:"채무불이행"},
@@ -1924,10 +1924,10 @@ const MODULE_REGISTRY = [
     id: "민법총칙",
     label: "민법총칙",
     subtitle: "민법 총칙편",
-    icon: "📜",
+    icon: "§",
     count: 민법총칙_DATA.length,
     status: "active",
-    color: "#58a6ff",
+    color: "#4a8ab5",
     topics: [
       {key:"신의성실의원칙", label:"신의성실의 원칙"},
       {key:"권리능력·행위능력", label:"권리능력·행위능력"},
@@ -1944,8 +1944,8 @@ const MODULE_REGISTRY = [
     ],
     getData: () => 민법총칙_DATA,
   },
-  { id:"물권법", label:"물권법", subtitle:"민법 물권편", icon:"🏠",
-    count: 물권법_DATA.length, status:"active", color:"#3fb950",
+  { id:"물권법", label:"물권법", subtitle:"민법 물권편", icon:"⌂︎",
+    count: 물권법_DATA.length, status:"active", color:"#3d8ab0",
     topics:[
       {key:"물권의소멸·소유권서론기타",label:"물권의 소멸·소유권 서론 기타"},
       {key:"등기제도",label:"등기제도"},
@@ -1962,8 +1962,8 @@ const MODULE_REGISTRY = [
     ],
     getData: () => 물권법_DATA,
   },
-  { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"📋",
-    count: 채권각론_DATA.length, status:"active", color:"#bc8cff",
+  { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"≡",
+    count: 채권각론_DATA.length, status:"active", color:"#3a80a8",
     topics:[
       {key:"계약의종류·성립",label:"계약의 종류·성립"},
       {key:"동시이행의항변권",label:"동시이행의 항변권"},
@@ -1984,7 +1984,7 @@ const MODULE_REGISTRY = [
     ],
     getData: () => 채권각론_DATA,
   },
-  { id:"민사소송법", label:"민사소송법", subtitle:"민소법 핵심 판례", icon:"⚖️", count:0, status:"soon", color:"#79c0ff" },
+  { id:"민사소송법", label:"민사소송법", subtitle:"민소법 핵심 판례", icon:"⚖︎", count:0, status:"soon", color:"#3878a0" },
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
@@ -2147,23 +2147,29 @@ function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Mat
 
 /* ── CSS ─────────────────────────────────────────── */
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#0d1421;--sf:#13192a;--sf2:#192038;--bd:#253050;--bd2:#1c2840;
-  --gold:#6b9ec4;--gold2:#8ab5d4;--gf:#3a7aae;--tx:#dde6f0;--tx2:#8daabf;--tx3:#566070;
+  --bg:#10192a;--sf:#172238;--sf2:#1d2d48;--bd:#284060;--bd2:#1e3254;
+  --gold:#7ab8d8;--gold2:#9acce8;--gf:#2e6282;--tx:#cce6f8;--tx2:#6aa8cc;--tx3:#366078;
   --purple:#b48eff;--ok:#4ade80;--er:#f87171;--er-bg:rgba(248,113,113,.08);
   --ok:#4ade80;--er:#f87171;--ok-bg:rgba(74,222,128,.08);--er-bg:rgba(248,113,113,.08);
-  --blue:#6b9ec4;--purple:#b48eff;--muted:#566070;
+  --blue:#7ab8d8;--purple:#b48eff;--muted:#366078;
 }
 
 /* ── 라이트 테마 ───────────────────────────────────── */
 html.light {
-  --bg:#eef5fb;--sf:#ffffff;--sf2:#e0eef8;--bd:#bad3e9;--bd2:#d0e5f4;
-  --gold:#2874ab;--gold2:#3585be;--gf:#2874ab;--tx:#192233;--tx2:#3f5a72;--tx3:#6080a0;
+  --bg:#ecf4fb;--sf:#ffffff;--sf2:#dceef8;--bd:#b4d0e8;--bd2:#cce0f2;
+  --gold:#2464a0;--gold2:#2e74b5;--gf:#2a5f88;--tx:#192233;--tx2:#3a5870;--tx3:#5878a0;
   --purple:#5235a0;--ok:#16a34a;--er:#dc2626;--er-bg:rgba(220,38,38,.08);
 }
 html.light body { background:var(--bg); color:var(--tx); }
+html.light .hdr-title{color:#ffffff;}
+html.light .hdr-sub{color:#a8d4f0;font-weight:600;}
+html.light .logout-btn{color:#b8d8f5;}
+html.light .uid-badge{color:#d0ecfa;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
+html.light .module-card{background:#ffffff;box-shadow:none;border-color:#c0d8ec;}
+html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100,160,.12);}
 
 /* ── 테마 토글 버튼 ────────────────────────────────── */
 .theme-toggle {
@@ -2231,7 +2237,7 @@ html.light body { background:var(--bg); color:var(--tx); }
   transition:border .15s;}
 .pin-digit:focus{border-color:var(--gold);}
 .pin-status{font-size:12px;text-align:center;min-height:18px;margin-bottom:8px;}
-.pin-status.ok{color:var(--ok);}
+.pin-status.ok{color:var(--gold2);}
 .pin-status.er{color:var(--er);}
 .pin-status.info{color:var(--tx3);}
 .login-step{font-size:11px;color:var(--tx3);text-align:center;margin-bottom:14px;letter-spacing:.05em;}
@@ -2239,13 +2245,13 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .app{min-height:100vh;display:flex;flex-direction:column;}
 
 /* 헤더 */
-.hdr{padding:16px 24px;border-bottom:1px solid var(--bd2);background:rgba(13,20,33,0.94);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100;}
+.hdr{padding:16px 24px;border-bottom:1px solid var(--bd2);background:rgba(16,25,42,0.95);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100;}
 .hdr-left{display:flex;flex-direction:column;}
 .hdr-title{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--tx);}
 .hdr-sub{font-family:'Noto Serif KR',serif;font-size:13px;color:var(--gold);margin-top:3px;font-weight:600;letter-spacing:.01em;}
 .hdr-user{display:flex;align-items:center;gap:8px;}
 .uid-badge{font-size:12px;color:var(--tx2);background:var(--sf2);border:1px solid var(--bd);border-radius:14px;padding:4px 12px;}
-.logout-btn{font-size:11px;color:var(--tx3);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
+.logout-btn{font-size:11px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
 .logout-btn:hover{color:var(--er);}
 
 /* 탭 */
@@ -2260,11 +2266,11 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .card-title{font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.8px;}
 
 /* 로그인 */
-.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 0%,rgba(58,122,174,.07) 0%,transparent 60%);}
+.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 0%,rgba(46,98,130,.08) 0%,transparent 60%);}
 .login-box{width:100%;max-width:380px;}
 .login-header{text-align:center;margin-bottom:28px;}
-.login-logo{font-family:'Noto Serif KR',serif;font-size:24px;font-weight:700;color:var(--tx);margin-bottom:6px;}
-.login-title{font-family:'Noto Serif KR',serif;font-size:16px;color:var(--gold);font-weight:600;margin-bottom:6px;letter-spacing:.01em;}
+.login-logo{font-family:'Noto Serif KR',serif;font-size:29px;font-weight:900;color:var(--tx);margin-bottom:6px;letter-spacing:-.3px;}
+.login-title{font-family:'Noto Serif KR',serif;font-size:21px;color:var(--gold);font-weight:700;margin-bottom:6px;letter-spacing:.01em;}
 .login-desc{font-size:12px;color:var(--tx3);line-height:1.6;}
 .login-card{background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
 .login-label{font-size:12px;color:var(--tx2);margin-bottom:8px;}
@@ -2279,15 +2285,15 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 @media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
 
 .module-prog-text{font-size:11px;color:var(--muted);margin-top:3px;}
-.module-card.civ-proc{border:1px dashed rgba(121,192,255,.35);background:rgba(121,192,255,.03);}
-.module-card.civ-proc .module-accent{background:linear-gradient(135deg,#79c0ff,#388bfd);}
+.module-card.civ-proc{background:rgba(122,184,216,.1);border:1px solid rgba(122,184,216,.22);}
+.module-card.civ-proc .module-accent{display:none;}
 .module-card.civ-proc .soon-badge{background:rgba(121,192,255,.15);color:#79c0ff;border:1px solid rgba(121,192,255,.25);}
-.module-card{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:20px;cursor:pointer;transition:all .2s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15);}
-.module-card.active:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(58,122,174,.14);}
+.module-card{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:22px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.18);}
+.module-card.active:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(46,98,130,.2);}
 .module-card.soon{opacity:.55;cursor:not-allowed;}
 .module-card.soon:hover{transform:none;}
-.module-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
-.module-icon{font-size:24px;margin-bottom:10px;}
+.module-accent{display:none;}
+.module-icon{font-size:40px;margin-bottom:14px;color:var(--gold);line-height:1;}
 .module-name{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--tx);margin-bottom:3px;}
 .module-sub{font-size:11px;color:var(--tx3);margin-bottom:12px;}
 .module-stats{display:flex;gap:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;}
@@ -3096,7 +3102,7 @@ function App() {
       {/* 헤더 */}
       <div className="hdr">
         <div className="hdr-left">
-          <div className="hdr-title">📚 3000제 OX 퀴즈</div>
+          <div className="hdr-title">⚖︎ 3000제 OX 퀴즈</div>
           <div className="hdr-sub">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
         </div>
         <div className="hdr-user">
@@ -3892,7 +3898,7 @@ function LoginScreen({ onLogin }) {
     <div className="login-wrap">
       <div className="login-box">
         <div className="login-header">
-          <div className="login-logo">📚 3000제 OX 퀴즈</div>
+          <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
           <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
           <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
         </div>
