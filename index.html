@@ -2534,6 +2534,8 @@ function App() {
   const [adminUsers,  setAdminUsers]  = useState([]);
   const [adminSearch, setAdminSearch] = useState("");
   const [adminResult, setAdminResult] = useState(null);
+  const [adminFbs,    setAdminFbs]    = useState(null);  // null=미로드, {}=로드완료
+  const [adminFbLoad, setAdminFbLoad] = useState(false);
 
   // ── 테마 (dark / light)
   const [theme, setTheme] = React.useState(() => {
@@ -3626,6 +3628,60 @@ function App() {
             </div>
 
             {/* 수정 내역 */}
+
+            {/* 피드백 목록 */}
+            <div className="card" style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>💬 피드백 목록</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}}
+                  onClick={async()=>{
+                    setAdminFbLoad(true);
+                    const data = await loadAllFeedbacks();
+                    setAdminFbs(data);
+                    setAdminFbLoad(false);
+                  }}>
+                  {adminFbLoad ? "로딩중..." : adminFbs===null ? "📥 불러오기" : "🔄 새로고침"}
+                </button>
+                {adminFbs!==null && (
+                  <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+                    총 {Object.values(adminFbs).reduce((s,a)=>s+a.length,0)}건
+                  </span>
+                )}
+              </div>
+
+              {adminFbs===null && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  불러오기 버튼을 눌러 피드백을 확인하세요.
+                </div>
+              )}
+
+              {adminFbs!==null && Object.keys(adminFbs).length===0 && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  피드백이 없습니다.
+                </div>
+              )}
+
+              {adminFbs!==null && Object.entries(adminFbs).map(([mid, items])=>(
+                <div key={mid} style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",marginBottom:8,
+                    paddingBottom:4,borderBottom:"1px solid var(--bd)"}}>
+                    {MODULE_REGISTRY.find(m=>m.id===mid)?.label || mid} ({items.length}건)
+                  </div>
+                  {items.map((item,i)=>(
+                    <div key={i} className="fb-admin-item">
+                      <div className="fb-admin-meta">
+                        <span className="fb-admin-no">#{item.qid}</span>
+                        <span className="fb-admin-type">{item.type}</span>
+                        <span className="fb-admin-uid">👤 {item.uid}</span>
+                        <span className="fb-admin-date">{item.date||new Date(item.ts).toLocaleDateString("ko-KR")}</span>
+                      </div>
+                      <div className="fb-admin-body">{item.text}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
           </div>
         )}
 
