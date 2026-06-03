@@ -2172,8 +2172,8 @@ html.light .uid-badge{color:#d0ecfa;background:rgba(255,255,255,.12);border-colo
 html.light .module-card{background:#ffffff;box-shadow:none;border-color:#c0d8ec;}
 html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100,160,.12);}
 html.light .tc.done-tc{background:#fef8ee!important;border-color:#ddd0b5!important;}
-html.light .tc.done-tc .tc-prog-bar-fill{background:#70b4e0;}
-html.light .tc.done-tc .tc-prog-pct{color:#5a88a8;font-weight:600;}
+html.light .tc.done-tc .tc-prog-bar-fill{background:#94cce8;}
+html.light .tc.done-tc .tc-prog-pct{color:#80aac4;font-weight:600;}
 
 /* ── 테마 토글 버튼 ────────────────────────────────── */
 .theme-toggle {
@@ -2325,21 +2325,22 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .pill.star{border-color:var(--gold);color:var(--gold);}
 .pill.star.act{background:var(--gf);border-color:var(--gf);color:#fff;}
 .wrong-badge{font-size:10px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
+.pill.act .wrong-badge{background:rgba(240,70,60,.55);border-color:rgba(240,70,60,.8);color:#fff;font-weight:700;}
 .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:12px;}
 .tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;}
 .tc:hover{border-color:var(--gold);}
 .tc.act{border-color:var(--gold);background:rgba(106,171,200,.1);}
 .tc-icon{font-size:22px;margin-bottom:6px;color:var(--gold);}
 .tc-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px;}
-.tc-cnt{font-size:11px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;}
+.tc-cnt{font-size:11px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;font-weight:500;}
 .tc-wc{font-size:10px;color:var(--er);margin-top:2px;}
 .tc-prog-wrap{margin-top:auto;padding-top:8px;display:flex;align-items:center;gap:6px;}
 .tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
 .tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .3s;}
 .tc-prog-pct{font-size:12px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;min-width:34px;text-align:right;font-weight:400;}
 .tc.done-tc{border-color:var(--gold)!important;background:rgba(106,171,200,.18)!important;}
-.tc.done-tc .tc-prog-bar-fill{background:rgba(255,255,255,.85);}
-.tc.done-tc .tc-prog-pct{color:#ffffff;font-weight:600;}
+.tc.done-tc .tc-prog-bar-fill{background:rgba(200,230,248,.6);}
+.tc.done-tc .tc-prog-pct{color:rgba(200,230,248,.85);font-weight:600;}
 .start-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .start-btn{padding:12px 30px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
 .start-btn:hover{background:var(--gold);}
@@ -2415,11 +2416,12 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 /* 오답 아카이브 */
 .arch-filter-row{display:flex;gap:6px;margin-bottom:12px;}
 .arch-filter{padding:4px 12px;border-radius:14px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:12px;cursor:pointer;transition:all .12s;}
-.arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(212,168,83,.08);}
+.arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(212,168,83,.08);font-weight:700;border-width:2px;}
 .arch-filter.purple.act{border-color:var(--purple);color:var(--purple);background:rgba(188,140,255,.08);}
 .arch-filter.er.act{border-color:var(--er);color:var(--er);background:rgba(208,112,112,.12);}
-html.light .arch-filter.act{border-color:#c8b290;color:#7a6040;background:rgba(210,185,145,.15);}
+html.light .arch-filter.act{border-color:#c8b290;color:#7a6040;background:rgba(210,185,145,.15);font-weight:700;border-width:2px;}
 html.light .arch-filter.er.act{border-color:var(--er);color:var(--er);background:rgba(220,38,38,.1);}
+html.light .arch-filter.purple.act{border-color:var(--purple);color:var(--purple);background:rgba(180,142,255,.12);}
 .retry-btn{width:100%;padding:10px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:7px;color:var(--er);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .12s;}
 .retry-btn:hover{background:rgba(248,81,73,.2);}
 .retry-btn.mk{background:rgba(188,140,255,.1);border-color:rgba(188,140,255,.3);color:var(--purple);}
@@ -3513,7 +3515,7 @@ function App() {
                 <div key={r} style={{marginBottom:16,border:"1px solid rgba(200,178,148,.35)",borderRadius:7,padding:"12px 14px"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingBottom:7,borderBottom:"1px solid var(--bd2)"}}>
                     <span style={{fontSize:14,fontWeight:700,color:"var(--gold)",fontFamily:"'Noto Serif KR',serif"}}>{r}회독</span>
-                    <span style={{fontSize:11,color:"var(--tx3)",fontFamily:"'IBM Plex Mono',monospace",marginLeft:"auto"}}>오답 {wCnt(r)} · 헷갈림 {mCnt(r)}</span>
+                    <span style={{fontSize:11,color:"var(--tx2)",fontFamily:"'IBM Plex Mono',monospace",marginLeft:"auto",fontWeight:600}}>오답 {wCnt(r)} · 헷갈림 {mCnt(r)}</span>
                   </div>
                   <div className="arch-filter-row">
                     <button className={`arch-filter er ${archFilter==="wrong"?"act er":""}`} onClick={()=>setArchFilter("wrong")}>오답만</button>
