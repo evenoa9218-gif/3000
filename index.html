@@ -87,9 +87,8 @@ function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
   margin-bottom: 5px;
   font-family: 'IBM Plex Mono', monospace;
 }
-.loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #ffffff; font-family: serif; font-size: 18px; }
+.loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #7c9ef5; font-family: serif; font-size: 18px; }
 </style>
-<script>document.documentElement.classList.add("light");</script>
 <!-- deploy:1779798651 -->
 </head>
 <body>
@@ -1549,6 +1548,90 @@ const SS_EXAM_물권 = {
   "SS6":"25.06모-08","SS7":"25.08모-20","SS8":"25.10모-28","SS9":"25.10모-34","SS10":"25.06모-06","SS11":"25.08모-22","SS12":"25.06모-04","SS13":"25.10모-30","SS14":"25.10모-18","SS15":"25.08모-24","SS16":"25.06모-01","SS17":"25.06모-25","SS18":"25.10모-33","SS질권1":"25.06모-02","SS질권2":"25.08모-35","SS저당1":"25.06모-03","SS저당2":"25.08모-23","SS저당3":"25.08모-25","SS공동1":"25.10모-29","SS가등기":"25.10모-35"
 };
 
+const STAR_IDS_민소 = new Set(["002.③", "002.④", "002.⑤", "003.②", "003.③", "004.①", "004.②", "004.③", "004.④", "005.ㄹ", "006.①", "006.②", "007.①", "007.②", "007.③", "008.ㄴ", "009.ㄴ", "009.ㄷ", "009.ㄹ", "010.①", "010.④", "011.①", "011.③", "012.①", "013.ㄴ", "013.ㄷ", "013.ㄹ", "014.ㄷ", "015.ㄱ", "016.ㄱ", "016.ㄴ", "016.ㄷ", "017.②", "018.①", "기타민소02", "기타민소15", "기타민소24"]);
+
+const 민소법_RAW = [
+  // 서론,
+  ["001.①", "민사소송과 다른 소송과의 관계에 관한 설명 중 옳지 않은 것은?§비송사건이 민사소송의 방법으로 청구되었으나 법령의 규정상 비송사건임이 명확하지 않은 경우에, 수소법원은 당사자에게 석명을 구하여 비송사건으로 처리해 주기를 바라는 의도도 포함되어 있다면, 비송사건 신청으로 보아 재배당을 거쳐 비송사건으로 심리·판단하여야 하고 그 비송사건에 대한 토지관할이 없을 때에는 관할법원에 이송할 수 있다.", true, "▸ 비송사건을 민사소송 방법으로 청구하는 것은 불허되지만, 소송사건·비송사건 구별 항상 명확한 것은 아니어서 당사자가 비송사건임을 알기 어려운 경우 수소법원은 당사자에게 석명 구하여 소송절차뿐 아니라 비송사건으로 처리 바라는 의도도 포함되어 있음이 확인되면 소제기를 비송사건 신청으로 보아 재배당 등을 거쳐 비송사건으로 심리·판단, 비송사건 토지관할 없다면 관할법원 이송함이 타당 X [2020다238622]", "서론"],
+  ["001.②", "민사소송과 다른 소송과의 관계에 관한 설명 중 옳지 않은 것은?§가사소송법 제2조 제1항에 의하여 가사소송사건 또는 가사비송사건으로 규정된 경우에도 이혼을 원인으로 한 손해배상청구와 같이 그 성격이 민사사건인 경우에는 가정법원의 전속관할에 속하지 않는다.", false, "▸ 이혼 원인으로 한 손해배상청구는 제3자에 대한 청구를 포함하여 가사소송법 제2조 제1항 제1호 다목 2)에서 정한 다류 가사소송사건, 가정법원의 전속관할 [2013다101104]", "서론"],
+  ["001.③", "민사소송과 다른 소송과의 관계에 관한 설명 중 옳지 않은 것은?§민사재판에 있어서 확정된 형사판결에서 인정된 사실은 특별한 사정이 없는 한 유력한 증거자료가 된다.", true, "▸ 민사재판은 형사재판의 사실인정에 구속받지 않으나 동일한 사실관계에서 이미 확정된 형사판결이 유죄로 인정한 사실은 유력한 증거자료 O, 다른 증거들에 비춰 형사재판의 사실판단을 채용 어려운 특별한 사정 없는 한 반대사실 인정 불가 [2021다243430]", "서론"],
+  ["001.④", "민사소송과 다른 소송과의 관계에 관한 설명 중 옳지 않은 것은?§행정소송의 제소기간을 도과하여 행정소송사건을 민사소송으로 제기한 경우, 수소법원은 관할법원에 이송할 것이 아니라 각하하여야 한다.", true, "▸ [행정] [95다28960]", "서론"],
+  ["001.⑤", "민사소송과 다른 소송과의 관계에 관한 설명 중 옳지 않은 것은?§민사소송에서 행정처분의 당연무효 여부가 선결문제로 된 경우 수소법원이 이를 심리·판단할 수 있다.", true, "▸ [행정] [2009다90092]", "서론"],
+  // 신의성실의원칙,
+  ["002.①", "■보충 법원이 화해권고결정을 할 것인지는 당사자의 이익, 그 밖의 모든 사정을 참작하여 직권으로 행하는 것이지만, 청구권의 발생 자체는 명백함에도 신의칙 위반을 이유로 법원이 원고의 청구를 배척하는 판결을 하는 경우에 그 판결에 앞서 화해적 해결을 시도하지 않았다면 위법하다.", false, "▸ 민사소송절차에서 법원이 화해 권고나 화해권고결정을 할지 여부는 당사자 이익 기타 모든 사정 참작하여 직권으로 → 청구권의 발생 자체는 명백하지만 신의칙에 의해 배척할 경우 판결에 앞서 화해적 해결을 시도하지 않았더라도 위법하지 X [2008다78279]", "신의성실의원칙"],
+  ["002.②", "의료과오소송 계속 중 의사 측이 진료기록을 변조한 행위는, 그 변조이유에 대하여 상당하고도 합리적인 이유를 제시하지 못하는 한, 당사자 간의 공평의 원칙 또는 신의칙에 어긋나는 증명방해행위에 해당한다.", true, "▸ 의사가 진료기록을 변조한 행위는 공평·신의칙에 어긋나는 입증방해행위 → 법원은 이를 자료로 삼아 자유로운 심증에 따라 방해자에게 불리한 평가를 할 수 있을 뿐, 입증책임이 전환되거나 곧바로 주장 사실 증명된 것으로 보아야 하는 것은 X [98다9915]", "신의성실의원칙"],
+  ["002.③", "★ 제1심 법원이 제1차 변론준비기일에 부적법한 당사자표시정정신청을 받아들이고 피고가 이에 명시적으로 동의하여 제1심 및 항소심에서 본안판결이 선고된 경우, 그 후 피고가 위 표시정정신청이 부적법하다고 주장하는 것은 인정되지 아니한다.", true, "▸ 부적법한 표시정정신청에 대해 법원이 허용하고 피고도 동의하여 판결 선고되면 더 이상 상소 X ∵ 소송경제, 신의칙 [2008다11276]", "신의성실의원칙"],
+  ["002.④", "★ 민사소송상 신의칙에 반하는 것은 강행규정에 위배되는 것이므로 당사자의 주장이 없더라도 법원은 직권으로 판단할 수 있다.", true, "▸ 민사소송상의 신의칙 위반은 소송요건으로 직권조사사항이라는 것이 통설·판례", "신의성실의원칙"],
+  ["002.⑤", "★ 원고가 소권(항소권을 포함한다)을 남용하여 청구가 이유 없음이 명백한 소를 반복적으로 제기한 것에 대하여 법원이 변론 없이 판결로 소를 각하하는 경우에는 재판장은 직권으로 피고에 대하여 공시송달을 명할 수 있다.", true, "제194조(공시송달의 요건) ④ 원고가 소권(항소권을 포함한다)을 남용하여 청구가 이유 없음이 명백한 소를 반복적으로 제기한 것에 대하여 법원이 변론 없이 판결로 소를 각하하는 경우에는 재판장은 직권으로 피고에 대하여 공시송달을 명할 수 있다.", "신의성실의원칙"],
+  // 관할,
+  ["003.①", "아래 약정서에 따라 乙을 상대로 제기하는 소의 관할법원에 관한 설명 중 옳지 않은 것은?\n[약정서] 채권자 甲(서울 서초구 거주) / 채무자 乙(서울 송파구 거주)\n1. 乙은 甲에게 100,000,000원을 지급한다.\n2. 乙은 서울 강북구 소재 토지에 관하여 증여를 원인으로 한 소유권이전등기절차를 이행한다.§甲은 약정 사항 제1항과 제2항의 이행을 구하는 소를 乙의 주소지 관할법원에 제기할 수 있다.", true, "제2조(보통재판적) 소(訴)는 피고의 보통재판적이 있는 곳의 법원이 관할한다.\n▸ 피고 乙의 주소지(송파구)에 제기 가능 O", "관할"],
+  ["003.②", "아래 약정서에 따라 乙을 상대로 제기하는 소의 관할법원에 관한 설명 중 옳지 않은 것은?\n[약정서] 채권자 甲(서울 서초구 거주) / 채무자 乙(서울 송파구 거주)\n1. 乙은 甲에게 100,000,000원을 지급한다.\n2. 乙은 서울 강북구 소재 토지에 관하여 증여를 원인으로 한 소유권이전등기절차를 이행한다.§★ 甲은 약정 사항 제1항만의 이행을 구하는 소를 甲의 주소지 관할법원에 제기할 수 있다.", true, "제8조(거소지 또는 의무이행지의 특별재판적) 재산권에 관한 소를 제기하는 경우에는 거소지 또는 의무이행지의 법원에 제기할 수 있다.\n▸ 금전채무의 의무이행지는 채권자의 현주소지 → 甲의 주소지(서초구)에 제기 가능 O", "관할"],
+  ["003.③", "아래 약정서에 따라 乙을 상대로 제기하는 소의 관할법원에 관한 설명 중 옳지 않은 것은?\n[약정서] 채권자 甲(서울 서초구 거주) / 채무자 乙(서울 송파구 거주)\n1. 乙은 甲에게 100,000,000원을 지급한다.\n2. 乙은 서울 강북구 소재 토지에 관하여 증여를 원인으로 한 소유권이전등기절차를 이행한다.§★ 甲은 약정 사항 제2항만의 이행을 구하는 소를 甲의 주소지 관할법원에 제기할 수 없다.", true, "▸ 제2·3조에 따라 피고 乙의 주소지, 제20·21조에 따라 부동산 소재지(강북구)의 관할법원에는 제기할 수 있으나, 원고 甲의 주소지에 제기할 근거는 없음", "관할"],
+  ["004.①", "★ 지방법원 합의부가 지방법원 단독판사의 판결에 대한 항소사건을 제2심으로 심판하는 도중에 지방법원 합의부의 관할에 속하는 반소가 제기되더라도 이미 정하여진 항소심 관할에는 영향이 없다.", true, "▸ 단독사건을 지법 합의부가 항소심으로 심판하는 도중 합의부 관할 소송이 새로 추가·변경되거나 반소로 제기되어도 계속 심판함 ∵ 심급관할은 '제1심' 법원의 존재에 의하여 결정되는 전속관할 [92다2066]", "관할"],
+  ["004.②", "★ 피고가 제1심 법원에서 관할위반의 항변을 하지 않은 채 본안에 관한 답변서를 제출하고서 변론기일 또는 변론준비기일에 불출석함으로써 그 답변서가 진술간주된 경우에도 변론관할은 생긴다.", false, "▸ 불출석하여 그가 제출한 서면이 '진술간주'된 경우는 변론관할 X → 반드시 출석하여 현실적으로 변론·진술해야 변론관할 생김 [80마403]", "관할"],
+  ["004.③", "★ 당사자가 임의관할에 관한 전속적 합의를 하더라도 다른 법원에 변론관할이 생길 수 있다.", true, "▸ 전속적 관할합의는 전속관할 X, 임의관할 O → 법원은 공익상 필요에 의해 다른 법원 이송 O [2007마1328] → 전속적 관할합의를 위반해도 다른 법원에 변론관할 O", "관할"],
+  ["004.④", "★ 전속관할의 규정을 위반하더라도 이송결정이 확정되면 원칙적으로 기속력이 인정되지만, 심급관할위반의 이송결정을 한 경우에는 그 기속력이 이송 받은 상급심 법원에까지 미치지 아니한다.", true, "▸ 전속관할 위반한 이송결정도 기속력 O ∵ 이송결정 불복방법으로 즉시항고 마련, 이송 반복에 따른 소송지연 피할 공익적 요청 → 심급관할 위반 기속력은 상급심 구속 X\n∵ 심급의 이익, 이송된 법원이 대법원이라면 사실 주장·입증 기회 박탈 → 그러나 이송 받은 하급심은 구속 O ∵ 하급심·상급심 법원 간 반복 전전이송 불합리 결과 초래, 민사소송의 심급구조 [94마1059] → 상급심불구속설", "관할"],
+  ["005.ㄹ", "서울특별시 서초구에 사는 甲은 수원시에 사는 乙에게 甲 소유의 X토지(인천광역시 소재)를 대금 2억 원에 매도하였다. 甲이 乙을 상대로 매매대금과 지연손해금을 청구하는 소를 제기하였다.§★ 甲이 서울동부지방법원에 위 소를 제기하였는데, 乙이 관할위반의 항변을 하지 아니하고 매매계약의 효력을 다투는 답변서를 제출하여 그것이 진술간주된 경우, 서울동부지방법원은 관할권을 가진다.", false, "▸ 불출석하여 그가 제출한 서면이 '진술간주'된 경우는 변론관할 X → 반드시 출석하여 현실적으로 변론 및 진술을 해야 변론관할 생김 [80마403] → 설문에서 동부지법에는 관할 없고, '진술간주'라서 변론관할도 생기기 X", "관할"],
+  ["006.①", "★ ■보충 불법행위로 인한 손해배상과 관련하여 제기되는 채무부존재확인의 소는 불법행위지의 법원에 토지관할이 인정된다.", true, "▸ 불법행위로 인한 손해배상과 관련한 채무부존재확인소송은 제18조 불법행위지 근거한 토지관할 O [2011그65]", "관할"],
+  ["006.②", "★ 약속어음의 의무이행을 구하는 소송의 토지관할권은 지급지를 관할하는 법원에 있다.", true, "제9조(어음·수표 지급지의 특별재판적) 어음·수표에 관한 소를 제기하는 경우에는 지급지의 법원에 제기할 수 있다.", "관할"],
+  ["006.④", "■보충 영업에 관한 채무의 이행을 구하는 소는 제소 당시 채권 추심 관련 업무를 실제로 담당하는 채권자의 영업소 소재지 법원에 제기할 수 있다.", true, "▸ 민법 467조 2항의 '영업에 관한 채무'는 영업과 관련성 있는 채무 의미, '현영업소'는 변제 당시 기준 그 채무와 관련된 채권자의 영업소로서 주된 영업소(본점) 한정되지 않고 그 채권 추심 관련 업무를 실제로 담당하는 영업소 포함 O [2021마6868]", "관할"],
+  ["007.①", "★ 사무소나 영업소에 계속하여 근무하는 사람에 대한 소는 그 업무와 관련이 없더라도 근무지 관할법원에 제기할 수 있다.", true, "▸ 제7조", "관할"],
+  ["007.②", "★ 채권자가 수익자에 대하여 제기하는 사해행위의 취소 및 소유권이전등기의 말소등기청구의 소는 그 말소등기절차를 이행할 등기관서 소재지의 법원에 제기할 수 있다.", true, "▸ 채권자취소소송은 취소로 인해 형성되는 법률관계의 의무이행지 O, 원상회복이 등기말소라면 제21조에 따른 등기관서가 있는 곳 O → 취소 대상인 법률행위의 의무이행지 X [2002마1156]", "관할"],
+  ["007.③", "★ ■보충 불법행위의 가해행위지와 결과발생지가 다른 경우, 그 불법행위로 인한 손해배상책임에 대한 채무부존재확인의 소는 가해행위지나 결과발생지 관할법원에 제기할 수 있다.", true, "▸ 불법행위로 인한 손해배상과 관련한 채무부존재확인소송은 제18조 불법행위지 근거한 토지관할 O [2011그65]", "관할"],
+  ["007.④", "사무소 또는 영업소가 있는 사람이 그 사무소 또는 영업소의 업무와 관련이 있는 소를 제기하는 경우에는 그 사무소 또는 영업소가 있는 곳의 법원에 제기할 수 있다.", false, "제12조(사무소·영업소가 있는 곳의 특별재판적) 사무소 또는 영업소가 있는 사람에 대하여 그 사무소 또는 영업소의 업무와 관련이 있는 소를 제기하는 경우에는 그 사무소 또는 영업소가 있는 곳의 법원에 제기할 수 있다.\n▸ '사람에 대하여' 소를 제기하는 경우로서 그가 '피고'인 경우를 의미함 → 지문처럼 '원고'인 경우에는 틀린 지문", "관할"],
+  ["007.⑤", "동일한 교통사고에 기하여 수인의 피해자들이 가해자를 상대로 제기하는 손해배상청구의 소는 공동원고 중 1인의 청구에 대한 관할권이 있는 법원에 제기할 수 있다.", true, "제25조(관련재판적) ② 소송목적이 되는 권리나 의무가 여러 사람에게 공통되거나 사실상 또는 법률상 같은 원인으로 말미암아 그 여러 사람이 공동소송인으로서 당사자가 되는 경우에는 제1항의 규정을 준용한다.", "관할"],
+  ["008.ㄱ", "■보충 국제재판관할 합의의 유형이 분명하지 아니한 경우 그 합의로 정해진 관할은 전속적인 것으로 추정한다.", true, "국제사법 제8조(합의관할) ③ 합의로 정해진 관할은 전속적인 것으로 추정한다. [2022.1.4. 개정신설]", "관할"],
+  ["008.ㄴ", "★ 대출금채권의 채권자와 채무자 사이에 있었던 관할합의의 효력은 그 채권의 특정승계인에게 미친다.", true, "▸ 채권의 특정승계인(채권양수인)에게 관할합의 효력 O ∵ 관할합의는 권리행사의 조건이자 실체적 이해의 변경이므로 당사자가 자유롭게 권리관계 내용 결정하는 지명채권에서는 승계 O [2005마902]", "관할"],
+  ["009.ㄴ", "★ 특허권 등의 지식재산권에 관한 소를 제기하는 경우에는 민사소송법 제2조부터 제23조까지의 규정에 따른 관할법원 소재지를 관할하는 고등법원이 있는 곳의 지방법원의 전속관할로 한다.", true, "제24조(지식재산권 등에 관한 특별재판적) ② 특허등의 지식재산권에 관한 소를 제기하는 경우에는 제2조부터 제23조까지의 규정에 따른 관할법원 소재지를 관할하는 고등법원이 있는 곳의 지방법원의 전속관할로 한다. 다만, 서울고등법원이 있는 곳의 지방법원은 서울중앙지방법원으로 한정한다.\n▸ 전속관할임에도 심판편의 이송이 가능한 유일한 예외 규정임", "관할"],
+  ["009.ㄷ", "★ 원고가 사해행위취소의 소의 채권자인 경우 사해행위취소에 따른 원상회복으로서의 소유권이전등기 말소등기의무의 이행지는 원고의 주소지이다.", false, "▸ 채권자취소소송은 취소로 인해 형성되는 법률관계의 의무이행지 O, 원상회복이 등기말소라면 제21조에 따른 등기관서가 있는 곳 O → 취소 대상인 법률행위의 의무이행지 X, 원고의 주소지 X [2002마1156]", "관할"],
+  ["009.ㄹ", "★ 사무소 또는 영업소에 계속하여 근무하는 사람이 원고로서 소를 제기하는 경우에는 그 사무소 또는 영업소가 있는 곳을 관할하는 법원에 소를 제기할 수 있다.", false, "▸ '사람에 대하여' → 사무소·영업소 계속 근무자가 '원고'가 아니라 '피고'인 경우임", "관할"],
+  ["010.①", "★ 소송목적의 값이 5억 원을 초과하는 민사사건은 지방법원 및 지방법원지원의 합의부에서 제1심으로 심판한다.", true, "민사 및 가사소송의 사물관할에 관한 규칙 제2조(지방법원 및 그 지원 합의부의 심판범위) 지방법원 및 지방법원지원의 합의부는 소송목적의 값이 5억 원을 초과하는 민사사건을 제1심으로 심판한다. [개정 2022.1.28]\n▸ 당시 '2억 원'으로 출제되었으나 2022년 개정규칙에 맞추어 지문을 '5억 원'으로 변형함", "관할"],
+  ["010.④", "★ 근저당권설정자와 근저당권자 사이에 이루어진 관할합의의 효력은 근저당권 부담부의 소유권을 취득한 부동산 양수인에게 미친다.", false, "▸ 물권의 특정승계인에게는 관할합의의 효력 X → 근저당권설정자와 근저당권자 사이의 관할합의는 그 부동산 소유권의 양수인에게 효력 X [94마536]", "관할"],
+  ["011.①", "★ 甲이 乙, 丙, 丁을 공동피고로 하여 乙에 대하여는 3억 원의 대여금을, 丙에 대하여는 2억 원의 매매대금을, 丁에 대하여는 1억 원의 부당이득금을 각 청구하는 경우, 지방법원단독판사가 관할권을 갖는다.", false, "제27조(청구를 병합한 경우의 소송목적의 값) ① 하나의 소로 여러 개의 청구를 하는 경우에는 그 여러 청구의 값을 모두 합하여 소송목적의 값을 정한다.\n▸ 합산 6억 원 초과 → 합의부 관할 → 단독판사 관할 X", "관할"],
+  ["011.③", "★ 甲과 乙이 매매계약을 체결하면서 '이 매매계약과 관련된 제1심 소송은 부산지방법원만을 관할법원으로 한다'는 유효한 합의를 하였고, 그 후 甲이 乙을 상대로 위 매매계약에 기한 대금지급청구 소송을 부산지방법원에 제기한 경우, 부산지방법원은 현저한 손해나 지연을 피하기 위한 이송을 할 수 있다.", true, "▸ 전속적 관할합의는 전속관할 X, 임의관할 O → 법원은 공익상 필요에 의해 다른 법원 이송 O [2007마1328]", "관할"],
+  ["012.①", "甲과 乙은 '甲이 乙에게 X 부동산을 대금 10억 원에 매도한다'는 매매계약을 체결하면서, 각자의 의무이행기한에 대하여는 별도의 약정을 하지 않았다.§★ 甲과 乙이 이 사건 계약을 체결하면서 '이 사건 계약과 관련된 제1심 소송은 인천지방법원만을 관할법원으로 한다'는 유효한 합의를 하였고, 그 후 乙에 대한 매매대금 채권이 丙에게 양도되었는데, 丙의 주소지가 광주지방법원의 토지관할구역 내에 있는 경우, 丙은 광주지방법원에 乙을 상대로 매매대금(양수금)의 지급을 구하는 소를 제기할 수 없다.", false, "▸ 채권의 특정승계인(채권양수인)에게 관할합의 효력 O ∵ 관할합의는 권리행사의 조건이자 실체적 이해의 변경이므로 당사자가 자유롭게 권리관계 내용 결정하는 지명채권에서는 승계 O [2005마902]", "관할"],
+  ["기타민소15", "★ 관할에 관한 전속적 합의를 한 경우에는 당사자가 합의하지 아니한 법원으로 이송할 수 없다.", false, "▸ 전속적 관할합의는 전속관할 X, 임의관할 O → 법원은 공익상 필요에 의해 다른 법원 이송 O [2007마1328]", "관할"],
+  ["기타민소24", "★ 전속적 관할합의도 전속관할이므로 소송의 이송은 허용되지 않는다.", false, "▸ 전속적 관할합의는 전속관할 X, 임의관할 O → 법원은 공익상 필요에 의해 다른 법원 이송 O [2007마1328]", "관할"],
+  ["013.ㄴ", "★ 관할위반을 이유로 한 당사자의 이송신청은 단지 법원의 직권발동을 촉구하는 의미밖에 없으므로 이송신청 기각결정에 대하여는 즉시항고가 허용되지 않으나, 법원이 이송신청에 대하여 재판하지 않은 경우에는 재판에 영향을 미친 헌법위반이 있음을 이유로 한 특별항고가 허용된다.", false, "▸ 관할위반의 경우 당사자는 이송신청권 X → 법원이 이송 거부한 경우에도 당사자는 즉시항고권 X, 특별항고권 X → 재항고도 각하 [93마524]", "관할"],
+  ["013.ㄷ", "★ 당사자가 즉시항고를 하지 아니하여 이송결정이 확정된 경우, 전속관할의 규정을 위반한 이송결정이라고 하더라도 원칙적으로 기속력이 인정된다.", true, "▸ 전속관할 위반한 이송결정도 기속력 O ∵ 이송결정 불복방법으로 즉시항고 마련, 이송 반복에 따른 소송지연 피할 공익적 요청", "관할"],
+  ["013.ㄹ", "★ 심급관할을 위반한 이송결정의 기속력은 이송 받은 동일 심급의 법원과 하급심 법원에는 미치지만 상급심 법원에는 미치지 않는다.", true, "▸ 전속관할 위반한 이송결정도 기속력 O → 심급관할 위반 기속력은 상급심 구속 X\n∵ 심급의 이익, 이송된 법원이 대법원이라면 사실 주장·입증 기회 박탈 → 그러나 이송 받은 하급심은 구속 O ∵ 하급심·상급심 법원 간 반복 전전이송 불합리 결과 초래, 민사소송의 심급구조 [94마1059] → 상급심불구속설", "관할"],
+  ["014.ㄱ", "항소장이 항소제기 기간 내에 제1심 법원 이외의 법원에 제출되었다 하더라도 항소제기의 효력이 인정된다.", false, "▸ 항소기간 준수 여부는 항소장이 제1심 법원에 접수된 때를 기준으로 판단, 항소장이 항소기간 내에 제1심 법원 이외의 법원에 제출되었어도 항소제기 효력 X [92마146]", "관할"],
+  ["014.ㄷ", "★ 소송을 이송한 경우에 있어서 법률상 기간의 준수 여부는 소송이 이송된 때를 기준으로 하여야 한다.", false, "▸ 이송한 경우 법률상 기간 준수 여부는 이송된 때가 아닌 이송한 법원에 소가 제기된 때를 기준으로, 소멸시효 중단에 관하여도 동일 적용 [83다1981, 2007다54610]", "관할"],
+  ["015.ㄱ", "★ 지방법원 본원 합의부가 지방법원 단독판사의 판결에 대한 항소사건을 항소심으로 심판하는 도중에 소가가 1억 5천만 원에서 5억 5천만 원으로 변경되면 이 사건을 합의사건의 항소심인 고등법원으로 이송하여야 한다.", false, "▸ 단독사건을 지법 합의부가 항소심으로 심판하는 도중 합의부 관할 소송이 새로 추가·변경되거나 반소로 제기되어도 계속 심판함 ∵ 심급관할은 '제1심' 법원의 존재에 의하여 결정되는 전속관할 [92다2066]", "관할"],
+  ["016.ㄱ", "★ 지방법원 단독판사는 소송에 대하여 관할권이 있는 경우라도 상당하다고 인정하면 직권으로 소송의 전부 또는 일부를 같은 지방법원 합의부에 이송할 수 있으나, 당사자는 이러한 이송에 대해 신청권이 없다.", false, "제34조(관할위반 또는 재량에 따른 이송) ② 지방법원 단독판사는 소송에 대하여 관할권이 있는 경우라도 상당하다고 인정하면 직권 또는 당사자의 신청에 따른 결정으로 소송의 전부 또는 일부를 같은 지방법원 합의부에 이송할 수 있다.\n▸ 심판편의의 이송은 당사자에게 신청권 O (관할위반 이송의 경우 당사자의 신청권이 없는 것과 구별)", "관할"],
+  ["016.ㄴ", "★ 당사자가 관할위반을 이유로 이송신청을 한 경우, 법원이 그 신청에 따른 직권발동으로 이송결정을 한 경우에는 즉시항고가 허용되지만, 항고심에서 당초의 이송결정이 취소되었다 하더라도 이에 대한 신청인의 재항고는 허용되지 않는다.", true, "▸ 당사자 신청에 따른 직권발동으로 이송결정 → 즉시항고 O(39조) → 항고심에서 당초 이송결정 취소 시 최초의 이송 신청인은 재항고 X → 재항고 각하 [2017마1332]", "관할"],
+  ["016.ㄷ", "★ 지방법원 본원 합의부가 지방법원 단독판사의 판결에 대한 항소사건을 제2심으로 심판하는 도중에 지방법원 합의부의 관할에 속하는 소송이 새로 추가된 경우에는 지방법원 본원 합의부가 그 소송을 고등법원으로 이송하여야 한다.", false, "▸ 단독사건을 지법 합의부가 항소심으로 심판하는 도중 합의부 관할 소송이 새로 추가·변경되거나 반소로 제기되어도 계속 심판함 ∵ 심급관할은 '제1심' 법원의 존재에 의하여 결정되는 전속관할 [92다2066]", "관할"],
+  ["017.②", "★ 법원이 전속관할을 위반한 소에 관해 심리하다가 관할법원으로 이송하면 그때까지 한 심리는 권한 없는 법원이 한 것으로서 무효로 된다.", false, "제40조(이송의 효과) ① 이송결정이 확정된 때에는 소송은 처음부터 이송 받은 법원에 계속된 것으로 본다.\n▸ 소송계속의 이전 효과 → 소제기 당시 시효중단·기간준수 효력 유지", "관할"],
+  ["018.①", "★ 본소가 단독사건인 경우에 피고가 반소로 합의사건에 속하는 청구를 한 때에는 당사자는 관할위반을 이유로 본소와 반소를 합의부로 이송하여 달라는 신청을 할 수 있다.", true, "제269조(반소) ② 본소가 단독사건인 경우에 피고가 반소로 합의사건에 속하는 청구를 한 때에는 법원은 직권 또는 당사자의 신청에 따른 결정으로 본소와 반소를 합의부에 이송하여야 한다.\n▸ 이는 당사자가 관할위반을 이유로 이송을 신청할 수 있는 예외에 해당함", "관할"],
+  ["기타민소02", "★ 지방법원 단독판사는 소송에 대하여 관할권이 있는 경우라도 전속관할에 속하는 것이 아닌 한 상당하다고 인정하면 직권 또는 당사자의 신청에 따른 결정으로 소송의 전부 또는 일부를 같은 지방법원 합의부에 이송할 수 있다.", true, "제34조(관할위반 또는 재량에 따른 이송) ② 지방법원 단독판사는 소송에 대하여 관할권이 있는 경우라도 상당하다고 인정하면 직권 또는 당사자의 신청에 따른 결정으로 소송의 전부 또는 일부를 같은 지방법원 합의부에 이송할 수 있다.", "관할"]
+];
+
+const 민소법_DATA = 민소법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_민소.has(String(id))}));
+
+const EXAM_YEAR_민소 = {
+  // Part5 서론·관할
+  "001":"24.08모-53",
+  "002":"24변시-55",
+  "003":"24변시-53",
+  "004":"22변시-67",
+  "005":"21변시-54",
+  "006":"24.06모-53",
+  "007":"24.10모-53",
+  "008":"23.10모-54",
+  "009":"21.06모-38",
+  "010":"17.10모-36",
+  "011":"16.08모-38",
+  "012":"16.10모-38",
+  "013":"18변시-53",
+  "014":"24.06모-54",
+  "015":"23.06모-53",
+  "016":"21.06모-39",
+  "017":"19.10모-48",
+  "018":"18.08모-36"
+};
+
+const SS_EXAM_민소 = {};
+
 const STAR_IDS_민총 = new Set(["001.ㄴ", "001.ㄷ", "003.ㄷ", "004.①", "004.⑤", "005.①", "005.②", "006.ㄱ", "007.ㄱ", "007.ㄴ", "007.ㄷ", "008.①", "008.②", "008.④", "009.①", "009.②", "01", "010.ㄱ", "010.ㄴ", "011.ㄴ", "012.ㄱ", "013.④", "014.②", "014.③", "014.⑤", "015.②", "016.ㄷ", "017.ㄱ", "017.ㄴ", "017.ㄷ", "019.②", "020.②", "020.④", "020.⑤", "021.ㄱ", "022.ㄱ", "022.ㄹ", "023.③", "025.①", "026.ㄱ", "026.ㄴ", "027.ㄴ", "027.ㄷ", "027.ㄹ", "028.ㄴ", "030.③", "030.⑤", "031.ㄴ", "032.ㄴ", "033.③", "034.②", "035.ㄷ", "036.ㄴ", "037.①", "038.⑤", "039.①", "039.③", "040.④", "042.ㄹ", "043.⑤", "044.②", "044.③", "045.①", "045.③", "045.⑤", "046.ㄴ", "046.ㄷ", "047.ㄷ", "047.ㄹ", "048.①", "048.③", "048.④", "048.⑤", "049.ㄱ", "050.ㄹ", "052.ㄷ", "053.④", "054.④", "055.①", "055.②", "055.③", "055.⑤", "056.ㄱ", "056.ㄴ", "057.ㄱ", "058.④", "059.②", "061.③", "062.②", "063.ㄱ", "063.ㄴ", "063.ㄷ", "064.③", "064.⑤", "065.②", "065.③", "066.ㄴ", "066.ㄷ", "067.①", "067.③", "068.ㄱ", "068.ㄴ", "068.ㄷ", "069.①", "070.①", "071.ㄹ", "072.③", "073.⑤", "074.①", "075.①", "075.③", "076.③", "076.④", "077.④", "078.⑤", "079.ㄱ", "079.ㄷ", "081.①", "081.⑤", "082.ㄹ", "083.②", "083.④", "084.ㄷ", "085.①", "085.②", "086.ㄱ", "086.ㄷ", "087.ㄴ", "089.①", "090.ㄱ", "090.ㄴ", "091.ㄷ", "091.ㅁ", "092.①", "092.②", "092.③", "092.④", "092.⑤", "093.①", "093.②", "094.ㄷ", "095.②", "096.②", "096.③", "096.④", "096.⑤", "098.①", "098.②", "098.⑤", "099.ㄱ", "099.ㄷ", "099.ㄹ", "100.②", "100.③", "100.④", "102.ㄹ", "103.②", "104.ㄴ", "104.ㄹ", "105.④", "106.②", "107.②", "107.④", "108.③", "108.⑤", "109.ㄴ", "11", "110.⑤", "111.①", "111.④", "112.①", "112.②", "113.ㄴ", "115.③", "115.⑤", "116.ㄱ", "116.ㄴ", "117.④", "118.ㄱ", "120.④", "122.③", "123.⑤", "124.②", "125.ㄱ", "126.③", "127.ㄷ", "128.④", "129.ㄹ", "13", "SS1.ㄱ", "SS1.ㄴ", "SS1.ㄹ", "SS2.ㄷ", "SS대리1.②", "SS대리1.③", "SS대리1.⑤", "SS무효1.①", "SS무효1.②", "SS법인1.②", "SS법인1.④", "SS법인2.ㅂ", "SS소멸2.①", "SS소멸3.ㄱ", "SS소멸4.ㄱ", "SS의사1.ㄹ", "SS의사2.ㄷ"]);
 
 const 민법총칙_RAW = [
@@ -1921,46 +2004,6 @@ const MODULE_REGISTRY = [
     ],
     getData: () => 채권총론_DATA,
   },
-  { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"≡",
-    count: 채권각론_DATA.length, status:"active", color:"#3a80a8",
-    topics:[
-      {key:"계약의종류·성립",label:"계약의 종류·성립"},
-      {key:"동시이행의항변권",label:"동시이행의 항변권"},
-      {key:"위험부담",label:"위험부담"},
-      {key:"제3자를위한계약",label:"제3자를 위한 계약"},
-      {key:"해제",label:"해제"},
-      {key:"증여",label:"증여"},
-      {key:"매매일반효력",label:"매매 일반·효력"},
-      {key:"매도인의담보책임",label:"매도인의 담보책임"},
-      {key:"민법상임대차",label:"민법상 임대차"},
-      {key:"주택임대차보호법",label:"주택임대차보호법"},
-      {key:"상가건물임대차보호법",label:"상가건물 임대차보호법"},
-      {key:"도급",label:"도급"},
-      {key:"기타전형계약",label:"기타 전형계약"},
-      {key:"부당이득",label:"부당이득"},
-      {key:"일반불법행위",label:"일반 불법행위"},
-      {key:"특수불법행위",label:"특수 불법행위"},
-    ],
-    getData: () => 채권각론_DATA,
-  },
-  { id:"물권법", label:"물권법", subtitle:"민법 물권편", icon:"⌂︎",
-    count: 물권법_DATA.length, status:"active", color:"#3d8ab0",
-    topics:[
-      {key:"물권의소멸·소유권서론기타",label:"물권의 소멸·소유권 서론 기타"},
-      {key:"등기제도",label:"등기제도"},
-      {key:"점유권",label:"점유권"},
-      {key:"취득시효",label:"취득시효"},
-      {key:"명의신탁",label:"명의신탁"},
-      {key:"법정지상권",label:"법정지상권"},
-      {key:"전세권",label:"전세권"},
-      {key:"유치권",label:"유치권"},
-      {key:"질권",label:"질권"},
-      {key:"저당권",label:"저당권"},
-      {key:"공동저당·특수저당",label:"공동저당·특수저당"},
-      {key:"가등기담보법",label:"가등기담보 등에 관한 법률"},
-    ],
-    getData: () => 물권법_DATA,
-  },
   {
     id: "민법총칙",
     label: "민법총칙",
@@ -1985,7 +2028,55 @@ const MODULE_REGISTRY = [
     ],
     getData: () => 민법총칙_DATA,
   },
-  { id:"민사소송법", label:"민사소송법", subtitle:"민소법 핵심 판례", icon:"⚖︎", count:0, status:"soon", color:"#3878a0" },
+  { id:"물권법", label:"물권법", subtitle:"민법 물권편", icon:"⌂︎",
+    count: 물권법_DATA.length, status:"active", color:"#3d8ab0",
+    topics:[
+      {key:"물권의소멸·소유권서론기타",label:"물권의 소멸·소유권 서론 기타"},
+      {key:"등기제도",label:"등기제도"},
+      {key:"점유권",label:"점유권"},
+      {key:"취득시효",label:"취득시효"},
+      {key:"명의신탁",label:"명의신탁"},
+      {key:"법정지상권",label:"법정지상권"},
+      {key:"전세권",label:"전세권"},
+      {key:"유치권",label:"유치권"},
+      {key:"질권",label:"질권"},
+      {key:"저당권",label:"저당권"},
+      {key:"공동저당·특수저당",label:"공동저당·특수저당"},
+      {key:"가등기담보법",label:"가등기담보 등에 관한 법률"},
+    ],
+    getData: () => 물권법_DATA,
+  },
+  { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"≡",
+    count: 채권각론_DATA.length, status:"active", color:"#3a80a8",
+    topics:[
+      {key:"계약의종류·성립",label:"계약의 종류·성립"},
+      {key:"동시이행의항변권",label:"동시이행의 항변권"},
+      {key:"위험부담",label:"위험부담"},
+      {key:"제3자를위한계약",label:"제3자를 위한 계약"},
+      {key:"해제",label:"해제"},
+      {key:"증여",label:"증여"},
+      {key:"매매일반효력",label:"매매 일반·효력"},
+      {key:"매도인의담보책임",label:"매도인의 담보책임"},
+      {key:"민법상임대차",label:"민법상 임대차"},
+      {key:"주택임대차보호법",label:"주택임대차보호법"},
+      {key:"상가건물임대차보호법",label:"상가건물 임대차보호법"},
+      {key:"도급",label:"도급"},
+      {key:"기타전형계약",label:"기타 전형계약"},
+      {key:"부당이득",label:"부당이득"},
+      {key:"일반불법행위",label:"일반 불법행위"},
+      {key:"특수불법행위",label:"특수 불법행위"},
+    ],
+    getData: () => 채권각론_DATA,
+  },
+  { id:"민사소송법", label:"민사소송법", subtitle:"민소법 핵심 판례", icon:"⚖︎",
+    count: 민소법_DATA.length, status:"active", color:"#3878a0",
+    topics:[
+      {key:"서론",               label:"서론"},
+      {key:"신의성실의원칙",     label:"신의성실의 원칙"},
+      {key:"관할",               label:"관할·이송"},
+    ],
+    getData: () => 민소법_DATA,
+  },
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
@@ -2152,10 +2243,10 @@ const CSS = `
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#10192a;--sf:#172238;--sf2:#1d2d48;--bd:#284060;--bd2:#1e3254;
-  --gold:#6aabc8;--gold2:#84bcd8;--gf:#2a5c7a;--tx:#d0e8f6;--tx2:#90b4c8;--tx3:#5898b8;
-  --purple:#b48eff;--ok:#52a870;--er:#d07070;--er-bg:rgba(208,112,112,.08);
-  --ok:#52a870;--er:#d07070;--ok-bg:rgba(82,168,112,.08);--er-bg:rgba(208,112,112,.08);
-  --blue:#6aabc8;--purple:#b48eff;--muted:#5888a8;
+  --gold:#7ab8d8;--gold2:#9acce8;--gf:#2e6282;--tx:#cce6f8;--tx2:#6aa8cc;--tx3:#366078;
+  --purple:#b48eff;--ok:#4ade80;--er:#f87171;--er-bg:rgba(248,113,113,.08);
+  --ok:#4ade80;--er:#f87171;--ok-bg:rgba(74,222,128,.08);--er-bg:rgba(248,113,113,.08);
+  --blue:#7ab8d8;--purple:#b48eff;--muted:#366078;
 }
 
 /* ── 라이트 테마 ───────────────────────────────────── */
@@ -2168,13 +2259,9 @@ html.light body { background:var(--bg); color:var(--tx); }
 html.light .hdr-title{color:#ffffff;}
 html.light .hdr-sub{color:#a8d4f0;font-weight:600;}
 html.light .logout-btn{color:#b8d8f5;}
-html.light .uid-badge{color:#f0f8ff;background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.42);font-weight:500;}
+html.light .uid-badge{color:#d0ecfa;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
 html.light .module-card{background:#ffffff;box-shadow:none;border-color:#c0d8ec;}
 html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100,160,.12);}
-html.light .tc.done-tc{background:#fffaf0!important;border-color:#e8d8b8!important;}
-html.light .tc.done-tc.act{background:#f7fbfd!important;border-color:#a8cad8!important;border-width:2px;box-shadow:0 0 0 2px rgba(140,190,215,.28);}
-html.light .tc.done-tc .tc-prog-bar-fill{background:#b4e0f4;}
-html.light .tc.done-tc .tc-prog-pct{color:#9ac0d8;font-weight:600;}
 
 /* ── 테마 토글 버튼 ────────────────────────────────── */
 .theme-toggle {
@@ -2185,7 +2272,6 @@ html.light .tc.done-tc .tc-prog-pct{color:#9ac0d8;font-weight:600;}
   flex-shrink:0;
 }
 .theme-toggle:hover{background:var(--bd);border-color:var(--tx3);}
-html.light .theme-toggle{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18);}
 
 /* ── 허브 노티스 ───────────────────────────────────── */
 .hub-notice {
@@ -2257,19 +2343,19 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .hdr-sub{font-family:'Noto Serif KR',serif;font-size:13px;color:var(--gold);margin-top:3px;font-weight:600;letter-spacing:.01em;}
 .hdr-user{display:flex;align-items:center;gap:8px;}
 .uid-badge{font-size:12px;color:var(--tx2);background:var(--sf2);border:1px solid var(--bd);border-radius:14px;padding:4px 12px;}
-.logout-btn{font-size:13px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
+.logout-btn{font-size:11px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
 .logout-btn:hover{color:var(--er);}
 
 /* 탭 */
 .tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--bd2);background:var(--sf);overflow-x:auto;}
 .tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--tx3);cursor:pointer;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;white-space:nowrap;background:transparent;transition:all .15s;}
 .tab:hover{color:var(--tx2);}
-.tab.act{color:var(--gold);background:var(--sf);border-color:var(--bd);border-bottom-color:var(--sf);margin-bottom:-1px;font-weight:700;}
+.tab.act{color:var(--gold);background:var(--bg);border-color:var(--bd);border-bottom-color:var(--bg);margin-bottom:-1px;font-weight:700;}
 
 /* 메인 */
 .main{flex:1;padding:20px 16px;max-width:860px;margin:0 auto;width:100%;}
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:22px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
-.card-title{font-size:13px;font-weight:700;color:var(--tx2);margin-bottom:16px;text-transform:uppercase;letter-spacing:.8px;}
+.card-title{font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.8px;}
 
 /* 로그인 */
 .login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 0%,rgba(46,98,130,.08) 0%,transparent 60%);}
@@ -2290,7 +2376,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
 @media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
 
-.module-prog-text{font-size:13px;color:var(--muted);margin-top:3px;}
+.module-prog-text{font-size:11px;color:var(--muted);margin-top:3px;}
 .module-card.civ-proc{background:rgba(122,184,216,.1);border:1px solid rgba(122,184,216,.22);}
 .module-card.civ-proc .module-accent{display:none;}
 .module-card.civ-proc .soon-badge{background:rgba(121,192,255,.15);color:#79c0ff;border:1px solid rgba(121,192,255,.25);}
@@ -2301,13 +2387,13 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .module-accent{display:none;}
 .module-icon{font-size:40px;margin-bottom:14px;color:var(--gold);line-height:1;}
 .module-name{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--tx);margin-bottom:3px;}
-.module-sub{font-size:13px;color:var(--tx2);margin-bottom:12px;}
-.module-stats{display:flex;gap:8px;font-size:12px;font-family:system-ui,sans-serif;font-weight:600;flex-wrap:wrap;}
-.module-stat{padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2);}
-.module-stat.ok{color:var(--ok);border-color:rgba(82,168,112,.2);}
-.module-stat.er{color:var(--er);border-color:rgba(208,112,112,.2);}
-.module-stat.gold{color:var(--gold);border-color:rgba(106,171,200,.2);}
-.soon-badge{position:absolute;top:12px;right:12px;font-size:12px;padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx2);}
+.module-sub{font-size:11px;color:var(--tx3);margin-bottom:12px;}
+.module-stats{display:flex;gap:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;}
+.module-stat{padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
+.module-stat.ok{color:var(--ok);border-color:rgba(63,185,80,.2);}
+.module-stat.er{color:var(--er);border-color:rgba(248,81,73,.2);}
+.module-stat.gold{color:var(--gold);border-color:rgba(212,168,83,.2);}
+.soon-badge{position:absolute;top:12px;right:12px;font-size:10px;padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx3);}
 .module-bar{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:10px;}
 .module-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
 
@@ -2322,33 +2408,26 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .pill.red.act{background:rgba(248,81,73,.12);border-color:var(--er);}
 .pill.purple{border-color:rgba(188,140,255,.35);color:var(--purple);}
 .pill.purple.act{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple);}
-.cnt-badge{font-size:12px;opacity:.75;font-family:'IBM Plex Mono',monospace;}
-.star-badge{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--gold),var(--gf));border-radius:6px;padding:2px 7px;margin-right:6px;letter-spacing:.3px;}
-.pill.star{border-color:var(--gold);color:var(--gold);}
-.pill.star.act{background:var(--gf);border-color:var(--gf);color:#fff;}
-.wrong-badge{font-size:12px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
-.pill.act .wrong-badge{background:rgba(240,70,60,.55);border-color:rgba(240,70,60,.8);color:#fff;font-weight:700;}
+.cnt-badge{font-size:10px;opacity:.75;font-family:'IBM Plex Mono',monospace;}
+.star-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:6px;padding:2px 7px;margin-right:6px;letter-spacing:.3px;}
+.pill.star{border-color:#f59e0b;color:#f59e0b;}
+.pill.star.act{background:#f59e0b;color:#0d1117;}
+.wrong-badge{font-size:10px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
 .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:12px;}
-.tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;min-height:132px;}
+.tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;}
 .tc:hover{border-color:var(--gold);}
-.tc.act{border-color:var(--gold);background:rgba(106,171,200,.1);border-width:2px;box-shadow:0 0 0 2px rgba(106,171,200,.25);}
-.tc-icon{font-size:22px;margin-bottom:6px;color:var(--gold);}
-.tc-name{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px;}
-.tc-cnt{display:none;}
-.tc-cnt-sub{font-size:11.5px;color:var(--tx3);font-family:system-ui,sans-serif;font-weight:500;margin-bottom:4px;}
-.tc-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:2px;min-height:18px;}
-.tc-stat{display:inline-flex;align-items:center;font-size:10px;font-family:system-ui,sans-serif;font-weight:700;padding:1px 6px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2);white-space:nowrap;}
-.tc-stat.er{color:var(--er);background:rgba(195,90,90,.07);border-color:rgba(195,90,90,.22);}
-.tc-stat.mk{color:var(--purple);background:rgba(148,110,220,.07);border-color:rgba(148,110,220,.22);}
-.tc-wc{font-size:12px;color:var(--er);margin-top:2px;}
-.tc-prog-wrap{margin-top:auto;padding-top:8px;display:flex;align-items:center;gap:6px;}
+.tc.act{border-color:var(--gold);background:rgba(212,168,83,.1);}
+.tc-icon{font-size:16px;margin-bottom:4px;}
+.tc-name{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px;}
+.tc-cnt{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.tc-wc{font-size:10px;color:var(--er);margin-top:2px;}
+.tc-prog-wrap{margin-top:6px;display:flex;align-items:center;gap:6px;}
 .tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
-.tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .3s;}
-.tc-prog-pct{font-size:12px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;min-width:34px;text-align:right;font-weight:400;}
-.tc.done-tc{border-color:var(--gold)!important;background:rgba(106,171,200,.18)!important;}
-.tc.done-tc.act{background:rgba(106,171,200,.34)!important;border-color:var(--gold2)!important;box-shadow:0 0 0 2px rgba(106,171,200,.28);}
-.tc.done-tc .tc-prog-bar-fill{background:rgba(255,255,255,.75);}
-.tc.done-tc .tc-prog-pct{color:rgba(255,255,255,.85);font-weight:600;}
+.tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gf);transition:width .3s;}
+.tc-prog-pct{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;min-width:30px;text-align:right;}
+.tc.done-tc{border-color:var(--gold)!important;background:rgba(212,168,83,.12)!important;}
+.tc.done-tc .tc-prog-bar-fill{background:#4caf50;}
+.tc.done-tc .tc-prog-pct{color:#4caf50;font-weight:700;}
 .start-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .start-btn{padding:12px 30px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
 .start-btn:hover{background:var(--gold);}
@@ -2359,13 +2438,13 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 /* 진행 */
 .prog-wrap{margin-bottom:18px;}
 .prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
-.prog-label{font-size:13px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prog-label{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .prog-num{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
 .prog-num span{font-size:12px;color:var(--tx3);font-weight:400;}
 .prog-bar{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;}
 .prog-fill{height:100%;border-radius:2px;transition:width .3s;}
 .prog-stats{display:flex;gap:14px;margin-top:6px;}
-.ps{font-size:13px;color:var(--tx3);}
+.ps{font-size:11px;color:var(--tx3);}
 .ps strong{font-family:'IBM Plex Mono',monospace;}
 .ps.ok strong{color:var(--ok);}
 .ps.er strong{color:var(--er);}
@@ -2374,26 +2453,26 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 /* 퀴즈 카드 */
 .qcard{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:26px 22px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
 .qcard-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.qcard-no{font-size:13px;color:var(--tx2);font-family:'IBM Plex Mono',monospace;}
-.qcard-topic{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx2);}
-.question{font-family:'Noto Serif KR',serif;font-size:16px;font-weight:600;line-height:2.0;color:var(--tx);word-break:keep-all;}
+.qcard-no{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.qcard-topic{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
+.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;}
 .reveal{margin-top:18px;padding:14px 16px;border-radius:8px;animation:fi .2s ease;}
-.reveal.ok{background:var(--ok-bg);border:1px solid rgba(82,168,112,.25);}
-.reveal.er{background:var(--er-bg);border:1px solid rgba(208,112,112,.25);}
+.reveal.ok{background:var(--ok-bg);border:1px solid rgba(63,185,80,.3);}
+.reveal.er{background:var(--er-bg);border:1px solid rgba(248,81,73,.3);}
 .rv-label{font-size:18px;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:6px;}
 .reveal.ok .rv-label{color:var(--ok);}
 .reveal.er .rv-label{color:var(--er);}
 .rv-verdict{font-size:12px;font-weight:600;opacity:.8;}
-.rv-exp{font-size:16px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
+.rv-exp{font-size:14.5px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
 .rv-toggle{font-size:12px;color:var(--blue);cursor:pointer;margin-top:5px;display:inline-block;text-decoration:underline;text-underline-offset:2px;}
 .mark-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:20px;border:1px solid rgba(188,140,255,.4);background:transparent;color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .mark-btn:hover,.mark-btn.marked{background:rgba(188,140,255,.15);border-color:var(--purple);}
 .ox-row{display:flex;gap:10px;margin-top:16px;}
-.ox{flex:1;padding:18px 16px;border-radius:14px;border:2px solid transparent;font-size:38px;font-weight:700;cursor:pointer;transition:all .15s cubic-bezier(.2,.8,.2,1);background:var(--sf2);display:flex;align-items:center;justify-content:center;}
-.ox.o{border-color:transparent;color:var(--ok);}
-.ox.o:not(:disabled):hover{background:var(--ok-bg);border-color:transparent;transform:translateY(-2px);}
-.ox.x{border-color:transparent;color:var(--er);}
-.ox.x:not(:disabled):hover{background:var(--er-bg);border-color:transparent;transform:translateY(-2px);}
+.ox{flex:1;padding:16px;border-radius:14px;border:2px solid transparent;font-size:28px;font-weight:700;cursor:pointer;transition:all .15s cubic-bezier(.2,.8,.2,1);background:var(--sf2);}
+.ox.o{border-color:rgba(63,185,80,.3);color:var(--ok);}
+.ox.o:not(:disabled):hover{background:var(--ok-bg);border-color:var(--ok);transform:translateY(-2px);}
+.ox.x{border-color:rgba(248,81,73,.3);color:var(--er);}
+.ox.x:not(:disabled):hover{background:var(--er-bg);border-color:var(--er);transform:translateY(-2px);}
 .ox:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .ox.sel-o{background:var(--ok-bg);border-color:var(--ok);}
 .ox.sel-x{background:var(--er-bg);border-color:var(--er);}
@@ -2410,7 +2489,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .done-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px;}
 .ds{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:12px 6px;}
 .ds-n{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
-.ds-l{font-size:12px;color:var(--tx3);}
+.ds-l{font-size:10px;color:var(--tx3);}
 .ds.c .ds-n{color:var(--ok);}
 .ds.w .ds-n{color:var(--er);}
 .ds.r .ds-n{color:var(--gold);}
@@ -2424,27 +2503,19 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 /* 오답 아카이브 */
 .arch-filter-row{display:flex;gap:6px;margin-bottom:12px;}
 .arch-filter{padding:4px 12px;border-radius:14px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:12px;cursor:pointer;transition:all .12s;}
-.arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(212,168,83,.08);font-weight:700;border-width:2px;}
+.arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(212,168,83,.08);}
 .arch-filter.purple.act{border-color:var(--purple);color:var(--purple);background:rgba(188,140,255,.08);}
-.arch-filter.er.act{border-color:var(--er);color:var(--er);background:rgba(208,112,112,.12);}
-html.light .arch-filter.act{border-color:#e8d8b8;color:#7a6040;background:#fffaf0;font-weight:700;border-width:2px;}
-html.light .arch-filter.er.act{border-color:#b84848;color:#b84848;background:rgba(180,70,70,.1);}
-html.light .arch-filter.purple.act{border-color:#6858a8;color:#6858a8;background:rgba(110,90,175,.1);}
-.retry-btn{width:100%;padding:10px;background:rgba(195,90,90,.1);border:1px solid rgba(195,90,90,.28);border-radius:7px;color:var(--er);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .12s;}
-.retry-btn.all-btn{background:rgba(106,171,200,.15);border-color:var(--gold);color:var(--gold);}
-.retry-btn.all-btn:hover{background:rgba(106,171,200,.28);}
-html.light .retry-btn.all-btn{background:#fffaf0;border-color:#e8d8b8;color:#7a6040;}
-html.light .retry-btn.all-btn:hover{background:#f8edcc;}
+.retry-btn{width:100%;padding:10px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:7px;color:var(--er);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .12s;}
 .retry-btn:hover{background:rgba(248,81,73,.2);}
-.retry-btn.mk{background:rgba(148,110,220,.1);border-color:rgba(148,110,220,.28);color:var(--purple);}
-.retry-btn.mk:hover{background:rgba(148,110,220,.2);}
-.arch-item{background:var(--sf);border:1px solid var(--bd2);border-left:3px solid rgba(195,90,90,.8);border-radius:7px;padding:12px 14px;margin-bottom:7px;cursor:pointer;transition:all .12s;}
+.retry-btn.mk{background:rgba(188,140,255,.1);border-color:rgba(188,140,255,.3);color:var(--purple);}
+.retry-btn.mk:hover{background:rgba(188,140,255,.2);}
+.arch-item{background:var(--sf);border:1px solid var(--bd2);border-left:3px solid var(--er);border-radius:7px;padding:12px 14px;margin-bottom:7px;cursor:pointer;transition:all .12s;}
 .arch-item:hover{background:var(--sf2);}
 .arch-item.exp{border-left-color:var(--gold);}
 .arch-item.mk-item{border-left-color:var(--purple);}
-.arch-q{font-size:13px;font-weight:500;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;}
-.arch-ans{font-size:13px;color:var(--tx2);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
-.arch-tag{font-size:12px;color:var(--tx2);background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:1px 6px;display:inline-block;margin-top:4px;margin-right:4px;}
+.arch-q{font-size:13px;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;}
+.arch-ans{font-size:11px;color:var(--tx3);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
+.arch-tag{font-size:10px;color:var(--tx3);background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:1px 6px;display:inline-block;margin-top:4px;margin-right:4px;}
 .arch-tag.mk{border-color:rgba(188,140,255,.3);color:var(--purple);background:rgba(188,140,255,.08);}
 .arch-exp{font-size:14px;color:var(--tx2);margin-top:7px;padding-top:7px;border-top:1px solid var(--bd2);line-height:1.65;display:none;word-break:keep-all;}
 .arch-item.exp .arch-exp{display:block;}
@@ -2458,7 +2529,7 @@ html.light .retry-btn.all-btn:hover{background:#f8edcc;}
 .admin-stat.ok b{color:var(--ok);}
 .admin-stat.er b{color:var(--er);}
 .admin-stat.gold b{color:var(--gold);}
-.rst-btn{font-size:13px;color:var(--tx3);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
+.rst-btn{font-size:11px;color:var(--tx3);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
 .rst-btn:hover{color:var(--er);}
 
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
@@ -2475,14 +2546,14 @@ html.light .retry-btn.all-btn:hover{background:#f8edcc;}
 .arch-round-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
 .art{padding:5px 14px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .art:hover{border-color:var(--gold);color:var(--gold);}
-.art.act{background:var(--gold);border-color:var(--gold);color:#ffffff;}
-.art-cnt{font-size:12px;opacity:.75;margin-left:4px;font-family:'IBM Plex Mono',monospace;}
+.art.act{background:var(--gold);border-color:var(--gold);color:#0d1117;}
+.art-cnt{font-size:10px;opacity:.75;margin-left:4px;font-family:'IBM Plex Mono',monospace;}
 /* 관리자 */
 .admin-search{display:flex;gap:8px;margin-bottom:14px;}
 .admin-search input{flex:1;font-family:'Pretendard',sans-serif;font-size:13px;padding:9px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--sf2);color:var(--tx);outline:none;}
 .admin-search input:focus{border-color:var(--gold);}
 .admin-search button{padding:9px 16px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
-.admin-note{font-size:13px;color:var(--tx3);margin-bottom:10px;line-height:1.5;}
+.admin-note{font-size:11px;color:var(--tx3);margin-bottom:10px;line-height:1.5;}
 
 /* 인라인 편집 */
 .edit-save:hover{opacity:.85;}
@@ -2494,20 +2565,14 @@ html.light .retry-btn.all-btn:hover{background:#f8edcc;}
 
 // ── 헬퍼 ─────────────────────────────────────────────
 const TOPIC_ICONS = {
-  "계약의종류·성립":"§","동시이행의항변권":"⚖︎","위험부담":"⊗",
-  "제3자를위한계약":"⊕","해제":"↩","증여":"◇","매매일반효력":"≡",
-  "매도인의담보책임":"◎","민법상임대차":"⌂","주택임대차보호법":"⌂",
-  "상가건물임대차보호법":"□","도급":"◆","기타전형계약":"¶",
-  "사무관리":"◈","부당이득":"⊖","일반불법행위":"⊘","특수불법행위":"⊗",
-  "신의성실의원칙":"§","권리능력·행위능력":"○","부재와실종":"◇","법인":"□","권리능력없는사단":"⊙",
-  "물건":"◈","법률행위":"§","의사표시":"○","대리":"⊕","무효와취소":"↩","조건과기한":"○","소멸시효":"⊘",
-  "채권의목적":"⚖︎","채무불이행":"⊗","손해배상":"◎","채권자지체":"○",
-  "채권자대위권":"⇄","채권자취소권":"↩","채권양도":"⊕","채무인수":"⊕",
-  "변제":"⊖","변제자대위":"⇄","대물변제공탁경개면제혼동":"≡",
-  "상계":"⇄","서론분할불가분":"≡","연대채무":"⊕","부진정연대채무":"⊕","보증채무":"◎","15V":"⚖︎",
-  "물권의소멸·소유권서론기타":"§","등기제도":"□","점유권":"◎","취득시효":"⊘",
-  "명의신탁":"⊗","법정지상권":"⌂","전세권":"⌂","유치권":"◈","질권":"◆","저당권":"§",
-  "공동저당·특수저당":"§","가등기담보법":"§"};
+  "계약의종류·성립":"📝","동시이행의항변권":"⚖","위험부담":"⚠",
+  "제3자를위한계약":"🤝","해제":"🔓","증여":"🎁","매매일반효력":"🏷",
+  "매도인의담보책임":"🛡","민법상임대차":"🏠","주택임대차보호법":"🏡",
+  "상가건물임대차보호법":"🏢","도급":"🔨","기타전형계약":"📋",
+  "사무관리":"📂","부당이득":"💸","일반불법행위":"⚡","특수불법행위":"🚗",
+  "신의성실의원칙":"⚖","권리능력·행위능력":"👶","부재와실종":"🔍","법인":"🏛","권리능력없는사단":"👥",
+  "물건":"📦","법률행위":"📝","의사표시":"💬","대리":"🤝","무효와취소":"🔄","조건과기한":"⏳","소멸시효":"⌛",
+  "채권의목적":"⚖","채무불이행":"⚡","손해배상":"💰","채권자지체":"⏰","채권자대위권":"🔗","채권자취소권":"✂","채권양도":"📤","채무인수":"📥","변제":"✅","대물변제":"🔄","상계":"↔","분할·불가분채권관계":"🔀","연대채무":"👥","보증채무":"🛡"};
 
 // ── 메인 앱 ───────────────────────────────────────────
 function App() {
@@ -2572,7 +2637,7 @@ function App() {
 
   // ── 테마 (dark / light)
   const [theme, setTheme] = React.useState(() => {
-    return 'light';
+    try { return localStorage.getItem('quiz_theme') || 'dark'; } catch { return 'dark'; }
   });
   React.useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light');
@@ -2922,7 +2987,6 @@ function App() {
   const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
   const tCnt     = k => getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k).length;
   const tWrong   = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(wrongMap[r]||new Set()).has(q.id)).length;
-  const tMark    = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(markedMap[r]||new Set()).has(q.id)).length;
   const tProg    = (r,k) => { const all=getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k); const ans=(progMap[r]?.answered||new Set()); const done=all.filter(q=>ans.has(q.id)).length; return {done, total:all.length, pct:all.length?Math.round(done/all.length*100):0}; };
   const TOTAL    = getAll().length;
   const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
@@ -3130,7 +3194,7 @@ function App() {
       {/* 헤더 */}
       <div className="hdr">
         <div className="hdr-left">
-          <div className="hdr-title">⚒︎ 3000제 OX 퀴즈</div>
+          <div className="hdr-title">⚖︎ 3000제 OX 퀴즈</div>
           <div className="hdr-sub">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
         </div>
         <div className="hdr-user">
@@ -3194,6 +3258,7 @@ function App() {
                       {!isActive && <span className="soon-badge">준비중</span>}
                       <div className="module-icon">{mod.icon}</div>
                       <div className="module-name">{mod.label}</div>
+                      <div className="module-sub">{mod.subtitle}</div>
                       <div className="module-stats">
                         {isActive ? (
                           <>
@@ -3261,7 +3326,7 @@ function App() {
                   {cfgMode==="topic" && getMod()?.topics && (
                     <div className="topic-grid">
                       {getMod().topics.map(t=>{
-                        const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), mc=tMark(cfgRound,t.key), sel=cfgTopics.includes(t.key);
+                        const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), sel=cfgTopics.includes(t.key);
                         const icon = TOPIC_ICONS[t.key]||"📌";
                         const {done:tDone,total:tTotal,pct:tPct}=tProg(cfgRound,t.key);
                         const isAllDone = tPct===100;
@@ -3270,11 +3335,7 @@ function App() {
                             onClick={()=>setCfgTopics(p=>p.includes(t.key)?p.filter(x=>x!==t.key):[...p,t.key])}>
                             <div className="tc-icon">{icon}</div>
                             <div className="tc-name">{t.label}</div>
-                            <div className="tc-cnt-sub">{cnt}문제</div>
-                            <div className="tc-stats">
-                              {wc>0&&<span className="tc-stat er">오답 {wc}</span>}
-                              {mc>0&&<span className="tc-stat mk">헷갈 {mc}</span>}
-                            </div>
+                            <div className="tc-cnt">{cnt}문제 {wc>0&&<span style={{color:'var(--er)',marginLeft:4}}>오답 {wc}</span>}</div>
                             <div className="tc-prog-wrap">
                               <div className="tc-prog-bar-bg"><div className="tc-prog-bar-fill" style={{width:tPct+'%'}}></div></div>
                               <span className="tc-prog-pct">{tPct}%</span>
@@ -3333,12 +3394,11 @@ function App() {
                     <span className="qcard-no" style={{display:"flex",flexDirection:"column",gap:1}}>
                       {(() => {
                         const id = String(cur.id);
-                        const ssMatch = id.match(/^SS(\d+)\.(.+)$/);
-                        const v15Match = id.match(/^15V(\d+)\.(.+)$/);
+                        const ssMatch = id.match(/^SS([가-힣a-zA-Z]*\d+)\.(.+)$/);              const v15Match = id.match(/^15V(\d+)\.(.+)$/);
                         const numMatch = id.match(/^(\d+)\.(.+)$/);
                         if (ssMatch) {
                           const ssKey = "SS" + ssMatch[1];
-                          const ssYr = (activeModule === "채권각론" ? SS_EXAM_각론 : SS_EXAM)[ssKey] || ssKey;
+                          const ssYr = (activeModule === "채권각론" ? SS_EXAM_각론 : activeModule === "민법총칙" ? SS_EXAM_민총 : activeModule === "민사소송법" ? SS_EXAM_민소 : activeModule === "물권법" ? SS_EXAM_물권 : SS_EXAM)[ssKey] || ssKey;
                           return (<><span style={{color:"var(--blue)",fontWeight:600}}>{ssYr}</span><span>{id}</span></>);
                         }
                         if (v15Match) {
@@ -3346,13 +3406,13 @@ function App() {
                           return (<><span style={{color:"var(--red,#e05252)",fontWeight:600}}>{v15yr}</span><span>{`.${v15Match[2]}`}</span></>);
                         }
                         if (numMatch) {
-                          const yr = (activeModule === "채권각론" ? EXAM_YEAR_각론 : EXAM_YEAR)[numMatch[1].padStart(3,"0")] || "";
+                          const yr = (activeModule === "채권각론" ? EXAM_YEAR_각론 : activeModule === "민법총칙" ? EXAM_YEAR_민총 : activeModule === "민사소송법" ? EXAM_YEAR_민소 : activeModule === "물권법" ? EXAM_YEAR_물권 : EXAM_YEAR)[numMatch[1].padStart(3,"0")] || "";
                           return (<>{yr && <span style={{color:"var(--blue)",fontWeight:600}}>{yr}</span>}<span>{id}</span></>);
                         }
                         return <span>{id}</span>;
                       })()}
                     </span>
-                    {cur.star && <span className="star-badge">★ 중요</span>}
+                    {cur.star && <span className="star-badge">⭐ 중요</span>}
                     <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
                       💬 피드백
                     </button>
@@ -3447,8 +3507,8 @@ function App() {
                   </div>
                 )}
                 <div className="ox-row">
-                  <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>O</button>
-                  <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>X</button>
+                  <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>○</button>
+                  <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>✕</button>
                 </div>
                 {answered !== null && (
                   <button className="next-btn" onClick={handleNext}>{qidx+1<queue.length?"다음 문제 →":"결과 보기"}</button>
@@ -3511,7 +3571,7 @@ function App() {
                       ↺ {archRound}회독 헷갈림 {amCnt(archRound)}문제 풀기
                     </button>
                   )}
-                  <button className="retry-btn all-btn" style={{flex:1,margin:0}}
+                  <button className="retry-btn" style={{flex:1,margin:0,borderColor:"var(--gold)",color:"var(--gold)",background:"rgba(212,168,83,.08)"}}
                     onClick={()=>launchQuiz(archRound,"aw_all",[])}>
                     ↺ {archRound}회독 전체 ({awTotal(archRound)}문제)
                   </button>
@@ -3528,13 +3588,13 @@ function App() {
               const items = archItems(r);
               const wids = wrongMap[r]||new Set(), mids = markedMap[r]||new Set();
               return (
-                <div key={r} style={{marginBottom:16,border:"1px solid rgba(200,178,148,.35)",borderRadius:7,padding:"12px 14px"}}>
+                <div key={r} style={{marginBottom:26}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingBottom:7,borderBottom:"1px solid var(--bd2)"}}>
                     <span style={{fontSize:14,fontWeight:700,color:"var(--gold)",fontFamily:"'Noto Serif KR',serif"}}>{r}회독</span>
-                    <span style={{fontSize:11,color:"var(--tx2)",fontFamily:"'IBM Plex Mono',monospace",marginLeft:"auto",fontWeight:600}}>오답 {wCnt(r)} · 헷갈림 {mCnt(r)}</span>
+                    <span style={{fontSize:11,color:"var(--tx3)",fontFamily:"'IBM Plex Mono',monospace",marginLeft:"auto"}}>오답 {wCnt(r)} · 헷갈림 {mCnt(r)}</span>
                   </div>
                   <div className="arch-filter-row">
-                    <button className={`arch-filter er ${archFilter==="wrong"?"act er":""}`} onClick={()=>setArchFilter("wrong")}>오답만</button>
+                    <button className={`arch-filter ${archFilter==="wrong"?"act":""}`} onClick={()=>setArchFilter("wrong")}>오답만</button>
                     <button className={`arch-filter purple ${archFilter==="marked"?"act purple":""}`} onClick={()=>setArchFilter("marked")}>헷갈림만</button>
                     <button className={`arch-filter ${archFilter==="all"?"act":""}`} onClick={()=>setArchFilter("all")}>전체</button>
                   </div>
@@ -3549,7 +3609,7 @@ function App() {
                           <div key={q.id} className={`arch-item ${archExp[k]?"exp":""} ${isMk&&!isW?"mk-item":""}`}
                             onClick={()=>setArchExp(p=>({...p,[k]:!p[k]}))}>
                             <div className="arch-q">No.{q.id} {q.question}</div>
-                            {q.star && <span className="star-badge">★ 중요</span>}
+                            {q.star && <span className="star-badge">⭐ 중요</span>}
                             <div className="arch-ans">정답: {q.answer?"○ 옳은 지문":"× 틀린 지문"}</div>
                             <span className="arch-tag">{TOPIC_ICONS[q.topic]||"📌"} {getMod()?.topics.find(t=>t.key===q.topic)?.label||q.topic}</span>
                             {isW&&<span className="arch-tag">오답</span>}
@@ -3929,7 +3989,7 @@ function LoginScreen({ onLogin }) {
     <div className="login-wrap">
       <div className="login-box">
         <div className="login-header">
-          <div className="login-logo">⚒︎ 3000제 OX 퀴즈</div>
+          <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
           <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
           <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
         </div>
