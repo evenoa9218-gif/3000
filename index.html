@@ -4878,12 +4878,15 @@ function LoginScreen({ onLogin }) {
     }
   };
 
+  const bgVideos = ["bg.mp4", "bg2.mp4"];
+  const [bgSrc] = React.useState(() => bgVideos[Math.floor(Math.random() * bgVideos.length)]);
+
   return (
     <React.Fragment>
       {/* 비디오 배경 */}
       <div className="login-scene">
-        <video autoPlay muted loop playsInline>
-          <source src="bg.mp4" type="video/mp4" />
+        <video key={bgSrc} autoPlay muted loop playsInline>
+          <source src={bgSrc} type="video/mp4" />
         </video>
       </div>
 
