@@ -3232,33 +3232,35 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
   width:100%;box-sizing:border-box;
   font-family:'Pretendard',sans-serif;font-size:15px;
   padding:11px 15px;
-  border:1px solid rgba(255,255,255,.35);
+  border:1px solid rgba(255,255,255,.55);
   border-radius:12px;outline:none;
   background:rgba(255,255,255,.1);
   color:#fff;margin-bottom:10px;transition:all .18s;
+  box-shadow:0 0 8px rgba(180,210,255,.2);
 }
 .login-input::placeholder{color:rgba(200,220,255,.55);}
-.login-input:focus{border-color:rgba(130,190,255,.7);background:rgba(255,255,255,.15);box-shadow:0 0 0 3px rgba(100,160,255,.15);}
+.login-input:focus{border-color:rgba(130,190,255,.9);background:rgba(255,255,255,.15);box-shadow:0 0 0 3px rgba(100,160,255,.15),0 0 12px rgba(130,190,255,.35);}
 .pin-digit{
   width:52px;height:58px;
-  border:1.5px solid rgba(255,255,255,.35);border-radius:12px;
+  border:1px solid rgba(255,255,255,.55);border-radius:12px;
   background:rgba(255,255,255,.1);
   color:#fff;font-size:22px;font-weight:700;
   text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;
   transition:border .15s, box-shadow .15s;
+  box-shadow:0 0 8px rgba(180,210,255,.2);
 }
-.pin-digit:focus{border-color:rgba(130,190,255,.7);box-shadow:0 0 0 3px rgba(100,160,255,.15);}
+.pin-digit:focus{border-color:rgba(130,190,255,.9);box-shadow:0 0 0 3px rgba(100,160,255,.15),0 0 12px rgba(130,190,255,.35);}
 .login-btn{
   width:100%;padding:13px;
-  background:rgba(100,160,255,.18);
-  color:#fff;border:1px solid rgba(140,190,255,.35);border-radius:12px;
+  background:rgba(100,160,255,.35);
+  color:#fff;border:1px solid rgba(140,190,255,.7);border-radius:12px;
   font-size:14px;font-weight:700;cursor:pointer;
   transition:all .18s;
-  box-shadow:0 4px 16px rgba(60,120,255,.2);
+  box-shadow:0 0 12px rgba(100,160,255,.4),0 4px 16px rgba(60,120,255,.25);
   letter-spacing:.04em;
 }
-.login-btn:hover{background:rgba(100,160,255,.32);border-color:rgba(160,210,255,.5);transform:translateY(-1px);box-shadow:0 8px 24px rgba(60,120,255,.3);}
-.login-btn:active{transform:translateY(0);box-shadow:0 3px 10px rgba(60,120,255,.2);}
+.login-btn:hover{background:rgba(100,160,255,.5);border-color:rgba(180,220,255,.85);transform:translateY(-1px);box-shadow:0 0 18px rgba(100,160,255,.55),0 8px 24px rgba(60,120,255,.3);}
+.login-btn:active{transform:translateY(0);box-shadow:0 0 8px rgba(100,160,255,.3);}
 .login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .login-hint{font-size:12px;color:rgba(230,240,255,.9);text-align:center;margin-top:10px;line-height:1.6;text-shadow:0 1px 5px rgba(0,0,0,.9);}
 
@@ -4893,7 +4895,6 @@ function LoginScreen({ onLogin }) {
           <div className="login-header">
             <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
             <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
-            <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
           </div>
           <div className="login-card">
             {/* 아이디 입력 */}
@@ -4922,8 +4923,10 @@ function LoginScreen({ onLogin }) {
               {loading ? "처리 중..." : "로그인"}
             </button>
 
-            <div className="login-hint" style={{marginTop:12}}>
-              처음 사용하는 아이디는 자동으로 계정이 생성됩니다. PIN을 잊으셨으면 관리자에게 문의해주세요.
+            <div className="login-hint" style={{marginTop:14}}>
+              아이디 + PIN으로 어느 기기에서든 학습 기록이 이어집니다.<br/>
+              <br/>
+              처음 사용하는 아이디는 자동으로 계정이 생성됩니다.
             </div>
           </div>
         </div>
