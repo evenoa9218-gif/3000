@@ -3252,16 +3252,17 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .pin-digit:focus{border-color:rgba(130,190,255,.7);box-shadow:0 0 0 3px rgba(100,160,255,.15);}
 .login-btn{
   width:100%;padding:13px;
-  background:linear-gradient(135deg,rgba(60,130,220,.85) 0%,rgba(40,100,190,.9) 100%);
-  color:#fff;border:none;border-radius:12px;
+  background:rgba(100,160,255,.18);
+  color:#fff;border:1px solid rgba(140,190,255,.35);border-radius:12px;
   font-size:14px;font-weight:700;cursor:pointer;
   transition:all .18s;
-  box-shadow:0 4px 16px rgba(30,80,180,.35);
-  backdrop-filter:blur(4px);
+  box-shadow:0 4px 16px rgba(60,120,255,.2);
+  backdrop-filter:blur(8px);
+  letter-spacing:.04em;
 }
-.login-btn:hover{background:linear-gradient(135deg,rgba(80,155,240,.9) 0%,rgba(55,120,210,.95) 100%);transform:translateY(-1px);box-shadow:0 8px 24px rgba(30,80,180,.45);}
-.login-btn:active{transform:translateY(0);box-shadow:0 3px 10px rgba(30,80,180,.3);}
-.login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.login-btn:hover{background:rgba(100,160,255,.32);border-color:rgba(160,210,255,.5);transform:translateY(-1px);box-shadow:0 8px 24px rgba(60,120,255,.3);}
+.login-btn:active{transform:translateY(0);box-shadow:0 3px 10px rgba(60,120,255,.2);}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .login-hint{font-size:12px;color:rgba(210,225,255,.75);text-align:center;margin-top:10px;line-height:1.6;}
 
 /* 허브 모듈 그리드 */
