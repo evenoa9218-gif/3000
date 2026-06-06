@@ -67,7 +67,7 @@ const fbPath = {
 function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
 </script>
 <style>
-  body { margin: 0; background: #0f1117; }
+  body { margin: 0; background: #020608; }
   #root { min-height: 100vh; }
   .fact-box {
   background: rgba(212,168,83,0.10);
@@ -3210,20 +3210,59 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:22px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
 .card-title{font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.8px;}
 
-/* 로그인 */
-.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 0%,rgba(46,98,130,.08) 0%,transparent 60%);}
-.login-box{width:100%;max-width:380px;}
-.login-header{text-align:center;margin-bottom:28px;}
-.login-logo{font-family:'Noto Serif KR',serif;font-size:29px;font-weight:900;color:var(--tx);margin-bottom:6px;letter-spacing:-.3px;}
-.login-title{font-family:'Noto Serif KR',serif;font-size:21px;color:var(--gold);font-weight:700;margin-bottom:6px;letter-spacing:.01em;}
-.login-desc{font-size:12px;color:var(--tx3);line-height:1.6;}
-.login-card{background:var(--sf);border:1px solid var(--bd);border-radius:20px;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
-.login-label{font-size:12px;color:var(--tx2);margin-bottom:8px;}
-.login-input{width:100%;font-family:'Pretendard',sans-serif;font-size:14px;padding:12px 16px;border:1px solid var(--bd);border-radius:12px;outline:none;background:var(--sf2);color:var(--tx);margin-bottom:10px;transition:all .15s;}
-.login-input:focus{border-color:var(--gold);}
-.login-btn{width:100%;padding:14px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
-.login-btn:hover{background:var(--gold);transform:translateY(-1px);box-shadow:0 6px 20px rgba(58,122,174,.2);}
-.login-hint{font-size:11px;color:var(--tx3);text-align:center;margin-top:10px;}
+/* 로그인 - 비디오 배경 + 글래스모피즘 */
+.login-scene{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.login-scene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.login-scene::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(4,12,28,.55) 0%,rgba(8,20,45,.45) 50%,rgba(2,8,20,.6) 100%);}
+.login-wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-box{width:100%;max-width:400px;}
+.login-header{text-align:center;margin-bottom:24px;}
+.login-logo{font-family:'Noto Serif KR',serif;font-size:30px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-.3px;text-shadow:0 2px 12px rgba(0,0,0,.5);}
+.login-title{font-family:'Noto Serif KR',serif;font-size:14px;color:rgba(200,220,255,.75);font-weight:500;margin-bottom:4px;letter-spacing:.06em;}
+.login-desc{font-size:12px;color:rgba(180,205,240,.55);line-height:1.6;}
+.login-card{
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(22px) saturate(1.4);
+  -webkit-backdrop-filter:blur(22px) saturate(1.4);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:22px;
+  padding:30px 28px;
+  box-shadow:0 8px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.login-label{font-size:12px;color:rgba(200,220,255,.7);margin-bottom:6px;letter-spacing:.03em;}
+.login-input{
+  width:100%;box-sizing:border-box;
+  font-family:'Pretendard',sans-serif;font-size:14px;
+  padding:11px 15px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;outline:none;
+  background:rgba(255,255,255,.09);
+  color:#fff;margin-bottom:10px;transition:all .18s;
+}
+.login-input::placeholder{color:rgba(180,205,240,.38);}
+.login-input:focus{border-color:rgba(130,190,255,.6);background:rgba(255,255,255,.14);box-shadow:0 0 0 3px rgba(100,160,255,.15);}
+.pin-digit{
+  width:52px;height:58px;
+  border:1.5px solid rgba(255,255,255,.18);border-radius:12px;
+  background:rgba(255,255,255,.09);
+  color:#fff;font-size:22px;font-weight:700;
+  text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;
+  transition:border .15s, box-shadow .15s;
+}
+.pin-digit:focus{border-color:rgba(130,190,255,.7);box-shadow:0 0 0 3px rgba(100,160,255,.15);}
+.login-btn{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,rgba(60,130,220,.85) 0%,rgba(40,100,190,.9) 100%);
+  color:#fff;border:none;border-radius:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .18s;
+  box-shadow:0 4px 16px rgba(30,80,180,.35);
+  backdrop-filter:blur(4px);
+}
+.login-btn:hover{background:linear-gradient(135deg,rgba(80,155,240,.9) 0%,rgba(55,120,210,.95) 100%);transform:translateY(-1px);box-shadow:0 8px 24px rgba(30,80,180,.45);}
+.login-btn:active{transform:translateY(0);box-shadow:0 3px 10px rgba(30,80,180,.3);}
+.login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.login-hint{font-size:11px;color:rgba(180,205,240,.45);text-align:center;margin-top:10px;line-height:1.5;}
 
 /* 허브 모듈 그리드 */
 .hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
@@ -4839,46 +4878,56 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div className="login-wrap">
-      <div className="login-box">
-        <div className="login-header">
-          <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
-          <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
-          <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
-        </div>
-        <div className="login-card">
-          {/* 아이디 입력 */}
-          <div className="login-label">아이디</div>
-          <input className="login-input" value={uid}
-            placeholder="한글/영문/숫자 20자 이내"
-            onChange={e=>{ setUid(e.target.value); setStatus({msg:"",type:"info"}); }}
-            onKeyDown={e=>{ if(e.key==="Enter") pinRefs[0].current?.focus(); }}
-            autoFocus />
+    <React.Fragment>
+      {/* 비디오 배경 */}
+      <div className="login-scene">
+        <video autoPlay muted loop playsInline>
+          <source src="bg.mp4" type="video/mp4" />
+        </video>
+      </div>
 
-          {/* PIN 입력 */}
-          <div className="login-label" style={{marginTop:4}}>
-            PIN {step==="pin_new" ? <span style={{color:"var(--tx3)",fontWeight:400}}>(신규 — 4자리 숫자 설정)</span> : ""}
+      {/* 로그인 폼 */}
+      <div className="login-wrap">
+        <div className="login-box">
+          <div className="login-header">
+            <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
+            <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
+            <div className="login-desc">아이디 + PIN으로 어느 기기에서든<br/>학습 기록이 이어집니다.</div>
           </div>
-          <div className="pin-row" style={{marginTop:4}}>
-            {[0,1,2,3].map(i=>(
-              <input key={i} ref={pinRefs[i]}
-                className="pin-digit" type="password"
-                maxLength={1} value={pin[i]}
-                onChange={e=>handlePinInput(i, e.target.value)}
-                onKeyDown={e=>handlePinKey(i,e)} />
-            ))}
-          </div>
-          <div className={`pin-status ${status.type}`}>{status.msg}</div>
-          <button className="login-btn" onClick={handleUnifiedLogin} disabled={loading}>
-            {loading ? "처리 중..." : "로그인"}
-          </button>
+          <div className="login-card">
+            {/* 아이디 입력 */}
+            <div className="login-label">아이디</div>
+            <input className="login-input" value={uid}
+              placeholder="한글/영문/숫자 20자 이내"
+              onChange={e=>{ setUid(e.target.value); setStatus({msg:"",type:"info"}); }}
+              onKeyDown={e=>{ if(e.key==="Enter") pinRefs[0].current?.focus(); }}
+              autoFocus />
 
-          <div className="login-hint" style={{marginTop:12}}>
-            처음 사용하는 아이디는 자동으로 계정이 생성됩니다. PIN을 잊으셨으면 관리자에게 문의해주세요.
+            {/* PIN 입력 */}
+            <div className="login-label" style={{marginTop:4}}>
+              PIN {step==="pin_new" ? <span style={{color:"rgba(180,205,240,.6)",fontWeight:400}}>(신규 — 4자리 숫자 설정)</span> : ""}
+            </div>
+            <div className="pin-row" style={{marginTop:4}}>
+              {[0,1,2,3].map(i=>(
+                <input key={i} ref={pinRefs[i]}
+                  className="pin-digit" type="password"
+                  maxLength={1} value={pin[i]}
+                  onChange={e=>handlePinInput(i, e.target.value)}
+                  onKeyDown={e=>handlePinKey(i,e)} />
+              ))}
+            </div>
+            <div className={`pin-status ${status.type}`} style={{color: status.type==="ok"?"rgba(120,200,120,.9)":status.type==="er"?"rgba(255,100,100,.9)":"rgba(180,205,240,.5)"}}>{status.msg}</div>
+            <button className="login-btn" onClick={handleUnifiedLogin} disabled={loading}>
+              {loading ? "처리 중..." : "로그인"}
+            </button>
+
+            <div className="login-hint" style={{marginTop:12}}>
+              처음 사용하는 아이디는 자동으로 계정이 생성됩니다. PIN을 잊으셨으면 관리자에게 문의해주세요.
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </React.Fragment>
   );
 }
 
