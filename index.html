@@ -3490,7 +3490,7 @@ function App() {
 
   // ── 테마 (dark / light)
   const [theme, setTheme] = React.useState(() => {
-    try { return localStorage.getItem('quiz_theme') || 'dark'; } catch { return 'dark'; }
+    try { return localStorage.getItem('quiz_theme') || 'light'; } catch { return 'light'; }
   });
   React.useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light');
