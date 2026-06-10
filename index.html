@@ -5130,7 +5130,7 @@ function LoginScreen({ onLogin }) {
     <React.Fragment>
       {/* 비디오 배경 */}
       <div className="login-scene">
-        <video key={bgSrc} autoPlay muted loop playsInline>
+        <video key={bgSrc} autoPlay muted loop playsInline preload="auto">
           <source src={bgSrc} type="video/mp4" />
         </video>
       </div>
