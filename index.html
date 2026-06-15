@@ -3805,13 +3805,11 @@ function App() {
       const safeId = id.replace(/[.#$\[\]]/g, '_');
       try {
         const existing = await fb.get(`users/${safeId}/info`);
-        if (existing) {
-          await fb.set(`users/${safeId}/info`, {
-            ...existing,
-            lastSeen: Date.now(),
-            lastDate: new Date().toLocaleDateString('ko-KR')
-          });
-        }
+        await fb.set(`users/${safeId}/info`, {
+          ...(existing || { id }),
+          lastSeen: Date.now(),
+          lastDate: new Date().toLocaleDateString('ko-KR')
+        });
       } catch {}
       await sw(K_UTIME(id), Date.now());
     }
