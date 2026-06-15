@@ -3805,13 +3805,11 @@ function App() {
       const safeId = id.replace(/[.#$\[\]]/g, '_');
       try {
         const existing = await fb.get(`users/${safeId}/info`);
-        if (existing) {
-          await fb.set(`users/${safeId}/info`, {
-            ...existing,
-            lastSeen: Date.now(),
-            lastDate: new Date().toLocaleDateString('ko-KR')
-          });
-        }
+        await fb.set(`users/${safeId}/info`, {
+          ...(existing || { id }),
+          lastSeen: Date.now(),
+          lastDate: new Date().toLocaleDateString('ko-KR')
+        });
       } catch {}
       await sw(K_UTIME(id), Date.now());
     }
@@ -5123,14 +5121,14 @@ function LoginScreen({ onLogin }) {
     }
   };
 
-  const bgVideos = ["bg.mp4","bg2.mp4","bg4.mp4","bg5.mp4","bg7.mp4","bg8.mp4","bg9.mp4","bg11.mp4","bg12.mp4","bg13.mp4","bg14.mp4"];
+  const bgVideos = ["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
   const [bgSrc] = React.useState(() => bgVideos[Math.floor(Math.random() * bgVideos.length)]);
 
   return (
     <React.Fragment>
       {/* 비디오 배경 */}
       <div className="login-scene">
-        <video key={bgSrc} autoPlay muted loop playsInline>
+        <video key={bgSrc} autoPlay muted loop playsInline preload="auto">
           <source src={bgSrc} type="video/mp4" />
         </video>
       </div>
