@@ -22,13 +22,12 @@ const fb = {
   },
   // 값 쓰기 (PUT: 덮어쓰기)
   set: async (path, data) => {
-    try {
-      await fetch(`${FB_URL}/${path}.json`, {
-        method: 'PUT',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-      });
-    } catch {}
+    const r = await fetch(`${FB_URL}/${path}.json`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(`Firebase set failed: HTTP ${r.status}`);
   },
   // 값 병합 (PATCH: 부분 업데이트)
   update: async (path, data) => {
@@ -3425,6 +3424,9 @@ html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100
 .fb-submit:hover{background:var(--gold);}
 .fb-cancel{padding:9px 14px;background:transparent;border:1px solid var(--bd);color:var(--tx3);border-radius:8px;font-size:13px;cursor:pointer;}
 .fb-cancel:hover{border-color:var(--tx);color:var(--tx);}
+.edit-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;margin-right:4px;}
+.edit-btn:hover{border-color:var(--blue);color:var(--blue);}
+.edited-badge{font-size:9px;font-weight:700;color:var(--gold);background:rgba(106,171,200,.15);border:1px solid rgba(106,171,200,.3);border-radius:6px;padding:1px 5px;margin-left:5px;vertical-align:middle;}
 /* 피드백 목록 (퀴즈 카드 하단) */
 .fb-list{margin-top:12px;border-top:1px solid var(--bd2);padding-top:10px;}
 .fb-item{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:12px;}
@@ -3795,6 +3797,12 @@ function App() {
   const [adminResult, setAdminResult] = useState(null);
   const [adminFbs,    setAdminFbs]    = useState(null);  // null=미로드, {}=로드완료
   const [adminFbLoad, setAdminFbLoad] = useState(false);
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [editQ,       setEditQ]       = useState('');
+  const [editE,       setEditE]       = useState('');
+  const [adminEdits,  setAdminEdits]  = useState(null);
+  const [adminEditLoad,setAdminEditLoad]=useState(false);
 
   // ── 테마 (dark / light)
   const [theme, setTheme] = React.useState(() => {
@@ -3910,8 +3918,12 @@ function App() {
     const lsSess = await gr(K_SESSION(uid,mid), null);
     setSavedSession(fbSess || lsSess);
 
-    // 수정본 (공유)
-    const edits = await gr(K_EDITS(mid), {});
+    // 수정본 (Firebase 공유)
+    const fbEdits = await fb.list(`edits/${mid}`);
+    const edits = {};
+    for (const ed of Object.values(fbEdits||{})) {
+      if (ed?.qid) edits[ed.qid] = {question:ed.question, explanation:ed.explanation};
+    }
     setUserEdits(edits);
   }
 
@@ -4172,7 +4184,7 @@ function App() {
   // ── 피드백 로드 (현재 문항)
   async function loadFeedbacks(qid, mid) {
     try {
-      const data = await fb.list(`feedbacks/${mid}/${qid}`);
+      const data = await fb.list(`feedbacks/${mid}/${toSafeId(String(qid))}`);
       const items = Object.values(data||{})
         .filter(Boolean)
         .sort((a,b)=>(b.ts||0)-(a.ts||0));
@@ -4186,11 +4198,12 @@ function App() {
     setFbLoading(true);
     try {
       const key = Date.now().toString();
-      await fb.set(`feedbacks/${mid}/${qid}/${key}`, {
+      const safeQid = toSafeId(String(qid));
+      await fb.set(`feedbacks/${mid}/${safeQid}/${key}`, {
         uid, type: fbType, text: fbText.trim(),
         ts: Date.now(),
         date: new Date().toLocaleDateString('ko-KR'),
-        qid, mid,
+        qid: String(qid), mid,
       });
       setFbText(""); setFbOpen(false);
       loadFeedbacks(qid, mid);
@@ -4199,6 +4212,58 @@ function App() {
   }
 
   // ── 피드백 전체 로드 (관리자)
+  // ── 문제 수정 열기
+  function openEdit(q) {
+    const ed = userEdits[q.id];
+    setEditTarget(q);
+    setEditQ(ed?.question ?? q.question ?? '');
+    setEditE(ed?.explanation ?? q.explanation ?? '');
+    setEditOpen(true);
+  }
+
+  // ── 수정 저장 (Firebase 공유)
+  async function submitEdit() {
+    if (!editTarget) return;
+    const qid = editTarget.id;
+    const safeQid = toSafeId(String(qid));
+    try {
+      await fb.set(`edits/${activeModule}/${safeQid}`, {
+        uid, ts: Date.now(),
+        date: new Date().toLocaleDateString('ko-KR'),
+        qid: String(qid), mid: activeModule,
+        question: editQ.trim(),
+        explanation: editE.trim(),
+        original_q: editTarget.question,
+        original_e: editTarget.explanation,
+      });
+      const next = {...userEdits, [qid]: {question:editQ.trim(), explanation:editE.trim()}};
+      setUserEdits(next);
+      setEditOpen(false);
+    } catch(e) { alert('수정 저장 실패: ' + e.message); }
+  }
+
+  // ── 수정 원복
+  async function resetEdit(qid) {
+    if (!window.confirm('원본으로 복원할까요?')) return;
+    const safeQid = toSafeId(String(qid));
+    await fb.set(`edits/${activeModule}/${safeQid}`, null);
+    const next = {...userEdits}; delete next[qid]; setUserEdits(next);
+  }
+
+  // ── 관리자: 전체 수정 내역 로드
+  async function loadAllEdits() {
+    try {
+      const allMods = {};
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==='active')) {
+        const modData = await fb.list(`edits/${mod.id}`);
+        const items = Object.values(modData||{}).filter(Boolean)
+          .sort((a,b)=>(b.ts||0)-(a.ts||0));
+        if (items.length) allMods[mod.id] = items;
+      }
+      return allMods;
+    } catch { return {}; }
+  }
+
   async function loadAllFeedbacks() {
     try {
       const allMods = {};
@@ -4572,6 +4637,9 @@ function App() {
                       })()}
                     </span>
                     {cur.star && <span className="star-badge">⭐ 중요</span>}
+                    <button className="edit-btn" onClick={()=>openEdit(cur)}>
+                      ✏ 수정
+                    </button>
                     <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
                       💬 피드백
                     </button>
@@ -4636,6 +4704,32 @@ function App() {
                   <button className="fb-float-btn" onClick={()=>{ setFbOpen(true); setFbText(""); setFbType("일반 피드백"); }}>
                     💬 피드백
                   </button>
+                )}
+
+                {/* 수정 모달 */}
+                {editOpen && editTarget && (
+                  <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setEditOpen(false);}}>
+                    <div className="fb-modal" onClick={e=>e.stopPropagation()}>
+                      <div className="fb-modal-title">✏ 문제 수정</div>
+                      <div className="fb-modal-sub" style={{marginBottom:14,fontSize:11,color:"var(--tx3)"}}>
+                        수정 내용은 모든 이용자에게 즉시 반영됩니다.
+                      </div>
+                      <div style={{fontSize:12,color:"var(--tx2)",marginBottom:6,fontWeight:600}}>문제</div>
+                      <textarea className="fb-textarea" rows={5} value={editQ}
+                        onChange={e=>setEditQ(e.target.value)}/>
+                      <div style={{fontSize:12,color:"var(--tx2)",margin:"12px 0 6px",fontWeight:600}}>해설</div>
+                      <textarea className="fb-textarea" rows={3} value={editE}
+                        onChange={e=>setEditE(e.target.value)}/>
+                      <div className="fb-row" style={{justifyContent:"space-between"}}>
+                        <button className="fb-cancel" style={{color:"var(--er)",borderColor:"var(--er)"}}
+                          onClick={()=>resetEdit(editTarget.id)}>원복</button>
+                        <div style={{display:"flex",gap:8}}>
+                          <button className="fb-cancel" onClick={()=>setEditOpen(false)}>취소</button>
+                          <button className="fb-submit" onClick={submitEdit}>저장</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {/* 피드백 모달 */}
@@ -4932,6 +5026,61 @@ function App() {
                         <span className="fb-admin-date">{item.date||new Date(item.ts).toLocaleDateString("ko-KR")}</span>
                       </div>
                       <div className="fb-admin-body">{item.text}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* 수정 내역 카드 */}
+            <div className="card" style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>✏ 수정 내역</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}}
+                  onClick={async()=>{
+                    setAdminEditLoad(true);
+                    const data = await loadAllEdits();
+                    setAdminEdits(data);
+                    setAdminEditLoad(false);
+                  }}>
+                  {adminEditLoad?"로딩중...":adminEdits===null?"📥 불러오기":"🔄 새로고침"}
+                </button>
+                {adminEdits!==null && (
+                  <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+                    총 {Object.values(adminEdits).reduce((s,a)=>s+a.length,0)}건
+                  </span>
+                )}
+              </div>
+              {adminEdits===null && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  불러오기 버튼을 눌러 수정 내역을 확인하세요.
+                </div>
+              )}
+              {adminEdits!==null && Object.keys(adminEdits).length===0 && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  수정 내역이 없습니다.
+                </div>
+              )}
+              {adminEdits!==null && Object.entries(adminEdits).map(([mid,items])=>(
+                <div key={mid} style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",marginBottom:8,
+                    paddingBottom:4,borderBottom:"1px solid var(--bd)"}}>
+                    {MODULE_REGISTRY.find(m=>m.id===mid)?.label||mid} ({items.length}건)
+                  </div>
+                  {items.map((item,i)=>(
+                    <div key={i} className="fb-admin-item" style={{marginBottom:8}}>
+                      <div className="fb-admin-meta">
+                        <span className="fb-admin-no">#{item.qid}</span>
+                        <span className="fb-admin-uid">👤 {item.uid}</span>
+                        <span className="fb-admin-date">{item.date}</span>
+                      </div>
+                      {item.original_q&&item.original_q!==item.question&&(
+                        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:4,
+                          textDecoration:"line-through",padding:"4px 8px",background:"var(--sf2)",borderRadius:4}}>
+                          {item.original_q}
+                        </div>
+                      )}
+                      <div className="fb-admin-body" style={{fontSize:12}}>{item.question}</div>
                     </div>
                   ))}
                 </div>
