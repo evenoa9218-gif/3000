@@ -22,13 +22,12 @@ const fb = {
   },
   // 값 쓰기 (PUT: 덮어쓰기)
   set: async (path, data) => {
-    try {
-      await fetch(`${FB_URL}/${path}.json`, {
-        method: 'PUT',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(data)
-      });
-    } catch {}
+    const r = await fetch(`${FB_URL}/${path}.json`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(`Firebase set failed: HTTP ${r.status}`);
   },
   // 값 병합 (PATCH: 부분 업데이트)
   update: async (path, data) => {
@@ -4149,7 +4148,7 @@ function App() {
   // ── 피드백 로드 (현재 문항)
   async function loadFeedbacks(qid, mid) {
     try {
-      const data = await fb.list(`feedbacks/${mid}/${qid}`);
+      const data = await fb.list(`feedbacks/${mid}/${toSafeId(String(qid))}`);
       const items = Object.values(data||{})
         .filter(Boolean)
         .sort((a,b)=>(b.ts||0)-(a.ts||0));
@@ -4163,11 +4162,12 @@ function App() {
     setFbLoading(true);
     try {
       const key = Date.now().toString();
-      await fb.set(`feedbacks/${mid}/${qid}/${key}`, {
+      const safeQid = toSafeId(String(qid));
+      await fb.set(`feedbacks/${mid}/${safeQid}/${key}`, {
         uid, type: fbType, text: fbText.trim(),
         ts: Date.now(),
         date: new Date().toLocaleDateString('ko-KR'),
-        qid, mid,
+        qid: String(qid), mid,
       });
       setFbText(""); setFbOpen(false);
       loadFeedbacks(qid, mid);
