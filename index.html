@@ -5045,19 +5045,58 @@ function App() {
                     {MODULE_REGISTRY.find(m=>m.id===mid)?.label||mid} ({items.length}건)
                   </div>
                   {items.map((item,i)=>(
-                    <div key={i} className="fb-admin-item" style={{marginBottom:8}}>
+                    <div key={i} className="fb-admin-item" style={{marginBottom:10}}>
+                      {/* 메타 */}
                       <div className="fb-admin-meta">
                         <span className="fb-admin-no">#{item.qid}</span>
                         <span className="fb-admin-uid">👤 {item.uid}</span>
                         <span className="fb-admin-date">{item.date}</span>
                       </div>
-                      {item.original_q&&item.original_q!==item.question&&(
-                        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:4,
-                          textDecoration:"line-through",padding:"4px 8px",background:"var(--sf2)",borderRadius:4}}>
-                          {item.original_q}
-                        </div>
-                      )}
-                      <div className="fb-admin-body" style={{fontSize:12}}>{item.question}</div>
+                      {/* 문제 변경 */}
+                      {(()=>{
+                        const qChanged = item.original_q && item.original_q!==item.question;
+                        const eChanged = item.original_e && item.original_e!==item.explanation;
+                        return (
+                          <>
+                            {qChanged ? (
+                              <div style={{marginBottom:6}}>
+                                <div style={{fontSize:10,fontWeight:700,color:"var(--er)",marginBottom:2}}>▼ 원본 문제</div>
+                                <div style={{fontSize:12,color:"var(--tx3)",padding:"6px 10px",
+                                  background:"rgba(208,112,112,.08)",borderRadius:6,
+                                  borderLeft:"3px solid var(--er)",lineHeight:1.7,
+                                  textDecoration:"line-through",opacity:.8}}>
+                                  {item.original_q}
+                                </div>
+                                <div style={{fontSize:10,fontWeight:700,color:"var(--ok)",margin:"4px 0 2px"}}>▲ 수정 문제</div>
+                                <div style={{fontSize:12,color:"var(--tx)",padding:"6px 10px",
+                                  background:"rgba(82,168,112,.08)",borderRadius:6,
+                                  borderLeft:"3px solid var(--ok)",lineHeight:1.7}}>
+                                  {item.question}
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{fontSize:11,color:"var(--tx3)",padding:"4px 0"}}>문제 변경 없음</div>
+                            )}
+                            {eChanged && (
+                              <div style={{marginTop:6}}>
+                                <div style={{fontSize:10,fontWeight:700,color:"var(--er)",marginBottom:2}}>▼ 원본 해설</div>
+                                <div style={{fontSize:11,color:"var(--tx3)",padding:"5px 10px",
+                                  background:"rgba(208,112,112,.06)",borderRadius:6,
+                                  borderLeft:"3px solid rgba(208,112,112,.5)",lineHeight:1.6,
+                                  textDecoration:"line-through",opacity:.75}}>
+                                  {item.original_e}
+                                </div>
+                                <div style={{fontSize:10,fontWeight:700,color:"var(--ok)",margin:"4px 0 2px"}}>▲ 수정 해설</div>
+                                <div style={{fontSize:11,color:"var(--tx2)",padding:"5px 10px",
+                                  background:"rgba(82,168,112,.06)",borderRadius:6,
+                                  borderLeft:"3px solid rgba(82,168,112,.5)",lineHeight:1.6}}>
+                                  {item.explanation}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
