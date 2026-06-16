@@ -4199,15 +4199,22 @@ function App() {
     try {
       const key = Date.now().toString();
       const safeQid = toSafeId(String(qid));
-      await fb.set(`feedbacks/${mid}/${safeQid}/${key}`, {
+      const fbPath = `feedbacks/${mid}/${safeQid}/${key}`;
+      console.log("[FB] writing to:", fbPath);
+      await fb.set(fbPath, {
         uid, type: fbType, text: fbText.trim(),
         ts: Date.now(),
         date: new Date().toLocaleDateString('ko-KR'),
         qid: String(qid), mid,
       });
+      console.log("[FB] feedback saved OK to:", fbPath);
+      alert("✅ 피드백 저장 완료! 경로: " + fbPath);
       setFbText(""); setFbOpen(false);
       loadFeedbacks(qid, mid);
-    } catch(e) { alert("피드백 저장 실패: " + e.message); }
+    } catch(e) { 
+      console.error("[FB] feedback save FAILED:", e);
+      alert("❌ 피드백 저장 실패:\n" + e.message + "\n\nConsole에서 자세한 내용 확인"); 
+    }
     setFbLoading(false);
   }
 
@@ -4268,7 +4275,9 @@ function App() {
     try {
       const allMods = {};
       for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+        console.log("[ADMIN] loading feedbacks for:", mod.id);
         const modData = await fb.list(`feedbacks/${mod.id}`);
+        console.log("[ADMIN] raw data for", mod.id, ":", modData);
         const items = [];
         for (const [qid, qFbs] of Object.entries(modData||{})) {
           for (const fb_item of Object.values(qFbs||{})) {
@@ -4277,8 +4286,9 @@ function App() {
         }
         if (items.length) allMods[mod.id] = items.sort((a,b)=>(b.ts||0)-(a.ts||0));
       }
+      console.log("[ADMIN] final allMods:", allMods);
       return allMods;
-    } catch { return {}; }
+    } catch(e) { console.error("[ADMIN] loadAllFeedbacks error:", e); return {}; }
   }
 
 
