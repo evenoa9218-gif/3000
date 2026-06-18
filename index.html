@@ -3516,6 +3516,21 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
 @media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
 
+/* ── 모바일 전용 (세로 폰) ──────────────────────────── */
+@media(max-width:480px){
+  .question{font-size:14px;line-height:1.85;}
+  .rv-exp{font-size:13.5px;}
+  .edit-btn{white-space:nowrap;font-size:10px;padding:2px 7px;gap:3px;margin-right:3px;}
+  .fb-btn{white-space:nowrap;font-size:10px;padding:2px 7px;gap:3px;}
+  .star-badge{white-space:nowrap;font-size:9px;padding:1px 5px;gap:2px;}
+  .qcard-topic{white-space:nowrap;font-size:10px;padding:1px 6px;}
+  .qcard-meta{gap:4px;}
+  .ox{font-size:34px;padding:14px 16px;}
+  .prog-label{font-size:11px;}
+  .prog-num{font-size:18px;}
+  .qcard{padding:14px 12px;}
+}
+
 .module-prog-text{font-size:11px;color:var(--muted);margin-top:3px;}
 .module-card.civ-proc{background:rgba(122,184,216,.1);border:1px solid rgba(122,184,216,.22);}
 .module-card.civ-proc .module-accent{display:none;}
