@@ -77,6 +77,7 @@ function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
   font-size: 15px;
   color: var(--tx);
   line-height: 1.8;
+  text-align: justify;
 }
 .fact-label {
   font-size: 10px;
@@ -3610,7 +3611,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .qcard-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .qcard-no{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
 .qcard-topic{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
-.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;}
+.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;text-align:justify;}
 .reveal{margin-top:18px;padding:14px 16px;border-radius:8px;animation:fi .2s ease;}
 .reveal.ok{background:var(--ok-bg);border:1px solid rgba(63,185,80,.3);}
 .reveal.er{background:var(--er-bg);border:1px solid rgba(248,81,73,.3);}
@@ -3618,7 +3619,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .reveal.ok .rv-label{color:var(--ok);}
 .reveal.er .rv-label{color:var(--er);}
 .rv-verdict{font-size:12px;font-weight:600;opacity:.8;}
-.rv-exp{font-size:14.5px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;}
+.rv-exp{font-size:14.5px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;text-align:justify;}
 .rv-toggle{font-size:12px;color:var(--blue);cursor:pointer;margin-top:5px;display:inline-block;text-decoration:underline;text-underline-offset:2px;}
 .mark-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:20px;border:1px solid rgba(188,140,255,.4);background:transparent;color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .mark-btn:hover,.mark-btn.marked{background:rgba(188,140,255,.15);border-color:var(--purple);}
@@ -3668,11 +3669,11 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .arch-item:hover{background:var(--sf2);}
 .arch-item.exp{border-left-color:var(--gold);}
 .arch-item.mk-item{border-left-color:var(--purple);}
-.arch-q{font-size:13px;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;}
+.arch-q{font-size:13px;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;text-align:justify;}
 .arch-ans{font-size:11px;color:var(--tx3);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
 .arch-tag{font-size:10px;color:var(--tx3);background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:1px 6px;display:inline-block;margin-top:4px;margin-right:4px;}
 .arch-tag.mk{border-color:rgba(188,140,255,.3);color:var(--purple);background:rgba(188,140,255,.08);}
-.arch-exp{font-size:14px;color:var(--tx2);margin-top:7px;padding-top:7px;border-top:1px solid var(--bd2);line-height:1.65;display:none;word-break:keep-all;}
+.arch-exp{font-size:14px;color:var(--tx2);margin-top:7px;padding-top:7px;border-top:1px solid var(--bd2);line-height:1.65;display:none;word-break:keep-all;text-align:justify;}
 .arch-item.exp .arch-exp{display:block;}
 
 /* 관리자 */
