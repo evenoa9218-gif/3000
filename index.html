@@ -3178,7 +3178,7 @@ const MODULE_REGISTRY = [
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
-const ADMIN_ID = "정연석";
+const ADMIN_ID = "Sol";
 
 const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
 const K_USERS  = "hub_userlist";           // shared: 전체 유저 목록
@@ -5101,7 +5101,6 @@ function App() {
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
 function LoginScreen({ onLogin }) {
   const FB_BASE = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
-  const ADMIN_ID_L = "정연석";
 
   const [step, setStep]       = React.useState("id");   // id | pin_new | pin_check
   const [uid,  setUid]        = React.useState(localStorage.getItem("hub_last_uid")||"");
@@ -5156,23 +5155,6 @@ function LoginScreen({ onLogin }) {
     setLoading(true);
     setStatus({msg:"확인 중...", type:"info"});
     const safeId = toSafe(id);
-    const ADMIN_PIN = "2027";
-    const isAdminUser = id === ADMIN_ID_L;
-
-    if (isAdminUser) {
-      // 관리자
-      if (pinFull !== ADMIN_PIN) {
-        setLoading(false);
-        setStatus({msg:"PIN이 올바르지 않습니다.", type:"er"});
-        setPin(["","","",""]);
-        setTimeout(()=>pinRefs[0].current?.focus(), 50);
-        return;
-      }
-      setStatus({msg:"로그인 성공!", type:"ok"});
-      setLoading(false);
-      setTimeout(()=>onLogin(id), 300);
-      return;
-    }
 
     const existing = await fbGet(`users/${safeId}/info`);
 
@@ -5213,15 +5195,6 @@ function LoginScreen({ onLogin }) {
     if (!id) return;
     if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) {
       setStatus({msg:"20자 이내 한글/영문/숫자/_-만 가능합니다.", type:"er"}); return;
-    }
-    // 관리자는 PIN 없이 바로
-    if (id === ADMIN_ID_L) {
-      // 관리자도 PIN 확인
-      setPin(["","","",""]);
-      setStep("pin_check");
-      setStatus({msg:"관리자 PIN을 입력해주세요.", type:"info"});
-      setTimeout(()=>pinRefs[0].current?.focus(), 100);
-      return;
     }
 
     setLoading(true);
@@ -5265,14 +5238,12 @@ function LoginScreen({ onLogin }) {
       setLoading(false);
       setTimeout(()=>onLogin(id), 500);
     } else {
-      // 기존: PIN 검증 (관리자는 고정 PIN)
-      const ADMIN_PIN = "2027";
-      const isAdminUser = uid.trim() === ADMIN_ID_L;
-      const existing = isAdminUser ? null : await fbGet(`users/${safeId}/info`);
-      const correctPin = isAdminUser ? ADMIN_PIN : existing?.pin;
+      // 기존: PIN 검증
+      const existing = await fbGet(`users/${safeId}/info`);
+      const correctPin = existing?.pin;
       if (correctPin === pinFull) {
-        // 접속시간 갱신 (관리자 제외)
-        if (!isAdminUser && existing) {
+        // 접속시간 갱신
+        if (existing) {
           await fbSet(`users/${safeId}/info`, {
             ...existing,
             lastSeen: Date.now(),
