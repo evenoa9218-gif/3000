@@ -4026,8 +4026,12 @@ function App() {
     let finalQueue, startIdx;
     // forceNew=false이고 resumeData 없으면 savedSession 자동 사용
     const effectiveResume = forceNew ? null : (resumeData || savedSession);
+    const topicsMatch = mode !== "topic" || (
+      effectiveResume &&
+      [...(effectiveResume.topics||[])].sort().join(",") === [...topics].sort().join(",")
+    );
     if (effectiveResume && effectiveResume.mode === mode && effectiveResume.round === round
-      && effectiveResume.module === activeModule) {
+      && effectiveResume.module === activeModule && topicsMatch) {
       // 저장된 큐 순서 복원 (ID 배열로 저장 → 실제 문제 객체로 매핑)
       const qMap = Object.fromEntries(all.map(q=>[q.id, q]));
       const restored = (effectiveResume.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
@@ -4057,6 +4061,7 @@ function App() {
 
     setQueue(finalQueue);
     setQidx(startIdx); setAnswered(null); setUserAns(null); setShowExp(false);
+    setFbList([]); setFbOpen(false);
     setSessCor(0); setSessErr(0); setSessMark(0);
     setDone(false); setLabel(lbl); setInQuiz(true); setScreen("quiz");
   }
@@ -4119,6 +4124,7 @@ function App() {
       const nextIdx = qidx+1;
       setQidx(nextIdx);
       setAnswered(null); setUserAns(null); setShowExp(false);
+      setFbList([]); setFbOpen(false);
       // 세션 qidx 갱신
       if (savedSession) {
         const updated = {...savedSession, qidx: nextIdx};
