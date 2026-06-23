@@ -3842,7 +3842,7 @@ function App() {
     const firstMod = MODULE_REGISTRY.find(m => m.status === "active");
     if (firstMod) setActiveModule(firstMod.id);
 
-    setScreen("hub");
+    setScreen("subject");
     loadHubStats(id);
   }
 
@@ -4362,6 +4362,20 @@ function App() {
   //  렌더
   // ══════════════════════════════════════════
 
+
+  // 과목 선택 화면
+  if (screen === "subject") return (
+    <><style>{CSS}</style>
+    <SubjectSelect
+      currentSubject="civil"
+      onSelect={(sub) => {
+    if (sub === "civil")    { setScreen("hub"); }
+    else if (sub === "criminal") { window.location.href = "criminal.html"; }
+    else if (sub === "public")   { window.location.href = "public-law.html"; }
+  }}
+    />
+    </>
+  );
   // 로그인 전
   if (!uid) return (
     <><style>{CSS}</style>
@@ -5100,6 +5114,52 @@ function App() {
 
 
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
+function SubjectSelect({ onSelect, currentSubject }) {
+  const bgVideos = ["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
+  const [bgSrc] = React.useState(() => bgVideos[Math.floor(Math.random() * bgVideos.length)]);
+  const btn = (id, label, ac, bc, gc) => {
+    const active = currentSubject === id;
+    return (
+      <button key={id} onClick={()=>onSelect(id)} style={{
+        width:"100%", padding:"17px 20px", borderRadius:12, textAlign:"left",
+        border: active ? `2px solid ${bc}` : "1px solid rgba(255,255,255,.13)",
+        background: active ? `rgba(${ac},.15)` : "rgba(255,255,255,.05)",
+        color: active ? `rgba(${ac},1)` : "rgba(255,255,255,.65)",
+        fontSize:15, fontWeight: active ? 700 : 500, cursor:"pointer",
+        letterSpacing:".02em", transition:"all .2s",
+        boxShadow: active ? `0 0 20px rgba(${gc},.35)` : "none",
+      }}>
+        ⚖ {label}
+        {active && <span style={{float:"right",fontSize:11,opacity:.55,fontWeight:400}}>선택됨</span>}
+      </button>
+    );
+  };
+  return (
+    <React.Fragment>
+      <div className="login-scene">
+        <video key={bgSrc} autoPlay muted loop playsInline preload="auto">
+          <source src={bgSrc} type="video/mp4" />
+        </video>
+      </div>
+      <div className="login-wrap">
+        <div className="login-box">
+          <div className="login-header">
+            <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
+            <div className="login-title" style={{letterSpacing:".04em"}}>과목을 선택하세요</div>
+          </div>
+          <div className="login-card" style={{padding:"22px 20px"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {btn("civil",    "민사법", "122,184,216", "rgba(122,184,216,.75)", "122,184,216")}
+              {btn("criminal", "형사법", "212,120,138", "rgba(212,120,138,.75)", "212,120,138")}
+              {btn("public",   "공법",   "196,160,112", "rgba(196,160,112,.75)", "196,160,112")}
+            </div>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
 function LoginScreen({ onLogin }) {
   const FB_BASE = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
 
@@ -5283,28 +5343,6 @@ function LoginScreen({ onLogin }) {
             <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
           </div>
           <div className="login-card">
-
-          {/* ── 과목 선택 ── */}
-          <div style={{marginBottom:18}}>
-            <div style={{fontSize:10,fontWeight:700,color:"rgba(200,220,255,.45)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:8,textAlign:"center"}}>과목 선택</div>
-            <div style={{display:"flex",gap:8}}>
-              <button style={{flex:1,padding:"9px 0",borderRadius:10,border:"2px solid rgba(122,184,216,.7)",background:"rgba(122,184,216,.18)",color:"#c6e8fa",fontSize:13,fontWeight:700,cursor:"default",textShadow:"0 0 10px rgba(122,184,216,.6)"}}>
-                ⚖ 민사법
-              </button>
-              <button onClick={()=>window.location.href="criminal.html"}
-                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(200,120,140,.35)",background:"rgba(200,120,140,.08)",color:"rgba(220,160,170,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
-                onMouseOver={e=>{e.target.style.background="rgba(200,120,140,.18)";e.target.style.color="rgba(240,180,190,.95)";}}
-                onMouseOut={e=>{e.target.style.background="rgba(200,120,140,.08)";e.target.style.color="rgba(220,160,170,.7)";}}>
-                형사법
-              </button>
-              <button onClick={()=>window.location.href="public-law.html"}
-                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(190,160,100,.35)",background:"rgba(190,160,100,.08)",color:"rgba(210,180,120,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
-                onMouseOver={e=>{e.target.style.background="rgba(190,160,100,.18)";e.target.style.color="rgba(230,200,140,.95)";}}
-                onMouseOut={e=>{e.target.style.background="rgba(190,160,100,.08)";e.target.style.color="rgba(210,180,120,.7)";}}>
-                공법
-              </button>
-            </div>
-          </div>
             {/* 아이디 입력 */}
             <div className="login-label">아이디</div>
             <input className="login-input" value={uid}
