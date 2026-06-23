@@ -4439,6 +4439,7 @@ function App() {
             onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
             {theme==='dark' ? '☀️' : '🌙'}
           </button>
+          <button className="logout-btn" onClick={()=>setScreen("subject")} style={{color:"var(--gold)",borderRadius:8,padding:"4px 10px",border:"1px solid var(--bd)",fontSize:11}}>← 과목</button>
           <span className="uid-badge">👤 {uid}</span>
           <button className="logout-btn" onClick={()=>{ setUid(null); setIsAdmin(false); localStorage.removeItem("hub_last_uid"); }}>로그아웃</button>
         </div>
