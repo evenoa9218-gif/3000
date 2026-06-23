@@ -737,6 +737,10 @@ function App() {
   const [sessMark, setSessMark] = useState(0);
   const [done,     setDone]     = useState(false);
   const [label,    setLabel]    = useState("");
+  const [timerLeft, setTimerLeft] = useState(20);
+  const timerRef  = React.useRef(null);
+  const qidxRef   = React.useRef(0);
+  const queueRef  = React.useRef([]);
 
   // ── 스토리지 (모듈별 회독별)
   const [hubStats,  setHubStats]  = useState({});  // {modId: {wc, mc, pct}}
@@ -1114,6 +1118,59 @@ function App() {
       }
     }
   }
+
+  // ── rnd100 타이머: qidx·inQuiz 변화 시 리셋 ──────────────
+  useEffect(() => { qidxRef.current = qidx; }, [qidx]);
+  useEffect(() => { queueRef.current = queue; }, [queue]);
+
+  useEffect(() => {
+    if (cfgMode !== "rnd100" || !inQuiz || done) {
+      clearInterval(timerRef.current); return;
+    }
+    clearInterval(timerRef.current);
+    setTimerLeft(20);
+    timerRef.current = setInterval(() => {
+      setTimerLeft(t => { if (t <= 1) { clearInterval(timerRef.current); return 0; } return t - 1; });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [qidx, inQuiz, cfgMode, done]);
+
+  // 답변 시 타이머 정지
+  useEffect(() => { if (answered !== null) clearInterval(timerRef.current); }, [answered]);
+
+  // 시간 초과 처리
+  useEffect(() => {
+    if (timerLeft !== 0 || cfgMode !== "rnd100" || answered !== null || !inQuiz || done) return;
+    const cur = queue[qidx];
+    if (!cur) return;
+    // 오답 강제 처리
+    setAnswered("er"); setUserAns(null); setShowExp(false);
+    setSessErr(p => p + 1);
+    const r = cfgRound;
+    const np = {
+      answered: new Set([...(progMap[r]?.answered||[]), cur.id]),
+      correct:  new Set([...(progMap[r]?.correct ||[])]),
+      wrong:    new Set([...(progMap[r]?.wrong   ||[])])
+    };
+    np.wrong.add(cur.id);
+    const nw = new Set(wrongMap[r]||[]); nw.add(cur.id);
+    setProgMap(pm=>({...pm,[r]:np})); setWrongMap(wm=>({...wm,[r]:nw}));
+    saveProg(r,np); saveWrong(r,nw);
+    const ar = archRound;
+    const nawm = new Set(awWrongMap[ar]||[]); nawm.add(cur.id);
+    setAwWrongMap(m=>({...m,[ar]:nawm})); saveAwWrong(ar,nawm);
+    // 1.3초 후 자동 다음 문제
+    setTimeout(() => {
+      const nextIdx = qidxRef.current + 1;
+      if (nextIdx >= queueRef.current.length) {
+        setDone(true); saveSession(null); setSavedSession(null);
+      } else {
+        setQidx(nextIdx); setAnswered(null); setUserAns(null);
+        setShowExp(false); setFbList([]); setFbOpen(false);
+      }
+    }, 1300);
+  }, [timerLeft]); // eslint-disable-line
+
 
   async function resetModule() {
     if (!confirm(`${activeModule} 모듈 전체 기록을 초기화하시겠습니까?`)) return;
@@ -1753,6 +1810,11 @@ function App() {
                     </div>
                   </div>
                 )}
+                {cfgMode === "rnd100" && answered === null && (
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:4}}>
+                    <CircleTimer timeLeft={timerLeft} />
+                  </div>
+                )}
                 <div className="ox-row">
                   <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>○</button>
                   <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>✕</button>
@@ -2140,6 +2202,23 @@ function SubjectSelect({ onSelect, currentSubject }) {
     </React.Fragment>
   );
 }
+
+function CircleTimer({ timeLeft, total = 20 }) {
+  const r = 13, circ = +(2 * Math.PI * r).toFixed(2);
+  const offset = +(circ * (1 - timeLeft / total)).toFixed(2);
+  const color = timeLeft <= 5 ? '#f87171' : timeLeft <= 10 ? '#fbbf24' : 'var(--gold)';
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34">
+      <circle cx="17" cy="17" r={r} fill="none" stroke="rgba(255,255,255,.09)" strokeWidth="3"/>
+      <circle cx="17" cy="17" r={r} fill="none" stroke={color} strokeWidth="3"
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{transform:'rotate(-90deg)',transformOrigin:'17px 17px',
+          transition:'stroke-dashoffset 0.9s linear, stroke 0.3s'}}/>
+    </svg>
+  );
+}
+
 
 function LoginScreen({ onLogin }) {
   const FB_BASE = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
