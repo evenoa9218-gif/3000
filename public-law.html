@@ -51,15 +51,16 @@ const fb = {
 };
 
 // ── Firebase 경로 정의 ──────────────────────────────
+const SUBJECT_NS = "public";
 const fbPath = {
-  info:      (uid)           => `users/${uid}/info`,
-  prog:      (uid,mid,r)     => `users/${uid}/stats/${mid}/prog_${r}`,
-  wrong:     (uid,mid,r)     => `users/${uid}/stats/${mid}/wrong_${r}`,
-  marked:    (uid,mid,r)     => `users/${uid}/stats/${mid}/marked_${r}`,
-  awWrong:   (uid,mid,r)     => `users/${uid}/stats/${mid}/aw_wrong_${r}`,
-  awMark:    (uid,mid,r)     => `users/${uid}/stats/${mid}/aw_mark_${r}`,
-  archRound: (uid,mid)       => `users/${uid}/stats/${mid}/arch_round`,
-  session:   (uid,mid)       => `users/${uid}/stats/${mid}/session`,
+  info:      (uid)           => `${SUBJECT_NS}/users/${uid}/info`,
+  prog:      (uid,mid,r)     => `${SUBJECT_NS}/users/${uid}/stats/${mid}/prog_${r}`,
+  wrong:     (uid,mid,r)     => `${SUBJECT_NS}/users/${uid}/stats/${mid}/wrong_${r}`,
+  marked:    (uid,mid,r)     => `${SUBJECT_NS}/users/${uid}/stats/${mid}/marked_${r}`,
+  awWrong:   (uid,mid,r)     => `${SUBJECT_NS}/users/${uid}/stats/${mid}/aw_wrong_${r}`,
+  awMark:    (uid,mid,r)     => `${SUBJECT_NS}/users/${uid}/stats/${mid}/aw_mark_${r}`,
+  archRound: (uid,mid)       => `${SUBJECT_NS}/users/${uid}/stats/${mid}/arch_round`,
+  session:   (uid,mid)       => `${SUBJECT_NS}/users/${uid}/stats/${mid}/session`,
 };
 
 // safeId: Firebase 키에서 금지 문자 변환
@@ -1410,7 +1411,7 @@ function App() {
       {/* 헤더 */}
       <div className="hdr">
         <div className="hdr-left">
-          <div className="hdr-title">⚖︎ 3000제 OX 퀴즈</div>
+          <div className="hdr-title">⚖︎ OX 퀴즈</div>
           <div className="hdr-sub">공법 선택형 기출 최신빈출지문</div>
         </div>
         <div className="hdr-user">
