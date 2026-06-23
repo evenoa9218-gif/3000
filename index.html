@@ -3846,7 +3846,12 @@ function App() {
     const firstMod = MODULE_REGISTRY.find(m => m.status === "active");
     if (firstMod) setActiveModule(firstMod.id);
 
-    setScreen("subject");
+    if (sessionStorage.getItem("ox_skip_subject")) {
+      sessionStorage.removeItem("ox_skip_subject");
+      setScreen("hub");
+    } else {
+      setScreen("subject");
+    }
     loadHubStats(id);
   }
 
@@ -4427,8 +4432,8 @@ function App() {
       currentSubject="civil"
       onSelect={(sub) => {
     if (sub === "civil")    { setScreen("hub"); }
-    else if (sub === "criminal") { window.location.href = "criminal.html"; }
-    else if (sub === "public")   { window.location.href = "public-law.html"; }
+    else if (sub === "criminal") { sessionStorage.setItem("ox_skip_subject","1"); window.location.href = "criminal.html"; }
+    else if (sub === "public")   { sessionStorage.setItem("ox_skip_subject","1"); window.location.href = "public-law.html"; }
   }}
     />
     </>
