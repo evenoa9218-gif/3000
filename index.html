@@ -5189,13 +5189,16 @@ function SubjectSelect({ onSelect, currentSubject }) {
   const btn = (id, label, ac, bc, gc) => {
     const active = currentSubject === id;
     return (
-      <button key={id} onClick={()=>onSelect(id)} style={{
+      <button key={id}
+        onClick={()=>onSelect(id)}
+        onTouchEnd={(e)=>{e.preventDefault();onSelect(id);}}
+        style={{
         width:"100%", padding:"17px 20px", borderRadius:12, textAlign:"left",
         border: active ? `2px solid ${bc}` : "1px solid rgba(255,255,255,.13)",
         background: active ? `rgba(${ac},.15)` : "rgba(255,255,255,.05)",
         color: active ? `rgba(${ac},1)` : "rgba(255,255,255,.65)",
         fontSize:15, fontWeight: active ? 700 : 500, cursor:"pointer",
-        letterSpacing:".02em", transition:"all .2s",
+        letterSpacing:".02em", touchAction:"manipulation",
         boxShadow: active ? `0 0 20px rgba(${gc},.35)` : "none",
       }}>
         ⚖ {label}
