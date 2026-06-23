@@ -5283,6 +5283,28 @@ function LoginScreen({ onLogin }) {
             <div className="login-title">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
           </div>
           <div className="login-card">
+
+          {/* ── 과목 선택 ── */}
+          <div style={{marginBottom:18}}>
+            <div style={{fontSize:10,fontWeight:700,color:"rgba(200,220,255,.45)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:8,textAlign:"center"}}>과목 선택</div>
+            <div style={{display:"flex",gap:8}}>
+              <button style={{flex:1,padding:"9px 0",borderRadius:10,border:"2px solid rgba(122,184,216,.7)",background:"rgba(122,184,216,.18)",color:"#c6e8fa",fontSize:13,fontWeight:700,cursor:"default",textShadow:"0 0 10px rgba(122,184,216,.6)"}}>
+                ⚖ 민사법
+              </button>
+              <button onClick={()=>window.location.href="criminal.html"}
+                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(200,120,140,.35)",background:"rgba(200,120,140,.08)",color:"rgba(220,160,170,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
+                onMouseOver={e=>{e.target.style.background="rgba(200,120,140,.18)";e.target.style.color="rgba(240,180,190,.95)";}}
+                onMouseOut={e=>{e.target.style.background="rgba(200,120,140,.08)";e.target.style.color="rgba(220,160,170,.7)";}}>
+                형사법
+              </button>
+              <button onClick={()=>window.location.href="public-law.html"}
+                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(190,160,100,.35)",background:"rgba(190,160,100,.08)",color:"rgba(210,180,120,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
+                onMouseOver={e=>{e.target.style.background="rgba(190,160,100,.18)";e.target.style.color="rgba(230,200,140,.95)";}}
+                onMouseOut={e=>{e.target.style.background="rgba(190,160,100,.08)";e.target.style.color="rgba(210,180,120,.7)";}}>
+                공법
+              </button>
+            </div>
+          </div>
             {/* 아이디 입력 */}
             <div className="login-label">아이디</div>
             <input className="login-input" value={uid}

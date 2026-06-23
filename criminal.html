@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3000제 OX 퀴즈 — 민법 & 민소법 선택형 기출</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script>
+// ── Firebase REST API 헬퍼 (SDK 없이 fetch로 직접 사용) ──
+const FB_URL = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+const fb = {
+  // 값 읽기
+  get: async (path) => {
+    try {
+      const r = await fetch(`${FB_URL}/${path}.json`);
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  },
+  // 값 쓰기 (PUT: 덮어쓰기)
+  set: async (path, data) => {
+    const r = await fetch(`${FB_URL}/${path}.json`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error(`Firebase set failed: HTTP ${r.status}`);
+  },
+  // 값 병합 (PATCH: 부분 업데이트)
+  update: async (path, data) => {
+    try {
+      await fetch(`${FB_URL}/${path}.json`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+    } catch {}
+  },
+  // 전체 목록 읽기
+  list: async (path) => {
+    try {
+      const r = await fetch(`${FB_URL}/${path}.json`);
+      if (!r.ok) return {};
+      const data = await r.json();
+      return data || {};
+    } catch { return {}; }
+  }
+};
+
+// ── Firebase 경로 정의 ──────────────────────────────
+const fbPath = {
+  info:      (uid)           => `users/${uid}/info`,
+  prog:      (uid,mid,r)     => `users/${uid}/stats/${mid}/prog_${r}`,
+  wrong:     (uid,mid,r)     => `users/${uid}/stats/${mid}/wrong_${r}`,
+  marked:    (uid,mid,r)     => `users/${uid}/stats/${mid}/marked_${r}`,
+  awWrong:   (uid,mid,r)     => `users/${uid}/stats/${mid}/aw_wrong_${r}`,
+  awMark:    (uid,mid,r)     => `users/${uid}/stats/${mid}/aw_mark_${r}`,
+  archRound: (uid,mid)       => `users/${uid}/stats/${mid}/arch_round`,
+  session:   (uid,mid)       => `users/${uid}/stats/${mid}/session`,
+};
+
+// safeId: Firebase 키에서 금지 문자 변환
+function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
+</script>
+<style>
+  body { margin: 0; background: #020608; }
+  #root { min-height: 100vh; }
+  .fact-box {
+  background: rgba(212,168,83,0.10);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font-size: 15px;
+  color: var(--tx);
+  line-height: 1.8;
+  text-align: justify;
+}
+.fact-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #7c9ef5; font-family: serif; font-size: 18px; }
+</style>
+<!-- deploy:1779798651 -->
+</head>
+<body>
+<div id="root"><div class="loading">⚖ 불러오는 중...</div></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+// window.storage — GitHub Pages에서는 localStorage로 폴백
+window.storage = window.storage || (() => {
+  const PREFIX = 'qhub_';
+  return {
+    get: async (key) => {
+      try {
+        const v = localStorage.getItem(PREFIX + key);
+        return v !== null ? { key, value: v } : null;
+      } catch { return null; }
+    },
+    set: async (key, value) => {
+      try {
+        localStorage.setItem(PREFIX + key, value);
+        return { key, value };
+      } catch { return null; }
+    },
+    delete: async (key) => {
+      try { localStorage.removeItem(PREFIX + key); return { key, deleted: true }; } catch { return null; }
+    },
+    list: async (prefix) => {
+      try {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(PREFIX + (prefix||''))) {
+            keys.push(k.slice(PREFIX.length));
+          }
+        }
+        return { keys };
+      } catch { return { keys: [] }; }
+    }
+  };
+})();
+
+/* ═══════════════════════════════════════════════
+   3000제 퀴즈 허브  —  quiz_hub.jsx
+   아이디 로그인 → 범위별 모듈 선택 → 퀴즈 진행
+═══════════════════════════════════════════════ */
+
+
+const 형법총론_RAW = [];
+const 형법총론_DATA = 형법총론_RAW;
+const 형법각론_RAW = [];
+const 형법각론_DATA = 형법각론_RAW;
+const 형사소송법_RAW = [];
+const 형사소송법_DATA = 형사소송법_RAW;
+const STAR_IDS_형법총론 = new Set([]);
+const STAR_IDS_형법각론 = new Set([]);
+const STAR_IDS_형사소송법 = new Set([]);
+const EXAM_YEAR_형법총론 = {};
+const EXAM_YEAR_형법각론 = {};
+const EXAM_YEAR_형사소송법 = {};
+const SS_EXAM_형법총론 = {};
+const SS_EXAM_형법각론 = {};
+const SS_EXAM_형사소송법 = {};
+
+const MODULE_REGISTRY = [
+  { id:"형법총론", label:"형법총론", subtitle:"형법 총칙편", icon:"⚖",
+    count: 형법총론_DATA.length, status:"soon", color:"#c85878",
+    topics:[], getData: () => 형법총론_DATA },
+  { id:"형법각론", label:"형법각론", subtitle:"형법 각칙편", icon:"§",
+    count: 형법각론_DATA.length, status:"soon", color:"#b84868",
+    topics:[], getData: () => 형법각론_DATA },
+  { id:"형사소송법", label:"형사소송법", subtitle:"형사소송법", icon:"⌂︎",
+    count: 형사소송법_DATA.length, status:"soon", color:"#a84060",
+    topics:[], getData: () => 형사소송법_DATA },
+];
+
+// ── 스토리지 키 ──────────────────────────────────────
+const ADMIN_ID = "Sol";
+
+const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
+const K_USERS  = "hub_userlist";           // shared: 전체 유저 목록
+const K_UTIME  = (uid) => `hub_utime_${uid}`; // 마지막 접속 시각
+const K_EDITS  = (mid) => `hub_edits_${mid}`; // 문항 수정본
+
+const ROUNDS = [1,2,3,4];
+const K_WRONG  = (uid,mid,r) => `hub_${uid}_${mid}_wrong_${r}`;
+const K_MARKED = (uid,mid,r) => `hub_${uid}_${mid}_marked_${r}`;
+const K_PROG   = (uid,mid,r) => `hub_${uid}_${mid}_prog_${r}`;
+const K_AW_ROUND = (uid,mid)  => `hub_${uid}_${mid}_arch_round`;   // 아카이브 현재 회독
+const K_AW_WRONG = (uid,mid,r)=> `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이브 오답 회독별
+const K_AW_MARK  = (uid,mid,r)=> `hub_${uid}_${mid}_aw_mark_${r}`;  // 아카이브 헷갈림 회독별
+const K_SESSION  = (uid,mid)  => `hub_${uid}_${mid}_session`;       // 이어풀기 세션
+
+
+
+const EXAM_YEAR_각론 = {
+  // 계약의종류·성립
+  "001":"23변시-34","002":"24.10모-01","003":"23.08모-09",
+  // 동시이행의항변권
+  "004":"24변시-11","005":"17변시-70","006":"24.06모-18","007":"24.08모-18",
+  "008":"24.10모-02","009":"23.06모-23","010":"23.10모-24",
+  "011":"19.10모-23","012":"18.06모-26","013":"18.08모-23",
+  // 위험부담
+  "014":"14변시-26","015":"23.10모-25","016":"18.08모-31",
+  // 제3자를위한계약
+  "017":"21변시-19","018":"19변시-23","019":"14변시-22",
+  "020":"24.06모-19","021":"23.08모-10","022":"23.06모-24",
+  // 해제
+  "023":"24변시-17","024":"23변시-23","025":"16변시-27","026":"24.08모-19",
+  "027":"19.08모-51","028":"25변시-28","029":"22변시-09","030":"20변시-27",
+  "031":"23.08모-12","032":"23.10모-26","033":"22.06모-29","034":"22.08모-27",
+  "035":"21.10모-35","036":"20.10모-28","037":"18.08모-26","038":"21.06모-28",
+  // 증여
+  "039":"23.08모-13","040":"21.06모-27","041":"19.06모-25",
+  // 매매일반효력
+  "042":"23변시-03","043":"21변시-33","044":"23.06모-25",
+  "045":"23.08모-11","046":"22.10모-26","047":"18.08모-27","048":"17.06모-06",
+  // 매도인의담보책임
+  "049":"16.10모-25","050":"25변시-25","051":"23변시-36","052":"22변시-05",
+  "053":"20변시-31","054":"17변시-13","055":"13변시-04","056":"24.06모-20",
+  "057":"24.08모-25","058":"24.10모-03","059":"23.08모-14","060":"22.08모-28",
+  "061":"20.08모-27",
+  // 민법상임대차
+  "062":"17.10모-30","063":"25변시-31","064":"18변시-25","065":"14변시-23",
+  "066":"24.06모-21","067":"24.08모-20","068":"21.06모-29","069":"21.10모-34",
+  "070":"18.06모-27","071":"19변시-26","072":"20.08모-28","073":"19변시-61",
+  // 주택임대차보호법
+  "074":"24변시-10","075":"21변시-27","076":"15변시-01","077":"13변시-22",
+  "078":"24.08모-23","079":"24.10모-04","080":"23.06모-26","081":"23.10모-28",
+  "082":"22.08모-29",
+  // 상가건물임대차보호법
+  "083":"23변시-21",
+  // 도급
+  "084":"25변시-27","085":"21변시-32","086":"14변시-29",
+  "087":"24.08모-22","088":"24.10모-05","089":"23.06모-27","090":"23.10모-29","091":"22.06모-32",
+  // 도급(추가)
+  "092":"21.08모-26","093":"21.10모-33","094":"19.06모-17",
+  // 기타전형계약
+  "095":"23.10모-30","096":"16변시-28","097":"13변시-25",
+  "098":"25변시-30","099":"24변시-04","100":"24.10모-06","101":"18.08모-29",
+  // 사무관리
+  "102":"19변시-27","103":"17변시-10","104":"21.08모-27","105":"20.08모-31",
+  // 부당이득
+  "106":"21.10모-32","107":"19.10모-29","108":"14변시-19",
+};
+
+const SS_EXAM_각론 = {
+  // 동시이행의항변권
+  "SS1":"25.10모-10",
+  "SS2":"25.08모-33",
+  "SS3":"25.08모-31",
+  "SS4":"25.08모-29",
+  "SS5":"25.08모-30",
+  "SS6":"25.06모-26","SS7":"25.06모-26",
+};
+
+const EXAM_YEAR = {
+  // 채권의목적
+  "001":"25변시-24","002":"23변시-35","003":"19변시-32",
+  "004":"24.08모-01","005":"17.10모-17","006":"16.06모-16",
+  // 채무불이행
+  "007":"24변시-18","008":"21변시-23","009":"18변시-13","010":"23.08모-02",
+  "011":"23.10모-16","012":"19.06모-22","013":"24변시-16","014":"23변시-17",
+  "015":"20변시-21","016":"23.08모-04","017":"23.06모-20","018":"23.10모-17",
+  // 손해배상
+  "019":"23변시-29","020":"19.10모-15","021":"17변시-02","022":"13변시-23",
+  "023":"24.06모-26","024":"23.06모-21","025":"21.06모-26","026":"16.06모-17",
+  "027":"16.08모-18","028":"25변시-22","029":"20변시-16","030":"13변시-12",
+  "031":"24.08모-04","032":"23.10모-18",
+  // 채권자지체
+  "033":"22.08모-19",
+  // 채권자대위권
+  "034":"25변시-26","035":"24변시-25","036":"22변시-22","037":"21변시-25",
+  "038":"20변시-30","039":"19변시-19","040":"15변시-21","041":"12변시-22",
+  "042":"24.06모-27","043":"24.10모-18","044":"23.08모-05","045":"23.10모-20",
+  "046":"20.10모-20",
+  // 채권자취소권
+  "047":"25변시-11","048":"24변시-30","049":"23변시-18","050":"22변시-04",
+  "051":"22변시-23","052":"21변시-26","053":"20변시-15","054":"19변시-21",
+  "055":"19변시-29","056":"17변시-09","057":"24.08모-06","058":"24.08모-08",
+  "059":"24.10모-21","060":"23.10모-19","061":"23.06모-16","062":"23.08모-06",
+  "063":"23.10모-21","064":"23.10모-22","065":"21.06모-18","066":"20.08모-51",
+  "067":"19.10모-18","068":"17.06모-09",
+  // 채권양도
+  "069":"24변시-24","070":"23변시-30","071":"20변시-32","072":"19변시-31",
+  "073":"18변시-20","074":"17변시-08","075":"17변시-65","076":"16변시-22",
+  "077":"24.08모-07","078":"24.10모-25","079":"24.10모-26","080":"23.08모-08",
+  "081":"22.06모-27","082":"22.08모-23","083":"21.06모-21",
+  // 채무인수
+  "084":"21변시-30","085":"18변시-22","086":"17변시-34","087":"23.06모-17",
+  "088":"20.06모-24","089":"23변시-22","090":"22변시-28","091":"15변시-04",
+  "092":"21.06모-22","093":"25변시-13",
+  // 변제
+  "094":"21.10모-12","095":"24.06모-25","096":"24.10모-24","097":"20변시-25",
+  "098":"17변시-03","099":"15변시-20","100":"13변시-16","101":"24.06모-24",
+  "102":"24.08모-02","103":"23.08모-03",
+  // 변제자대위
+  "104":"25변시-29","105":"24변시-20","106":"21변시-22","107":"14변시-33",
+  "108":"24.10모-23","109":"23.06모-19","110":"22.08모-24",
+  // 대물변제·공탁·경개·면제·혼동
+  "111":"23변시-16","112":"24.10모-22",
+  // 상계
+  "114":"21.06모-24","115":"25변시-21","116":"21변시-26",
+  "117":"24변시-21","118":"22변시-30","119":"21변시-34",
+  "120":"20변시-30","121":"19변시-08","122":"19변시-14","123":"18변시-01",
+  "124":"17변시-01","125":"16변시-09","126":"16변시-14","127":"15변시-08",
+  "128":"14변시-06","129":"13변시-04","130":"12변시-07",
+  // 서론·분할·불가분
+  "131":"25변시-19","133":"21.06모-19",
+  // 연대채무
+  "134":"24변시-22","135":"18변시-12","136":"23.06모-22",
+  // 부진정연대채무
+  "137":"18.10모-22",
+  // 보증채무
+  "138":"25변시-15","139":"21변시-05","140":"21변시-14","141":"19변시-12",
+  "142":"18변시-09","143":"17변시-19","144":"16변시-14","145":"16변시-24",
+  "146":"15변시-07","147":"14변시-19","148":"14변시-31","149":"13변시-08",
+  "150":"13변시-29","151":"12변시-15","152":"12변시-31",
+  "153":"21.06모-07","154":"21.06모-12","155":"20.06모-09",
+  "156":"20.10모-08","157":"17.06모-16","158":"25변시-17",
+};
+
+const SS_EXAM = {
+  "SS1":"25.10모-02","SS2":"25.08모-02",
+  "SS4":"25.06모-28","SS5":"25.08모-04","SS6":"25.10모-04",
+  "SS7":"25.06모-29","SS8":"25.06모-34","SS9":"25.08모-05","SS10":"25.10모-05",
+  "SS11":"25.06모-33","SS12":"25.08모-06","SS13":"25.10모-06",
+  "SS14":"25.06mo-31","SS15":"25.06모-35","SS16":"25.08모-07","SS17":"25.10mo-08",
+  "SS18":"25.08모-08","SS19":"25.08모-09","SS21":"25.10모-10",
+  "SS22":"25.08모-08","SS24":"25.08모-01","SS25":"25.10모-01",
+  "SS26":"25.06모-22","SS27":"25.08모-03","SS28":"25.10모-03","SS29":"25.08모-03",
+};
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ── CSS ─────────────────────────────────────────── */
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1c1018;--sf:#241420;--sf2:#2c1a28;--bd:#4e2038;--bd2:#3a1a2c;
+  --gold:#d4788a;--gold2:#e89aaa;--gf:#8c3050;--tx:#f8dce4;--tx2:#b88090;--tx3:#7a4858;
+  --purple:#c89aff;--ok:#4ade80;--er:#f87171;--er-bg:rgba(248,113,113,.08);
+  --ok:#4ade80;--er:#f87171;--ok-bg:rgba(74,222,128,.08);--er-bg:rgba(248,113,113,.08);
+  --blue:#d4788a;--purple:#c89aff;--muted:#7a4858;
+}
+
+/* ── 라이트 테마 ───────────────────────────────────── */
+html.light {
+  --bg:#fdf0f3;--sf:#ffffff;--sf2:#fae4e8;--bd:#e8b0bc;--bd2:#f2ccd4;
+  --gold:#a02e48;--gold2:#b83858;--gf:#882840;--tx:#280e18;--tx2:#6a3040;--tx3:#8a5060;
+  --purple:#6a35a0;--ok:#16a34a;--er:#dc2626;--er-bg:rgba(220,38,38,.08);
+}
+html.light body { background:var(--bg); color:var(--tx); }
+html.light .hdr-title{color:#ffffff;}
+html.light .hdr-sub{color:var(--gold2);font-weight:600;}
+html.light .logout-btn{color:#b8d8f5;}
+html.light .uid-badge{color:#d0ecfa;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);}
+html.light .module-card{background:#ffffff;box-shadow:none;border-color:#c0d8ec;}
+html.light .module-card.civ-proc{background:#e6f3fc;border:1px solid rgba(36,100,160,.12);}
+
+/* ── 테마 토글 버튼 ────────────────────────────────── */
+.theme-toggle {
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:8px;cursor:pointer;
+  background:var(--sf2);border:1px solid var(--bd);
+  font-size:15px;transition:background .15s,border .15s;
+  flex-shrink:0;
+}
+.theme-toggle:hover{background:var(--bd);border-color:var(--tx3);}
+
+/* ── 허브 노티스 ───────────────────────────────────── */
+.hub-notice {
+  display:flex;align-items:flex-start;gap:8px;
+  background:var(--sf2);border:1px solid var(--bd);border-radius:10px;
+  padding:11px 14px;margin-bottom:14px;font-size:12px;
+  color:var(--tx2);line-height:1.6;
+}
+.hub-notice-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+
+/* ── 피드백 ───────────────────────────────────────────── */
+.fb-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;}
+.fb-btn:hover{border-color:var(--gold);color:var(--gold);}
+.fb-float-btn{position:fixed;bottom:18px;right:18px;z-index:900;display:flex;align-items:center;gap:5px;padding:7px 14px;border-radius:20px;border:1px solid var(--bd);background:var(--sf);color:var(--tx3);font-size:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);transition:all .15s;}
+.fb-float-btn:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 3px 12px rgba(212,168,83,.2);}
+.fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.fb-modal{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
+.fb-modal-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:4px;}
+.fb-modal-sub{font-size:12px;color:var(--tx3);margin-bottom:16px;}
+.fb-qref{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.6;}
+.fb-select-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.fb-type{padding:5px 12px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;cursor:pointer;transition:all .15s;}
+.fb-type:hover{border-color:var(--gold);color:var(--gold);}
+.fb-type.sel{background:var(--gf);border-color:var(--gf);color:#fff;font-weight:700;}
+.fb-textarea{width:100%;box-sizing:border-box;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:'Pretendard',sans-serif;padding:10px 12px;resize:vertical;outline:none;line-height:1.6;}
+.fb-textarea:focus{border-color:var(--gold);}
+.fb-row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end;}
+.fb-submit{padding:9px 20px;background:var(--gf);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.fb-submit:hover{background:var(--gold);}
+.fb-cancel{padding:9px 14px;background:transparent;border:1px solid var(--bd);color:var(--tx3);border-radius:8px;font-size:13px;cursor:pointer;}
+.fb-cancel:hover{border-color:var(--tx);color:var(--tx);}
+.edit-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:11px;cursor:pointer;transition:all .15s;margin-right:4px;}
+.edit-btn:hover{border-color:var(--blue);color:var(--blue);}
+.edited-badge{font-size:9px;font-weight:700;color:var(--gold);background:rgba(106,171,200,.15);border:1px solid rgba(106,171,200,.3);border-radius:6px;padding:1px 5px;margin-left:5px;vertical-align:middle;}
+/* 피드백 목록 (퀴즈 카드 하단) */
+.fb-list{margin-top:12px;border-top:1px solid var(--bd2);padding-top:10px;}
+.fb-item{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:12px;}
+.fb-item-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.fb-item-type{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:rgba(212,168,83,.15);color:var(--gold);}
+.fb-item-uid{font-size:11px;color:var(--tx3);}
+.fb-item-date{font-size:10px;color:var(--tx3);margin-left:auto;}
+.fb-item-body{color:var(--tx2);line-height:1.6;}
+/* 관리자 피드백 목록 */
+.fb-admin-item{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.fb-admin-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.fb-admin-no{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--blue);}
+.fb-admin-type{font-size:11px;font-weight:700;color:var(--gold);}
+.fb-admin-uid{font-size:11px;color:var(--tx3);}
+.fb-admin-date{font-size:10px;color:var(--tx3);margin-left:auto;}
+.fb-admin-q{font-size:12px;color:var(--tx2);margin-bottom:6px;padding:7px 10px;background:var(--sf2);border-radius:6px;line-height:1.5;}
+.fb-admin-body{font-size:13px;color:var(--tx);line-height:1.6;}
+
+/* ── PIN 입력 ─────────────────────────────────────── */
+.pin-row{display:flex;gap:10px;justify-content:center;margin:16px 0;}
+.pin-digit{width:52px;height:60px;border:2px solid var(--bd);border-radius:12px;
+  background:var(--sf2);color:var(--tx);font-size:24px;font-weight:700;
+  text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;
+  transition:border .15s;}
+.pin-digit:focus{border-color:var(--gold);}
+.pin-status{font-size:12px;text-align:center;min-height:18px;margin-bottom:8px;}
+.pin-status.ok{color:var(--gold2);}
+.pin-status.er{color:var(--er);}
+.pin-status.info{color:var(--tx3);}
+.login-step{font-size:11px;color:var(--tx3);text-align:center;margin-bottom:14px;letter-spacing:.05em;}
+html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-ui,sans-serif;}
+.app{min-height:100vh;display:flex;flex-direction:column;}
+
+/* 헤더 */
+.hdr{padding:16px 24px;border-bottom:1px solid var(--bd2);background:rgba(18,6,14,0.95);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;flex-direction:column;}
+.hdr-title{font-family:'Noto Serif KR',serif;font-size:22px;font-weight:700;color:var(--tx);}
+.hdr-sub{font-family:'Noto Serif KR',serif;font-size:13px;color:var(--gold);margin-top:3px;font-weight:600;letter-spacing:.01em;}
+.hdr-user{display:flex;align-items:center;gap:8px;}
+.uid-badge{font-size:12px;color:var(--tx2);background:var(--sf2);border:1px solid var(--bd);border-radius:14px;padding:4px 12px;}
+.logout-btn{font-size:11px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
+.logout-btn:hover{color:var(--er);}
+
+/* 탭 */
+.tabs{display:flex;gap:2px;padding:10px 14px 0;border-bottom:1px solid var(--bd2);background:var(--sf);overflow-x:auto;}
+.tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--tx3);cursor:pointer;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:none;white-space:nowrap;background:transparent;transition:all .15s;}
+.tab:hover{color:var(--tx2);}
+.tab.act{color:var(--gold);background:var(--bg);border-color:var(--bd);border-bottom-color:var(--bg);margin-bottom:-1px;font-weight:700;}
+
+/* 메인 */
+.main{flex:1;padding:20px 16px;max-width:860px;margin:0 auto;width:100%;}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:22px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.card-title{font-size:11px;font-weight:700;color:var(--tx3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.8px;}
+
+/* 로그인 - 비디오 배경 + 글래스모피즘 */
+.login-scene{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.login-scene video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.login-scene::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(4,12,28,.25) 0%,rgba(8,20,45,.2) 50%,rgba(2,8,20,.3) 100%);}
+.login-wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login-box{width:100%;max-width:400px;}
+.login-header{text-align:center;margin-bottom:24px;}
+.login-logo{font-family:'Noto Serif KR',serif;font-size:33px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-.3px;text-shadow:0 0 18px rgba(120,180,255,.7),0 2px 8px rgba(0,0,0,.9);}
+.login-title{font-family:'Noto Serif KR',serif;font-size:19px;color:#fff;font-weight:600;margin-bottom:4px;letter-spacing:.06em;text-shadow:0 0 12px rgba(100,160,255,.6),0 1px 6px rgba(0,0,0,.9);}
+.login-desc{font-size:13px;color:rgba(230,240,255,.95);line-height:1.6;text-shadow:0 1px 6px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.8);}
+.login-card{
+  background:transparent;
+  border:2px solid rgba(255,255,255,.75);
+  border-radius:22px;
+  padding:30px 28px;
+  box-shadow:0 0 18px rgba(140,190,255,.3), 0 0 40px rgba(100,160,255,.15), inset 0 0 18px rgba(140,190,255,.06);
+}
+.login-label{font-size:13px;color:#fff;margin-bottom:6px;letter-spacing:.03em;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.9);}
+.login-input{
+  width:100%;box-sizing:border-box;
+  font-family:'Pretendard',sans-serif;font-size:15px;
+  padding:11px 15px;
+  border:1px solid rgba(255,255,255,.55);
+  border-radius:12px;outline:none;
+  background:rgba(255,255,255,.1);
+  color:#fff;margin-bottom:10px;transition:all .18s;
+  box-shadow:0 0 8px rgba(180,210,255,.2);
+}
+.login-input::placeholder{color:rgba(200,220,255,.55);}
+.login-input:focus{border-color:rgba(130,190,255,.9);background:rgba(255,255,255,.15);box-shadow:0 0 0 3px rgba(100,160,255,.15),0 0 12px rgba(130,190,255,.35);}
+.pin-digit{
+  width:52px;height:58px;
+  border:1px solid rgba(255,255,255,.55);border-radius:12px;
+  background:rgba(255,255,255,.1);
+  color:#fff;font-size:22px;font-weight:700;
+  text-align:center;font-family:'IBM Plex Mono',monospace;outline:none;
+  transition:border .15s, box-shadow .15s;
+  box-shadow:0 0 8px rgba(180,210,255,.2);
+}
+.pin-digit:focus{border-color:rgba(130,190,255,.9);box-shadow:0 0 0 3px rgba(100,160,255,.15),0 0 12px rgba(130,190,255,.35);}
+.login-btn{
+  width:100%;padding:13px;
+  background:rgba(100,160,255,.35);
+  color:#fff;border:1px solid rgba(140,190,255,.7);border-radius:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .18s;
+  box-shadow:0 0 12px rgba(100,160,255,.4),0 4px 16px rgba(60,120,255,.25);
+  letter-spacing:.04em;
+}
+.login-btn:hover{background:rgba(100,160,255,.5);border-color:rgba(180,220,255,.85);transform:translateY(-1px);box-shadow:0 0 18px rgba(100,160,255,.55),0 8px 24px rgba(60,120,255,.3);}
+.login-btn:active{transform:translateY(0);box-shadow:0 0 8px rgba(100,160,255,.3);}
+.login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.login-hint{font-size:12px;color:rgba(230,240,255,.9);text-align:center;margin-top:10px;line-height:1.6;text-shadow:0 1px 5px rgba(0,0,0,.9);}
+
+/* 허브 모듈 그리드 */
+.hub-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:700px){.hub-grid{grid-template-columns:repeat(2,1fr);}}
+
+/* ── 모바일 전용 (세로 폰) ──────────────────────────── */
+@media(max-width:480px){
+  .question{font-size:14px;line-height:1.85;}
+  .rv-exp{font-size:13.5px;}
+  .edit-btn{white-space:nowrap;font-size:10px;padding:2px 7px;gap:3px;margin-right:3px;}
+  .fb-btn{white-space:nowrap;font-size:10px;padding:2px 7px;gap:3px;}
+  .star-badge{white-space:nowrap;font-size:9px;padding:1px 5px;gap:2px;}
+  .qcard-topic{white-space:nowrap;font-size:10px;padding:1px 6px;}
+  .qcard-meta{gap:4px;}
+  .ox{font-size:34px;padding:14px 16px;}
+  .prog-label{font-size:11px;}
+  .prog-num{font-size:18px;}
+  .qcard{padding:14px 12px;}
+}
+
+.module-prog-text{font-size:11px;color:var(--muted);margin-top:3px;}
+.module-card.civ-proc{background:rgba(122,184,216,.1);border:1px solid rgba(122,184,216,.22);}
+.module-card.civ-proc .module-accent{display:none;}
+.module-card.civ-proc .soon-badge{background:rgba(121,192,255,.15);color:#79c0ff;border:1px solid rgba(121,192,255,.25);}
+.module-card{background:var(--sf);border:1px solid var(--bd);border-radius:4px;padding:22px 20px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.18);}
+.module-card.active:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(46,98,130,.2);}
+.module-card.soon{opacity:.55;cursor:not-allowed;}
+.module-card.soon:hover{transform:none;}
+.module-accent{display:none;}
+.module-icon{font-size:40px;margin-bottom:14px;color:var(--gold);line-height:1;}
+.module-name{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;color:var(--tx);margin-bottom:3px;}
+.module-sub{font-size:11px;color:var(--tx3);margin-bottom:12px;}
+.module-stats{display:flex;gap:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;}
+.module-stat{padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
+.module-stat.ok{color:var(--ok);border-color:rgba(63,185,80,.2);}
+.module-stat.er{color:var(--er);border-color:rgba(248,81,73,.2);}
+.module-stat.gold{color:var(--gold);border-color:rgba(212,168,83,.2);}
+.soon-badge{position:absolute;top:12px;right:12px;font-size:10px;padding:2px 8px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);color:var(--tx3);}
+.module-bar{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:10px;}
+.module-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
+
+/* 퀴즈 설정 */
+.pill-row{display:flex;gap:7px;flex-wrap:wrap;}
+.pill{padding:7px 18px;border-radius:24px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx2);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px;}
+.pill:hover{border-color:var(--gold);color:var(--gold);}
+.pill.act{background:var(--gf);border-color:var(--gf);color:#fff;}
+.pill.blue{border-color:rgba(88,166,255,.35);color:var(--blue);}
+.pill.blue.act{background:rgba(88,166,255,.15);border-color:var(--blue);color:var(--blue);}
+.pill.red{border-color:rgba(248,81,73,.35);color:var(--er);}
+.pill.red.act{background:rgba(248,81,73,.12);border-color:var(--er);}
+.pill.purple{border-color:rgba(188,140,255,.35);color:var(--purple);}
+.pill.purple.act{background:rgba(188,140,255,.12);border-color:var(--purple);color:var(--purple);}
+.cnt-badge{font-size:10px;opacity:.75;font-family:'IBM Plex Mono',monospace;}
+.star-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:6px;padding:2px 7px;margin-right:6px;letter-spacing:.3px;}
+.pill.star{border-color:#f59e0b;color:#f59e0b;}
+.pill.star.act{background:#f59e0b;color:#0d1117;}
+.wrong-badge{font-size:10px;background:rgba(248,81,73,.15);color:var(--er);padding:1px 5px;border-radius:8px;border:1px solid rgba(248,81,73,.3);}
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:12px;}
+.tc{background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:12px 13px;cursor:pointer;transition:all .15s;}
+.tc:hover{border-color:#4a9edd;}
+.tc.act{border:2px solid #4a9edd;background:rgba(74,158,221,.1);}
+.tc-icon{font-size:16px;margin-bottom:4px;}
+.tc-name{font-size:12px;font-weight:600;color:var(--tx);margin-bottom:2px;}
+.tc-cnt{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.tc-wc{font-size:10px;color:var(--er);margin-top:2px;}
+.tc-prog-wrap{margin-top:6px;display:flex;align-items:center;gap:6px;}
+.tc-prog-bar-bg{flex:1;height:4px;background:var(--bd2);border-radius:2px;overflow:hidden;}
+.tc-prog-bar-fill{height:100%;border-radius:2px;background:var(--gf);transition:width .3s;}
+.tc-prog-pct{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;min-width:30px;text-align:right;}
+.tc.done-tc{border-color:var(--gold)!important;background:rgba(212,168,83,.12)!important;}
+.tc.done-tc .tc-prog-bar-fill{background:#4caf50;}
+.tc.done-tc .tc-prog-pct{color:#4caf50;font-weight:700;}
+.start-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.start-btn{padding:12px 30px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;}
+.start-btn:hover{background:var(--gold);}
+.start-btn:disabled{opacity:.4;cursor:not-allowed;}
+.start-hint{font-size:12px;color:var(--tx3);}
+.clear-link{font-size:12px;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+
+/* 진행 */
+.prog-wrap{margin-bottom:18px;}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.prog-label{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prog-num{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.prog-num span{font-size:12px;color:var(--tx3);font-weight:400;}
+.prog-bar{height:3px;background:var(--bd);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:2px;transition:width .3s;}
+.prog-stats{display:flex;gap:14px;margin-top:6px;}
+.ps{font-size:11px;color:var(--tx3);}
+.ps strong{font-family:'IBM Plex Mono',monospace;}
+.ps.ok strong{color:var(--ok);}
+.ps.er strong{color:var(--er);}
+.ps.mk strong{color:var(--purple);}
+
+/* 퀴즈 카드 */
+.qcard{background:var(--sf);border:1px solid var(--bd);border-radius:18px;padding:26px 22px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.qcard-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.qcard-no{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.qcard-topic{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
+.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;text-align:justify;}
+.reveal{margin-top:18px;padding:14px 16px;border-radius:8px;animation:fi .2s ease;}
+.reveal.ok{background:var(--ok-bg);border:1px solid rgba(63,185,80,.3);}
+.reveal.er{background:var(--er-bg);border:1px solid rgba(248,81,73,.3);}
+.rv-label{font-size:18px;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.reveal.ok .rv-label{color:var(--ok);}
+.reveal.er .rv-label{color:var(--er);}
+.rv-verdict{font-size:12px;font-weight:600;opacity:.8;}
+.rv-exp{font-size:14.5px;line-height:1.75;color:var(--tx2);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);word-break:keep-all;text-align:justify;}
+.rv-toggle{font-size:12px;color:var(--blue);cursor:pointer;margin-top:5px;display:inline-block;text-decoration:underline;text-underline-offset:2px;}
+.mark-btn{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 12px;border-radius:20px;border:1px solid rgba(188,140,255,.4);background:transparent;color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.mark-btn:hover,.mark-btn.marked{background:rgba(188,140,255,.15);border-color:var(--purple);}
+.ox-row{display:flex;gap:10px;margin-top:16px;}
+.ox{flex:1;padding:16px;border-radius:14px;border:2px solid transparent;font-size:28px;font-weight:700;cursor:pointer;transition:all .15s cubic-bezier(.2,.8,.2,1);background:var(--sf2);}
+.ox.o{border-color:rgba(63,185,80,.3);color:var(--ok);}
+.ox.o:not(:disabled):hover{background:var(--ok-bg);border-color:var(--ok);transform:translateY(-2px);}
+.ox.x{border-color:rgba(248,81,73,.3);color:var(--er);}
+.ox.x:not(:disabled):hover{background:var(--er-bg);border-color:var(--er);transform:translateY(-2px);}
+.ox:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.ox.sel-o{background:var(--ok-bg);border-color:var(--ok);}
+.ox.sel-x{background:var(--er-bg);border-color:var(--er);}
+.next-btn{width:100%;padding:14px;background:var(--gf);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;transition:all .15s;letter-spacing:.2px;}
+.next-btn:hover{background:var(--gold);transform:translateY(-1px);box-shadow:0 6px 20px rgba(58,122,174,.2);}
+.back-btn{padding:6px 14px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;cursor:pointer;margin-bottom:14px;}
+.back-btn:hover{color:var(--blue);border-color:var(--blue);}
+
+/* 완료 */
+.done-card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:36px 20px;text-align:center;}
+.done-icon{font-size:44px;margin-bottom:14px;}
+.done-title{font-family:'Noto Serif KR',serif;font-size:21px;font-weight:700;color:var(--gold);margin-bottom:6px;}
+.done-sub{font-size:13px;color:var(--tx2);margin-bottom:22px;}
+.done-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px;}
+.ds{background:var(--sf2);border:1px solid var(--bd);border-radius:8px;padding:12px 6px;}
+.ds-n{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
+.ds-l{font-size:10px;color:var(--tx3);}
+.ds.c .ds-n{color:var(--ok);}
+.ds.w .ds-n{color:var(--er);}
+.ds.r .ds-n{color:var(--gold);}
+.ds.m .ds-n{color:var(--purple);}
+.act-row{display:flex;gap:8px;flex-wrap:wrap;}
+.act-btn{flex:1;min-width:90px;padding:11px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;}
+.act-btn:hover{border-color:var(--gold);color:var(--gold);}
+.act-btn.pri{background:var(--gold);border-color:var(--gold);color:#0d1117;}
+.act-btn.pri:hover{background:var(--gold2);}
+
+/* 오답 아카이브 */
+.arch-filter-row{display:flex;gap:6px;margin-bottom:12px;}
+.arch-filter{padding:4px 12px;border-radius:14px;border:1px solid var(--bd);background:transparent;color:var(--tx3);font-size:12px;cursor:pointer;transition:all .12s;}
+.arch-filter.act{border-color:var(--gold);color:var(--gold);background:rgba(212,168,83,.08);}
+.arch-filter.purple.act{border-color:var(--purple);color:var(--purple);background:rgba(188,140,255,.08);}
+.retry-btn{width:100%;padding:10px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:7px;color:var(--er);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .12s;}
+.retry-btn:hover{background:rgba(248,81,73,.2);}
+.retry-btn.mk{background:rgba(188,140,255,.1);border-color:rgba(188,140,255,.3);color:var(--purple);}
+.retry-btn.mk:hover{background:rgba(188,140,255,.2);}
+.arch-item{background:var(--sf);border:1px solid var(--bd2);border-left:3px solid var(--er);border-radius:7px;padding:12px 14px;margin-bottom:7px;cursor:pointer;transition:all .12s;}
+.arch-item:hover{background:var(--sf2);}
+.arch-item.exp{border-left-color:var(--gold);}
+.arch-item.mk-item{border-left-color:var(--purple);}
+.arch-q{font-size:13px;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;text-align:justify;}
+.arch-ans{font-size:11px;color:var(--tx3);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
+.arch-tag{font-size:10px;color:var(--tx3);background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:1px 6px;display:inline-block;margin-top:4px;margin-right:4px;}
+.arch-tag.mk{border-color:rgba(188,140,255,.3);color:var(--purple);background:rgba(188,140,255,.08);}
+.arch-exp{font-size:14px;color:var(--tx2);margin-top:7px;padding-top:7px;border-top:1px solid var(--bd2);line-height:1.65;display:none;word-break:keep-all;text-align:justify;}
+.arch-item.exp .arch-exp{display:block;}
+
+/* 관리자 */
+.admin-user-card{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.admin-uid{font-size:14px;font-weight:700;color:var(--gold);min-width:100px;}
+.admin-stats{display:flex;gap:10px;font-size:12px;flex:1;flex-wrap:wrap;}
+.admin-stat{color:var(--tx3);}
+.admin-stat b{font-family:'IBM Plex Mono',monospace;}
+.admin-stat.ok b{color:var(--ok);}
+.admin-stat.er b{color:var(--er);}
+.admin-stat.gold b{color:var(--gold);}
+.rst-btn{font-size:11px;color:var(--tx3);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
+.rst-btn:hover{color:var(--er);}
+
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* 이어풀기 배너 */
+.resume-banner{background:var(--sf2);border:1px solid var(--gold);border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.resume-info{font-size:13px;color:var(--tx);}
+.resume-info b{color:var(--gold);font-family:'IBM Plex Mono',monospace;}
+.resume-btns{display:flex;gap:8px;}
+.resume-cont{padding:8px 18px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.resume-cont:hover{background:var(--gold2);}
+.resume-new{padding:8px 14px;background:transparent;border:1px solid var(--bd);color:var(--tx2);border-radius:8px;font-size:13px;cursor:pointer;}
+.resume-new:hover{border-color:var(--tx);color:var(--tx);}
+/* 아카이브 회독 */
+.arch-round-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.art{padding:5px 14px;border-radius:16px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx3);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.art:hover{border-color:var(--gold);color:var(--gold);}
+.art.act{background:var(--gold);border-color:var(--gold);color:#0d1117;}
+.art-cnt{font-size:10px;opacity:.75;margin-left:4px;font-family:'IBM Plex Mono',monospace;}
+/* 관리자 */
+.admin-search{display:flex;gap:8px;margin-bottom:14px;}
+.admin-search input{flex:1;font-family:'Pretendard',sans-serif;font-size:13px;padding:9px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--sf2);color:var(--tx);outline:none;}
+.admin-search input:focus{border-color:var(--gold);}
+.admin-search button{padding:9px 16px;background:var(--gold);color:#0d1117;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.admin-note{font-size:11px;color:var(--tx3);margin-bottom:10px;line-height:1.5;}
+
+/* 인라인 편집 */
+.edit-save:hover{opacity:.85;}
+.edit-cancel:hover{color:var(--tx);}
+/* 관리자 - 수정 내역 */
+@keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.su{animation:su .2s ease;}
+`;
+
+// ── 헬퍼 ─────────────────────────────────────────────
+const TOPIC_ICONS = {}
+
+// ── 메인 앱 ───────────────────────────────────────────
+function App() {
+  // ── 로그인/세션 상태
+  const [uid,    setUid]    = useState(null);     // 현재 사용자 ID
+  const [isAdmin,setIsAdmin]= useState(false);
+
+  // ── 화면 상태
+  const [screen, setScreen] = useState("hub");    // hub | quiz | archive | admin
+  const [activeModule, setActiveModule] = useState(null); // 현재 선택된 모듈
+
+  // ── 퀴즈 설정
+  const [cfgRound,  setCfgRound]  = useState(1);
+  const [cfgMode,   setCfgMode]   = useState("all");
+  const [cfgTopics, setCfgTopics] = useState([]);
+
+  // ── 퀴즈 진행
+  const [inQuiz,   setInQuiz]   = useState(false);
+  const [queue,    setQueue]    = useState([]);
+  const [qidx,     setQidx]     = useState(0);
+  const [answered, setAnswered] = useState(null);
+  const [userAns,  setUserAns]  = useState(null);
+  const [showExp,  setShowExp]  = useState(false);
+  const [sessCor,  setSessCor]  = useState(0);
+  const [sessErr,  setSessErr]  = useState(0);
+  const [sessMark, setSessMark] = useState(0);
+  const [done,     setDone]     = useState(false);
+  const [label,    setLabel]    = useState("");
+
+  // ── 스토리지 (모듈별 회독별)
+  const [hubStats,  setHubStats]  = useState({});  // {modId: {wc, mc, pct}}
+  const [wrongMap,  setWrongMap]  = useState({});
+  const [markedMap, setMarkedMap] = useState({});
+  const [progMap,   setProgMap]   = useState({});
+
+  // ── 아카이브
+  const [archExp,     setArchExp]     = useState({});
+  const [archFilter,  setArchFilter]  = useState("wrong");
+
+  // ── 피드백
+  const [fbOpen,    setFbOpen]    = useState(false);
+  const [fbType,    setFbType]    = useState("오류 제보");
+  const [fbText,    setFbText]    = useState("");
+  const [fbList,    setFbList]    = useState([]);  // 현재 문항 피드백
+  const [fbLoading, setFbLoading] = useState(false);
+  const [archRound,   setArchRound]   = useState(1);
+  const [awWrongMap,  setAwWrongMap]  = useState({});
+  const [awMarkMap,   setAwMarkMap]   = useState({});
+
+  // ── 문항 수정본 (공유)
+  const [userEdits, setUserEdits] = useState({});
+
+  // ── 이어풀기 세션
+  const [savedSession, setSavedSession] = useState(null);
+
+  // ── 관리자
+  const [adminUsers,  setAdminUsers]  = useState([]);
+  const [adminSearch, setAdminSearch] = useState("");
+  const [adminResult, setAdminResult] = useState(null);
+  const [adminFbs,    setAdminFbs]    = useState(null);  // null=미로드, {}=로드완료
+  const [adminFbLoad, setAdminFbLoad] = useState(false);
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [editQ,       setEditQ]       = useState('');
+  const [editE,       setEditE]       = useState('');
+  const [adminEdits,  setAdminEdits]  = useState(null);
+  const [adminEditLoad,setAdminEditLoad]=useState(false);
+
+  // ── 테마 (dark / light)
+  const [theme, setTheme] = React.useState(() => {
+    try { return localStorage.getItem('quiz_theme') || 'light'; } catch { return 'light'; }
+  });
+  React.useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light');
+    try { localStorage.setItem('quiz_theme', theme); } catch {}
+  }, [theme]);
+
+  // ── 초기화: 로컬스토리지에서 마지막 uid 복원
+  useEffect(() => {
+    const saved = localStorage.getItem("hub_last_uid") || "";
+    if (saved) tryLogin(saved, true);
+  }, []);
+
+  // ── 스토리지 저장 헬퍼
+  const sw = async (key, val) => { try { await window.storage.set(key, JSON.stringify(val)); } catch {} };
+  const gr = async (key, fallback) => { try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : fallback; } catch { return fallback; } };
+
+  // ── 로그인
+  async function tryLogin(id, silent=false) {
+    if (!id.trim()) return;
+    const isAdm = id === ADMIN_ID;
+    setUid(id);
+    setIsAdmin(isAdm);
+    localStorage.setItem("hub_last_uid", id);
+
+    // 접속 시각 갱신 (PIN 로그인에서 이미 info 설정됨, 여기서는 lastSeen만 갱신)
+    if (!isAdm) {
+      const safeId = id.replace(/[.#$\[\]]/g, '_');
+      try {
+        const existing = await fb.get(`users/${safeId}/info`);
+        await fb.set(`users/${safeId}/info`, {
+          ...(existing || { id }),
+          lastSeen: Date.now(),
+          lastDate: new Date().toLocaleDateString('ko-KR')
+        });
+      } catch {}
+      await sw(K_UTIME(id), Date.now());
+    }
+
+    // 첫 번째 활성 모듈 설정
+    const firstMod = MODULE_REGISTRY.find(m => m.status === "active");
+    if (firstMod) setActiveModule(firstMod.id);
+
+    setScreen("hub");
+    loadHubStats(id);
+  }
+
+  // ── 모듈 스토리지 로드
+  async function loadHubStats(userId) {
+    if (!userId) return;
+    const sid = toSafeId(userId);
+    const stats = {};
+    for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+      const allWrong = new Set(), allMarked = new Set();
+      let answered=0, total=mod.count||0;
+      for (const r of ROUNDS) {
+        const fbW = await fb.get(fbPath.wrong(sid,mod.id,r));
+        const w = fbW || await gr(K_WRONG(userId,mod.id,r), []);
+        w.forEach(id=>allWrong.add(id));
+        const fbM = await fb.get(fbPath.marked(sid,mod.id,r));
+        const m2 = fbM || await gr(K_MARKED(userId,mod.id,r), []);
+        m2.forEach(id=>allMarked.add(id));
+      }
+      // 진행률: 1회독 기준
+      const fbP = await fb.get(fbPath.prog(sid,mod.id,1));
+      const lsP = await gr(K_PROG(userId,mod.id,1), {answered:[]});
+      const p = fbP || lsP;
+      answered = (p.answered||[]).length;
+      const pct = total ? Math.round(answered/total*100) : 0;
+      stats[mod.id] = {wc: allWrong.size, mc: allMarked.size, answered, pct};
+    }
+    setHubStats(stats);
+  }
+
+  async function loadModuleData(mid) {
+    if (!uid) return;
+    const sid = toSafeId(uid);
+    const wm = {}, mm = {}, pm = {}, awm = {}, amm = {};
+
+    for (const r of ROUNDS) {
+      // Firebase 우선, 없으면 localStorage 폴백
+      const fbW = await fb.get(fbPath.wrong(sid,mid,r));
+      wm[r] = new Set(fbW || await gr(K_WRONG(uid,mid,r), []));
+
+      const fbM = await fb.get(fbPath.marked(sid,mid,r));
+      mm[r] = new Set(fbM || await gr(K_MARKED(uid,mid,r), []));
+
+      const fbP = await fb.get(fbPath.prog(sid,mid,r));
+      const lsP = await gr(K_PROG(uid,mid,r), {answered:[],correct:[],wrong:[]});
+      const p   = fbP || lsP;
+      pm[r] = { answered:new Set(p.answered||[]), correct:new Set(p.correct||[]), wrong:new Set(p.wrong||[]) };
+
+      const fbAW = await fb.get(fbPath.awWrong(sid,mid,r));
+      awm[r] = new Set(fbAW || await gr(K_AW_WRONG(uid,mid,r), []));
+
+      const fbAM = await fb.get(fbPath.awMark(sid,mid,r));
+      amm[r] = new Set(fbAM || await gr(K_AW_MARK(uid,mid,r), []));
+    }
+
+    setWrongMap(wm); setMarkedMap(mm); setProgMap(pm);
+    setAwWrongMap(awm); setAwMarkMap(amm);
+
+    // 아카이브 회독
+    const fbAR = await fb.get(fbPath.archRound(sid,mid));
+    const arVal = fbAR ?? await gr(K_AW_ROUND(uid,mid), 1);
+    setArchRound(arVal);
+
+    // 세션
+    const fbSess = await fb.get(fbPath.session(sid,mid));
+    const lsSess = await gr(K_SESSION(uid,mid), null);
+    setSavedSession(fbSess || lsSess);
+
+    // 수정본 (Firebase 공유)
+    const fbEdits = await fb.list(`edits/${mid}`);
+    const edits = {};
+    for (const ed of Object.values(fbEdits||{})) {
+      if (ed?.qid) edits[ed.qid] = {question:ed.question, explanation:ed.explanation};
+    }
+    setUserEdits(edits);
+  }
+
+  useEffect(() => { if (uid && activeModule) loadModuleData(activeModule); }, [uid, activeModule]);
+
+  // 수정본 저장 (공유: 모든 유저에게 적용)
+  const saveEdit = async (qid, q, e) => {
+    const next = {...userEdits};
+    if (q === null) {
+      delete next[qid];
+    } else {
+      next[qid] = { ...(next[qid]||{}), question: q, explanation: e };
+    }
+    setUserEdits(next);
+    await window.storage.set(K_EDITS(activeModule), JSON.stringify(next));
+  };
+
+  // 현재 문항에 수정본 적용
+  const applyEdit = (q) => {
+    if (!q) return q;
+    const ed = userEdits[q.id];
+    if (!ed) return q;
+    return { ...q, question: ed.question ?? q.question, explanation: ed.explanation ?? q.explanation };
+  };
+
+  // 이중 저장: Firebase(공유) + localStorage(빠른 읽기)
+  const _fbsw = (path, data) => { fb.set(path, data); }; // fire-and-forget
+
+  const saveWrong = (r,s) => {
+    const arr = [...s];
+    sw(K_WRONG(uid,activeModule,r), arr);
+    _fbsw(fbPath.wrong(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveMarked = (r,s) => {
+    const arr = [...s];
+    sw(K_MARKED(uid,activeModule,r), arr);
+    _fbsw(fbPath.marked(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveProg = (r,p) => {
+    const obj = {answered:[...p.answered],correct:[...p.correct],wrong:[...p.wrong]};
+    sw(K_PROG(uid,activeModule,r), obj);
+    _fbsw(fbPath.prog(toSafeId(uid),activeModule,r), obj);
+  };
+  const saveAwWrong = (r,s) => {
+    const arr = [...s];
+    sw(K_AW_WRONG(uid,activeModule,r), arr);
+    _fbsw(fbPath.awWrong(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveAwMark = (r,s) => {
+    const arr = [...s];
+    sw(K_AW_MARK(uid,activeModule,r), arr);
+    _fbsw(fbPath.awMark(toSafeId(uid),activeModule,r), arr);
+  };
+  const saveArchRound = (r) => {
+    sw(K_AW_ROUND(uid,activeModule), r);
+    _fbsw(fbPath.archRound(toSafeId(uid),activeModule), r);
+  };
+  const saveSession = (sess) => {
+    sw(K_SESSION(uid,activeModule), sess || null);
+    _fbsw(fbPath.session(toSafeId(uid),activeModule), sess || null);
+  };
+
+  // ── 퀴즈 시작
+  function launchQuiz(round, mode, topics, resumeData=null, forceNew=false) {
+    const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
+    if (!mod) return;
+    const all = mod.getData();
+    let pool, lbl;
+
+    // 아카이브 전용 회독(aw_*): archRound 기준
+    if (mode === "aw_wrong") {
+      const r = archRound;
+      pool = all.filter(q => (awWrongMap[r]||new Set()).has(q.id));
+      if (!pool.length) return;
+      lbl = `아카이브 ${r}회독 · 오답 (${pool.length}문제)`;
+    } else if (mode === "aw_mark") {
+      const r = archRound;
+      pool = all.filter(q => (awMarkMap[r]||new Set()).has(q.id));
+      if (!pool.length) return;
+      lbl = `아카이브 ${r}회독 · 헷갈림 (${pool.length}문제)`;
+    } else if (mode === "aw_all") {
+      const r = archRound;
+      const wids = awWrongMap[r]||new Set(), mids = awMarkMap[r]||new Set();
+      pool = all.filter(q => wids.has(q.id)||mids.has(q.id));
+      if (!pool.length) return;
+      lbl = `아카이브 ${r}회독 · 전체 (${pool.length}문제)`;
+    } else if (mode === "wrong+marked") {
+      const wids = wrongMap[round]||new Set(), mids = markedMap[round]||new Set();
+      pool = all.filter(q => wids.has(q.id) || mids.has(q.id));
+      if (!pool.length) return;
+      lbl = `${round}회독 오답+헷갈림 (${pool.length}문제)`;
+    } else if (mode === "rnd100") {
+      pool = shuffle([...all]).slice(0, 100);
+      lbl = `${round}회독 무작위 100문제`;
+    } else if (mode === "star") {
+      pool = all.filter(q => q.star);
+      if (!pool.length) return;
+      lbl = `${round}회독 · ⭐ 중요문제 (${pool.length}문제)`;
+    } else if (mode === "topic") {
+      pool = topics.length > 0 ? all.filter(q => topics.some(t => t === "15V" ? String(q.id).startsWith("15V") : q.topic === t)) : [...all];
+      lbl = `${round}회독 · ${topics.length > 0 ? topics.map(t=>mod.topics.find(x=>x.key===t)?.label||t).join(', ') : '전체'} (${pool.length}문제)`;
+    } else {
+      pool = [...all];
+      lbl = `${round}회독 전체 ${all.length}문제`;
+    }
+
+    // 이어풀기: resumeData가 있으면 복원, 없으면 섞어서 시작
+    let finalQueue, startIdx;
+    // forceNew=false이고 resumeData 없으면 savedSession 자동 사용
+    const effectiveResume = forceNew ? null : (resumeData || savedSession);
+    const topicsMatch = mode !== "topic" || (
+      effectiveResume &&
+      [...(effectiveResume.topics||[])].sort().join(",") === [...topics].sort().join(",")
+    );
+    if (effectiveResume && effectiveResume.mode === mode && effectiveResume.round === round
+      && effectiveResume.module === activeModule && topicsMatch) {
+      // 저장된 큐 순서 복원 (ID 배열로 저장 → 실제 문제 객체로 매핑)
+      const qMap = Object.fromEntries(all.map(q=>[q.id, q]));
+      const restored = (effectiveResume.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
+      if (restored.length > 0) {
+        finalQueue = restored;
+        startIdx = effectiveResume.qidx || 0;
+        lbl = effectiveResume.label || lbl;
+      } else {
+        finalQueue = shuffle(pool);
+        startIdx = 0;
+      }
+    } else {
+      finalQueue = shuffle(pool);
+      startIdx = 0;
+    }
+
+    // 세션 저장
+    const sessData = {
+      mode, round, topics,
+      queueIds: finalQueue.map(q=>q.id),
+      qidx: startIdx,
+      label: lbl,
+      module: activeModule,
+    };
+    saveSession(sessData);
+    setSavedSession(sessData);
+
+    setQueue(finalQueue);
+    setQidx(startIdx); setAnswered(null); setUserAns(null); setShowExp(false);
+    setFbList([]); setFbOpen(false);
+    setSessCor(0); setSessErr(0); setSessMark(0);
+    setDone(false); setLabel(lbl); setInQuiz(true); setScreen("quiz");
+  }
+
+  function exitQuiz() {
+    // 종료 시 현재 위치 저장 (qidx 갱신된 상태 유지 → 이어풀기용)
+    setInQuiz(false); setDone(false); setScreen("quiz");
+  }
+
+  function handleAnswer(choice) {
+    if (answered !== null) return;
+    const cur = queue[qidx];
+    const correct = choice === cur.answer;
+    setUserAns(choice); setAnswered(correct ? "ok" : "er"); setShowExp(false);
+    const r = cfgRound;
+    const np = {
+      answered: new Set([...(progMap[r]?.answered||[]), cur.id]),
+      correct:  new Set([...(progMap[r]?.correct||[])]),
+      wrong:    new Set([...(progMap[r]?.wrong||[])])
+    };
+    const nw = new Set(wrongMap[r]||[]);
+    if (correct) { np.correct.add(cur.id); setSessCor(p=>p+1); }
+    else { np.wrong.add(cur.id); nw.add(cur.id); setSessErr(p=>p+1); }
+    setProgMap(pm=>({...pm,[r]:np}));
+    setWrongMap(wm=>({...wm,[r]:nw}));
+    saveProg(r,np); saveWrong(r,nw);
+
+    // 아카이브 회독용 오답 추가 (메인 오답은 아카이브 현재 회독에도 자동 적재)
+    if (!correct) {
+      const ar = archRound;
+      const nawm = new Set(awWrongMap[ar]||[]);
+      nawm.add(cur.id);
+      setAwWrongMap(m=>({...m,[ar]:nawm}));
+      saveAwWrong(ar, nawm);
+    }
+  }
+
+  function toggleMark() {
+    const cur = queue[qidx]; const r = cfgRound;
+    const nm = new Set(markedMap[r]||[]);
+    if (nm.has(cur.id)) { nm.delete(cur.id); setSessMark(p=>Math.max(0,p-1)); }
+    else { nm.add(cur.id); setSessMark(p=>p+1); }
+    setMarkedMap(mm=>({...mm,[r]:nm}));
+    saveMarked(r,nm);
+
+    // 아카이브 회독용 헷갈림도 동기화
+    const ar = archRound;
+    const namm = new Set(awMarkMap[ar]||[]);
+    if (nm.has(cur.id)) namm.add(cur.id); else namm.delete(cur.id);
+    setAwMarkMap(m=>({...m,[ar]:namm}));
+    saveAwMark(ar, namm);
+  }
+
+  function handleNext() {
+    if (qidx+1 >= queue.length) {
+      setDone(true);
+      saveSession(null); // 완료 시 세션 삭제
+      setSavedSession(null);
+    } else {
+      const nextIdx = qidx+1;
+      setQidx(nextIdx);
+      setAnswered(null); setUserAns(null); setShowExp(false);
+      setFbList([]); setFbOpen(false);
+      // 세션 qidx 갱신
+      if (savedSession) {
+        const updated = {...savedSession, qidx: nextIdx};
+        setSavedSession(updated);
+        saveSession(updated);
+      }
+    }
+  }
+
+  async function resetModule() {
+    if (!confirm(`${activeModule} 모듈 전체 기록을 초기화하시겠습니까?`)) return;
+    for (const r of ROUNDS) {
+      const np = {answered:new Set(),correct:new Set(),wrong:new Set()};
+      setProgMap(pm=>({...pm,[r]:np}));
+      setWrongMap(wm=>({...wm,[r]:new Set()}));
+      setMarkedMap(mm=>({...mm,[r]:new Set()}));
+      saveProg(r,np); saveWrong(r,new Set()); saveMarked(r,new Set());
+    }
+  }
+
+  // ── 헬퍼
+  const getMod   = () => MODULE_REGISTRY.find(m => m.id === activeModule);
+  const getAll   = () => getMod()?.getData() || [];
+  const wCnt     = r => (wrongMap[r]||new Set()).size;
+  const mCnt     = r => (markedMap[r]||new Set()).size;
+  const wmCnt    = r => new Set([...(wrongMap[r]||new Set()), ...(markedMap[r]||new Set())]).size;
+  const awCnt    = r => (awWrongMap[r]||new Set()).size;
+  const amCnt    = r => (awMarkMap[r]||new Set()).size;
+  const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
+  const tCnt     = k => getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k).length;
+  const tWrong   = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(wrongMap[r]||new Set()).has(q.id)).length;
+  const tProg    = (r,k) => { const all=getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k); const ans=(progMap[r]?.answered||new Set()); const done=all.filter(q=>ans.has(q.id)).length; return {done, total:all.length, pct:all.length?Math.round(done/all.length*100):0}; };
+  const TOTAL    = getAll().length;
+  const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
+  const canStart = cfgMode !== "topic" || cfgTopics.length > 0;
+  // 이어풀기 세션이 현재 설정과 매칭되는지 확인
+  const hasResume = savedSession && savedSession.round===cfgRound && savedSession.mode===cfgMode
+    && savedSession.module===activeModule
+    && (cfgMode!=="topic" || (savedSession.topics||[]).join(",")===[...cfgTopics].sort().join(","))
+    && (savedSession.qidx||0) > 0
+    && (savedSession.queueIds||[]).length > (savedSession.qidx||0);
+  const startCnt = cfgMode==="all" ? TOTAL : cfgMode==="rnd100" ? 100 : cfgMode==="topic" ? getAll().filter(q=>cfgTopics.includes(q.topic)).length : cfgMode==="wrong+marked" ? wmCnt(cfgRound) : 0;
+  const cur      = applyEdit(queue[qidx]);
+  const curMark  = cur && (markedMap[cfgRound]||new Set()).has(cur.id);
+
+  // 아카이브 표시
+  const archItems = r => {
+    const wids = wrongMap[r]||new Set(), mids = markedMap[r]||new Set();
+    if (archFilter==="wrong")  return getAll().filter(q=>wids.has(q.id));
+    if (archFilter==="marked") return getAll().filter(q=>mids.has(q.id)&&!wids.has(q.id));
+    return getAll().filter(q=>wids.has(q.id)||mids.has(q.id));
+  };
+
+  // 관리자 유저 목록 로드
+  // ── 피드백 로드 (현재 문항)
+  async function loadFeedbacks(qid, mid) {
+    try {
+      const data = await fb.list(`feedbacks/${mid}/${toSafeId(String(qid))}`);
+      const items = Object.values(data||{})
+        .filter(Boolean)
+        .sort((a,b)=>(b.ts||0)-(a.ts||0));
+      setFbList(items);
+    } catch { setFbList([]); }
+  }
+
+  // ── 피드백 제출
+  async function submitFeedback(qid, mid) {
+    if (!fbText.trim()) return;
+    setFbLoading(true);
+    try {
+      const key = Date.now().toString();
+      const safeQid = toSafeId(String(qid));
+      await fb.set(`feedbacks/${mid}/${safeQid}/${key}`, {
+        uid, type: fbType, text: fbText.trim(),
+        ts: Date.now(),
+        date: new Date().toLocaleDateString('ko-KR'),
+        qid: String(qid), mid,
+      });
+      setFbText(""); setFbOpen(false);
+      loadFeedbacks(qid, mid);
+    } catch(e) { alert("피드백 저장 실패: " + e.message); }
+    setFbLoading(false);
+  }
+
+  // ── 피드백 전체 로드 (관리자)
+  // ── 문제 수정 열기
+  function openEdit(q) {
+    const ed = userEdits[q.id];
+    setEditTarget(q);
+    setEditQ(ed?.question ?? q.question ?? '');
+    setEditE(ed?.explanation ?? q.explanation ?? '');
+    setEditOpen(true);
+  }
+
+  // ── 수정 저장 (Firebase 공유)
+  async function submitEdit() {
+    if (!editTarget) return;
+    const qid = editTarget.id;
+    const safeQid = toSafeId(String(qid));
+    try {
+      await fb.set(`edits/${activeModule}/${safeQid}`, {
+        uid, ts: Date.now(),
+        date: new Date().toLocaleDateString('ko-KR'),
+        qid: String(qid), mid: activeModule,
+        question: editQ.trim(),
+        explanation: editE.trim(),
+        original_q: editTarget.question,
+        original_e: editTarget.explanation,
+      });
+      const next = {...userEdits, [qid]: {question:editQ.trim(), explanation:editE.trim()}};
+      setUserEdits(next);
+      setEditOpen(false);
+    } catch(e) { alert('수정 저장 실패: ' + e.message); }
+  }
+
+  // ── 수정 원복
+  async function resetEdit(qid) {
+    if (!window.confirm('원본으로 복원할까요?')) return;
+    const safeQid = toSafeId(String(qid));
+    await fb.set(`edits/${activeModule}/${safeQid}`, null);
+    const next = {...userEdits}; delete next[qid]; setUserEdits(next);
+  }
+
+  // ── 관리자: 전체 수정 내역 로드
+  async function loadAllEdits() {
+    try {
+      const allMods = {};
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==='active')) {
+        const modData = await fb.list(`edits/${mod.id}`);
+        const items = Object.values(modData||{}).filter(Boolean)
+          .sort((a,b)=>(b.ts||0)-(a.ts||0));
+        if (items.length) allMods[mod.id] = items;
+      }
+      return allMods;
+    } catch { return {}; }
+  }
+
+  async function loadAllFeedbacks() {
+    try {
+      const allMods = {};
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+        const modData = await fb.list(`feedbacks/${mod.id}`);
+        const items = [];
+        for (const [qid, qFbs] of Object.entries(modData||{})) {
+          for (const fb_item of Object.values(qFbs||{})) {
+            if (fb_item) items.push({...fb_item, qid, modLabel:mod.label});
+          }
+        }
+        if (items.length) allMods[mod.id] = items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+      }
+      return allMods;
+    } catch { return {}; }
+  }
+
+
+  async function loadAdminUsers() {
+    // Firebase에서 전체 유저 + 완전한 학습 통계 조회
+    const fbAll = await fb.list('users');
+    if (!fbAll) { setAdminUsers([]); return; }
+
+    const users = [];
+    for (const [safeId, userData] of Object.entries(fbAll)) {
+      if (!userData || typeof userData !== 'object') continue;
+      // info 서브키 있는 경우(신규)와 없는 경우(구버전) 모두 지원
+      const info = userData.info || {};
+      const id = info.id || userData.id || safeId;
+      if (!id || id === ADMIN_ID) continue;
+      const lastSeen = info.lastSeen || userData.lastSeen || 0;
+      const lastDate = info.lastDate || userData.lastDate || '';
+
+      const stats = userData?.stats || {};
+      let total_ans=0, total_cor=0, total_wrg=0;
+      const modStats = [];
+
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+        const modData = stats[mod.id] || {};
+        let m_ans=0, m_cor=0, m_wrg=0;
+        for (const r of ROUNDS) {
+          const p = modData[`prog_${r}`] || {};
+          m_ans += (p.answered||[]).length;
+          m_cor += (p.correct||[]).length;
+          m_wrg += (p.wrong||[]).length;
+        }
+        total_ans+=m_ans; total_cor+=m_cor; total_wrg+=m_wrg;
+        if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
+          pct: m_ans>0?Math.round(m_cor/m_ans*100):0});
+      }
+      users.push({ id, last:lastSeen, lastDate, ans:total_ans, cor:total_cor, wrg:total_wrg, modStats });
+    }
+    users.sort((a,b)=>(b.last||0)-(a.last||0));
+    setAdminUsers(users);
+  }
+
+  async function adminSearchUser(searchId) {
+    if (!searchId.trim()) return;
+    const id = searchId.trim();
+    const safeId = toSafeId(id);
+
+    // Firebase에서 완전한 데이터 조회
+    const userData = await fb.get(`users/${safeId}`);
+    if (!userData) { setAdminResult({id, notFound:true}); return; }
+
+    // info 서브키 있는 경우(신규)와 없는 경우(구버전) 모두 지원
+    const info  = userData.info  || {};
+    const stats = userData.stats || {};
+    const lastSeen_ = info.lastSeen || userData.lastSeen || 0;
+    const lastDate_ = info.lastDate || userData.lastDate || '';
+    let total_ans=0, total_cor=0, total_wrg=0;
+    const modStats = [];
+
+    for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+      const modData = stats[mod.id] || {};
+      let m_ans=0, m_cor=0, m_wrg=0, m_wrg_cnt=0, m_mk_cnt=0;
+      for (const r of ROUNDS) {
+        const p = modData[`prog_${r}`] || {};
+        m_ans += (p.answered||[]).length;
+        m_cor += (p.correct||[]).length;
+        m_wrg += (p.wrong||[]).length;
+        m_wrg_cnt += (modData[`wrong_${r}`]||[]).length;
+        m_mk_cnt  += (modData[`marked_${r}`]||[]).length;
+      }
+      total_ans+=m_ans; total_cor+=m_cor; total_wrg+=m_wrg;
+      if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
+        pct:m_ans>0?Math.round(m_cor/m_ans*100):0, wrongCnt:m_wrg_cnt, markCnt:m_mk_cnt});
+    }
+
+    if (!lastSeen_ && total_ans===0) { setAdminResult({id, notFound:true}); return; }
+    setAdminResult({id, last:lastSeen_, lastDate:lastDate_, ans:total_ans, cor:total_cor, wrg:total_wrg, modStats});
+  }
+
+  useEffect(() => { if (isAdmin && screen==="admin") loadAdminUsers(); }, [screen, isAdmin]);
+
+  // ══════════════════════════════════════════
+  //  렌더
+  // ══════════════════════════════════════════
+
+  // 로그인 전
+  if (!uid) return (
+    <><style>{CSS}</style>
+    <LoginScreen onLogin={tryLogin} />
+    </>
+  );
+
+  function renderExp(exp) {
+    if (!exp) return null;
+    const boxStyle = {
+      background:'var(--sf2)', border:'1px solid var(--bd2)',
+      borderLeft:'3px solid var(--blue)', borderRadius:6,
+      padding:'6px 10px', margin:'4px 0', fontSize:14,
+      color:'var(--tx2)', fontFamily:"'Noto Sans KR', sans-serif", lineHeight:1.6
+    };
+    // ▸ 앞 또는 \n[AI해설] 앞에서 분리
+    const segs = exp.split(/(?=▸)|\n(?=\[AI해설\])/).filter(s => s.trim());
+    return segs.map((seg, si) => {
+      const t = seg.trim();
+      // [AI해설] 섹션
+      if (t.startsWith('[AI해설]')) {
+        return (
+          <div key={si} style={{marginTop:10,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,.1)',fontSize:14,color:'var(--tx3)',lineHeight:1.7}}>
+            <span style={{display:'inline-block',background:'rgba(82,167,254,.15)',color:'var(--blue)',borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,marginRight:6}}>AI해설</span>
+            {t.slice('[AI해설]'.length).trim()}
+          </div>
+        );
+      }
+      // [조문] 전체 섹션 → 박스
+      if (t.startsWith('[조문]')) {
+        return <div key={si} style={{...boxStyle, marginBottom: si < segs.length-1 ? 6 : 0}}>{t.slice('[조문]'.length).trim()}</div>;
+      }
+      // 일반 ▸ 섹션 — 인라인 제NNN조 / [법조문] / [조문] 박스 처리
+      const parts = seg.split(/(제\d+조[^가-힣\n]{5,150}[가-힣]|\[법조문\][^\n]+|\[조문\][^\n]+)/g);
+      const nextIsAI = segs[si+1]?.trim().startsWith('[AI해설]');
+      return (
+        <div key={si} style={{marginBottom: si < segs.length-1 && !nextIsAI ? 10 : 0}}>
+          {parts.map((p, pi) => {
+            const pt = p.trim();
+            if (/^제\d+조/.test(pt) || /^\[법조문\]/.test(pt)) return <div key={pi} style={boxStyle}>{p}</div>;
+            if (/^\[조문\]/.test(pt)) return <div key={pi} style={boxStyle}>{p.replace(/^\[조문\]\s*/,'')}</div>;
+            return <span key={pi} style={{whiteSpace:'pre-wrap'}}>{p}</span>;
+          })}
+        </div>
+      );
+    });
+  }
+
+  return (
+    <><style>{CSS}</style>
+    <div className="app">
+
+      {/* 헤더 */}
+      <div className="hdr">
+        <div className="hdr-left">
+          <div className="hdr-title">⚖︎ 3000제 OX 퀴즈</div>
+          <div className="hdr-sub">형사법 선택형 기출 최신빈출지문</div>
+        </div>
+        <div className="hdr-user">
+          <button className="theme-toggle" title="테마 전환"
+            onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+            {theme==='dark' ? '☀️' : '🌙'}
+          </button>
+          <span className="uid-badge">👤 {uid}</span>
+          <button className="logout-btn" onClick={()=>{ setUid(null); setIsAdmin(false); localStorage.removeItem("hub_last_uid"); }}>로그아웃</button>
+        </div>
+      </div>
+
+      {/* 탭 */}
+      <div className="tabs">
+        {[
+          ["hub","모듈 선택"],
+          activeModule && getMod()?.status==="active" ? ["quiz","퀴즈"] : null,
+          activeModule && getMod()?.status==="active" ? ["archive","오답 아카이브"] : null,
+          isAdmin ? ["admin","관리자"] : null,
+        ].filter(Boolean).map(([t,l])=>(
+          <button key={t} className={`tab ${screen===t?"act":""}`}
+            onClick={()=>{ setScreen(t); if(t!=="quiz"){setInQuiz(false);setDone(false);} }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div className="main">
+
+        {/* ════ 허브 ════ */}
+        {screen==="hub" && (
+          <div className="su">
+            <div style={{marginBottom:14}}>
+              <div className="card-title">학습 범위 선택</div>
+              <div className="hub-notice">
+                <span className="hub-notice-icon">📖</span>
+                <span>정연석 3000제 문제를 100% 구현(+15회 변호사시험: 유니온 발췌). 누락·오류 검수 1차 완료 후 문제 업데이트.<br/>기타 문제 발견이나 원하는 기능은 페이지 내 피드백 기능을 이용해주세요:)</span>
+              </div>
+              <div className="hub-grid">
+                {MODULE_REGISTRY.map(mod => {
+
+
+                  const isActive = mod.status==="active";
+                  const hs = hubStats[mod.id] || {};
+                  const wc = hs.wc || 0;
+                  const mc = hs.mc || 0;
+                  const pct = hs.pct || 0;
+                  const answered = hs.answered || 0;
+                  const isSel = activeModule===mod.id;
+                  return (
+                    <div key={mod.id}
+                      className={`module-card ${isActive?"active":"soon"}${mod.id==="민사소송법"?" civ-proc":""}`}
+                      style={isSel&&isActive?{border:`1px solid ${mod.color}`,background:`rgba(${mod.color.match(/\w\w/g)?.map(h=>parseInt(h,16)).join(',')},0.05)`}:{}}
+                      onClick={()=>{
+                        if(!isActive) return;
+                        setActiveModule(mod.id);
+                        loadModuleData(mod.id);
+                        setScreen("quiz"); setInQuiz(false); setDone(false);
+                      }}>
+                      <div className="module-accent" style={{background:mod.color}}/>
+                      {!isActive && <span className="soon-badge">준비중</span>}
+                      <div className="module-icon">{mod.icon}</div>
+                      <div className="module-name">{mod.label}</div>
+                      <div className="module-sub">{mod.subtitle}</div>
+                      <div className="module-stats">
+                        {isActive ? (
+                          <>
+                            <span className="module-stat gold">{mod.count}문제</span>
+                            {wc>0&&<span className="module-stat er">오답 {wc}</span>}
+                            {mc>0&&<span className="module-stat" style={{color:"var(--purple)",borderColor:"rgba(188,140,255,.2)"}}>헷갈림 {mc}</span>}
+                          </>
+                        ) : (
+                          <span className="module-stat">{mod.count||"?"} 문제</span>
+                        )}
+                      </div>
+                      {isActive && (
+                        <>
+                          <div className="module-bar"><div className="module-bar-fill" style={{width:`${pct}%`,background:mod.color}}/></div>
+                          <div className="module-prog-text">{answered}/{mod.count} 풀이 ({pct}%)</div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ 퀴즈 탭 ════ */}
+        {screen==="quiz" && (
+          <div className="su" key={inQuiz?"q":"s"}>
+
+            {/* 설정 화면 */}
+            {!inQuiz && (
+              <>
+                <div className="card">
+                  <div className="card-title">📖 회독 선택</div>
+                  <div className="pill-row">
+                    {ROUNDS.map(r=>(
+                      <button key={r} className={`pill ${cfgRound===r?"act":""}`} onClick={()=>setCfgRound(r)}>
+                        {r}회독
+                        {wCnt(r)>0&&<span className="wrong-badge">오답 {wCnt(r)}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="card">
+                  <div className="card-title">🎯 문제 범위</div>
+                  <div className="pill-row">
+                    <button className={`pill ${cfgMode==="all"?"act":""}`} onClick={()=>{setCfgMode("all");setCfgTopics([]);}}>
+                      전체 <span className="cnt-badge">{TOTAL}문제</span>
+                    </button>
+                    <button className={`pill blue ${cfgMode==="rnd100"?"act":""}`} onClick={()=>{setCfgMode("rnd100");setCfgTopics([]);}}>
+                      무작위 100문제
+                    </button>
+                    <button className={`pill ${cfgMode==="topic"?"act":""}`} onClick={()=>setCfgMode("topic")}>
+                      주제 선택
+                    </button>
+                    <button className={`pill star ${cfgMode==="star"?"act":""}`} onClick={()=>{setCfgMode("star");setCfgTopics([]);}}>
+                      ⭐ 중요문제 <span className="cnt-badge">{getAll().filter(q=>q.star).length}문제</span>
+                    </button>
+                    {wmCnt(cfgRound)>0&&(
+                      <button className={`pill red ${cfgMode==="wrong+marked"?"act":""}`} onClick={()=>{setCfgMode("wrong+marked");setCfgTopics([]);}}>
+                        오답+헷갈림 <span className="cnt-badge">{wmCnt(cfgRound)}문제</span>
+                      </button>
+                    )}
+                  </div>
+                  {cfgMode==="topic" && getMod()?.topics && (
+                    <div className="topic-grid">
+                      {getMod().topics.map(t=>{
+                        const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), sel=cfgTopics.includes(t.key);
+                        const icon = TOPIC_ICONS[t.key]||"📌";
+                        const {done:tDone,total:tTotal,pct:tPct}=tProg(cfgRound,t.key);
+                        const isAllDone = tPct===100;
+                        return (
+                          <div key={t.key} className={`tc ${sel?"act":""} ${isAllDone?"done-tc":""}`}
+                            onClick={()=>setCfgTopics(p=>p.includes(t.key)?p.filter(x=>x!==t.key):[...p,t.key])}>
+                            <div className="tc-icon">{icon}</div>
+                            <div className="tc-name">{t.label}</div>
+                            <div className="tc-cnt">{cnt}문제 {wc>0&&<span style={{color:'var(--er)',marginLeft:4}}>오답 {wc}</span>}</div>
+                            <div className="tc-prog-wrap">
+                              <div className="tc-prog-bar-bg"><div className="tc-prog-bar-fill" style={{width:tPct+'%'}}></div></div>
+                              <span className="tc-prog-pct">{tPct}%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="start-row">
+                    <button className="start-btn" disabled={!canStart}
+                      onClick={()=>launchQuiz(cfgRound, cfgMode, cfgTopics)}>
+                      {canStart ? (hasResume ? `▶ 이어풀기 (${(savedSession.queueIds||[]).length-(savedSession.qidx||0)}문제 남음)` : `▶ 시작 (${cfgMode==="rnd100"?100:startCnt}문제)`) : "주제를 선택하세요"}
+                    </button>
+                    {hasResume && (
+                      <button className="start-btn" style={{background:'var(--sf2)',color:'var(--tx2)',border:'1px solid var(--bd)',fontWeight:400}}
+                        onClick={()=>launchQuiz(cfgRound, cfgMode, cfgTopics, null, true)}>
+                        처음부터
+                      </button>
+                    )}
+                    {cfgMode==="topic"&&cfgTopics.length>0&&(
+                      <span className="start-hint">
+                        {cfgTopics.map(k=>getMod()?.topics.find(t=>t.key===k)?.label||k).join(", ")}
+                        · <span className="clear-link" onClick={()=>setCfgTopics([])}>초기화</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <button className="rst-btn" onClick={resetModule}>전체 기록 초기화</button>
+                </div>
+              </>
+            )}
+
+            {/* 퀴즈 진행 */}
+            {inQuiz && !done && cur && (
+              <>
+                <button className="back-btn" onClick={exitQuiz}>← 설정으로</button>
+                <div className="prog-wrap">
+                  <div className="prog-top">
+                    <span className="prog-label">{label}</span>
+                    <span className="prog-num">{qidx+1}<span>/{queue.length}</span></span>
+                  </div>
+                  <div className="prog-bar">
+                    <div className="prog-fill" style={{width:`${(qidx+1)/queue.length*100}%`,background:"linear-gradient(90deg,var(--gf),var(--gold))"}}/>
+                  </div>
+                  <div className="prog-stats">
+                    <span className="ps ok">정답 <strong>{sessCor}</strong></span>
+                    <span className="ps er">오답 <strong>{sessErr}</strong></span>
+                    <span className="ps">정답률 <strong>{qidx>0?Math.round(sessCor/qidx*100):"-"}%</strong></span>
+                    <span className="ps mk">헷갈림 <strong>{sessMark}</strong></span>
+                  </div>
+                </div>
+                <div className="qcard">
+                  <div className="qcard-meta">
+                    <span className="qcard-no" style={{display:"flex",flexDirection:"column",gap:1}}>
+                      {(() => {
+                        const id = String(cur.id);
+                        const ssMatch = id.match(/^SS([가-힣a-zA-Z]*\d+)\.(.+)$/);              const v15Match = id.match(/^15V(\d+)\.(.+)$/);
+                        const numMatch = id.match(/^(\d+)\.(.+)$/);
+                        if (ssMatch) {
+                          const ssKey = "SS" + ssMatch[1];
+                          const ssYr = (activeModule === "채권각론" ? SS_EXAM_각론 : activeModule === "민법총칙" ? SS_EXAM_민총 : activeModule === "민사소송법" ? SS_EXAM_민소 : activeModule === "물권법" ? SS_EXAM_물권 : SS_EXAM)[ssKey] || ssKey;
+                          return (<><span style={{color:"var(--blue)",fontWeight:600}}>{ssYr}</span><span>{id}</span></>);
+                        }
+                        if (v15Match) {
+                          const v15yr = `26변시-${v15Match[1]}`;
+                          return (<><span style={{color:"var(--red,#e05252)",fontWeight:600}}>{v15yr}</span><span>{`.${v15Match[2]}`}</span></>);
+                        }
+                        if (numMatch) {
+                          const yr = (activeModule === "채권각론" ? EXAM_YEAR_각론 : activeModule === "민법총칙" ? EXAM_YEAR_민총 : activeModule === "민사소송법" ? EXAM_YEAR_민소 : activeModule === "물권법" ? EXAM_YEAR_물권 : EXAM_YEAR)[numMatch[1].padStart(3,"0")] || "";
+                          return (<>{yr && <span style={{color:"var(--blue)",fontWeight:600}}>{yr}</span>}<span>{id}</span></>);
+                        }
+                        return <span>{id}</span>;
+                      })()}
+                    </span>
+                    {cur.star && <span className="star-badge">⭐ 중요</span>}
+                    <button className="edit-btn" onClick={()=>openEdit(cur)}>
+                      ✏ 수정
+                    </button>
+                    <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
+                      💬 피드백
+                    </button>
+                    <span className="qcard-topic">{TOPIC_ICONS[cur.topic]||"📌"} {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</span>
+                  </div>
+                  {(() => {
+                  function stripPrefix(s) {
+                    return (s||'').replace(/^[ㄱ-ㅎ①-⑳⑴-⑽]\.?\s*/, '').trim();
+                  }
+                  const parts = (cur.question || '').split('§');
+                  if (parts.length >= 2) {
+                    return (
+                      <div>
+                        <div className="fact-box">
+                          <div className="fact-label">🗂 사실관계</div>
+                          {parts[0].trim()}
+                        </div>
+                        <div className="question">{stripPrefix(parts[1])}</div>
+                      </div>
+                    );
+                  }
+                  return <div className="question">{stripPrefix(cur.question)}</div>;
+                })()}
+                  {answered !== null && (
+                    <div className={`reveal ${answered}`}>
+                      <div className="rv-label">
+                        {answered==="ok"?"⭕":"❌"}
+                        <span className="rv-verdict">
+                          {answered==="ok" ? `정답 (${cur.answer?"○ 옳은 지문":"× 틀린 지문"})` : `오답. 정답: ${cur.answer?"○ 옳은 지문":"× 틀린 지문"}`}
+                        </span>
+                      </div>
+                      {showExp
+                        ? <><div className="rv-exp">{renderExp(cur.explanation)}</div><span className="rv-toggle" onClick={()=>setShowExp(false)}>▴ 접기</span></>
+                        : <span className="rv-toggle" onClick={()=>setShowExp(true)}>▸ 해설 보기</span>
+                      }
+                      <div style={{marginTop:10}}>
+                        <button className={`mark-btn ${curMark?"marked":""}`} onClick={toggleMark}>
+                          {curMark ? "🔖 헷갈림 표시됨 (클릭하여 해제)" : "🔖 헷갈리는 문제로 표시"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* 피드백 목록 - 정답 확인 후 표시 */}
+                  {fbList.length > 0 && answered !== null && (
+                    <div className="fb-list">
+                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8,fontWeight:700}}>💬 이 문항 피드백 {fbList.length}건</div>
+                      {fbList.slice(0,3).map((f,i)=>(
+                        <div key={i} className="fb-item">
+                          <div className="fb-item-head">
+                            <span className="fb-item-type">{f.type}</span>
+                            <span className="fb-item-uid">👤 {f.uid}</span>
+                            <span className="fb-item-date">{f.date}</span>
+                          </div>
+                          <div className="fb-item-body">{f.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* 퀴즈 화면 외 플로팅 피드백 버튼 */}
+                {!(inQuiz && !done) && (
+                  <button className="fb-float-btn" onClick={()=>{ setFbOpen(true); setFbText(""); setFbType("일반 피드백"); }}>
+                    💬 피드백
+                  </button>
+                )}
+
+                {/* 수정 모달 */}
+                {editOpen && editTarget && (
+                  <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setEditOpen(false);}}>
+                    <div className="fb-modal" onClick={e=>e.stopPropagation()}>
+                      <div className="fb-modal-title">✏ 문제 수정</div>
+                      <div className="fb-modal-sub" style={{marginBottom:14,fontSize:11,color:"var(--tx3)"}}>
+                        수정 내용은 모든 이용자에게 즉시 반영됩니다.
+                      </div>
+                      <div style={{fontSize:12,color:"var(--tx2)",marginBottom:6,fontWeight:600}}>문제</div>
+                      <textarea className="fb-textarea" rows={5} value={editQ}
+                        onChange={e=>setEditQ(e.target.value)}/>
+                      <div style={{fontSize:12,color:"var(--tx2)",margin:"12px 0 6px",fontWeight:600}}>해설</div>
+                      <textarea className="fb-textarea" rows={3} value={editE}
+                        onChange={e=>setEditE(e.target.value)}/>
+                      <div className="fb-row" style={{justifyContent:"space-between"}}>
+                        <button className="fb-cancel" style={{color:"var(--er)",borderColor:"var(--er)"}}
+                          onClick={()=>resetEdit(editTarget.id)}>원복</button>
+                        <div style={{display:"flex",gap:8}}>
+                          <button className="fb-cancel" onClick={()=>setEditOpen(false)}>취소</button>
+                          <button className="fb-submit" onClick={submitEdit}>저장</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 피드백 모달 */}
+                {fbOpen && (
+                  <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setFbOpen(false);}}>
+                    <div className="fb-modal">
+                      <div className="fb-modal-title">💬 피드백 작성</div>
+                      <div className="fb-modal-sub">No.{cur.id} · {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</div>
+                      <div className="fb-qref">{(cur.question||'').split('§').pop().trim().slice(0,100)}...</div>
+                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8}}>유형 선택</div>
+                      <div className="fb-select-row">
+                        {["오류 제보","정답 이의","해설 보완","기능 요청","기타"].map(t=>(
+                          <button key={t} className={`fb-type ${fbType===t?"sel":""}`} onClick={()=>setFbType(t)}>{t}</button>
+                        ))}
+                      </div>
+                      <textarea className="fb-textarea" rows={4}
+                        placeholder="내용을 입력해주세요..."
+                        value={fbText}
+                        onChange={e=>setFbText(e.target.value)}/>
+                      <div className="fb-row">
+                        <button className="fb-cancel" onClick={()=>setFbOpen(false)}>취소</button>
+                        <button className="fb-submit" disabled={fbLoading||!fbText.trim()}
+                          onClick={()=>submitFeedback(cur.id, activeModule)}>
+                          {fbLoading?"저장 중...":"제출"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="ox-row">
+                  <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>○</button>
+                  <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>✕</button>
+                </div>
+                {answered !== null && (
+                  <button className="next-btn" onClick={handleNext}>{qidx+1<queue.length?"다음 문제 →":"결과 보기"}</button>
+                )}
+              </>
+            )}
+
+            {/* 완료 */}
+            {inQuiz && done && (
+              <div className="done-card">
+                <div className="done-icon">🏛</div>
+                <div className="done-title">완료!</div>
+                <div className="done-sub">{label}</div>
+                <div className="done-stats">
+                  <div className="ds c"><div className="ds-n">{sessCor}</div><div className="ds-l">정답</div></div>
+                  <div className="ds w"><div className="ds-n">{sessErr}</div><div className="ds-l">오답</div></div>
+                  <div className="ds r"><div className="ds-n">{queue.length>0?Math.round(sessCor/queue.length*100):0}%</div><div className="ds-l">정답률</div></div>
+                  <div className="ds m"><div className="ds-n">{sessMark}</div><div className="ds-l">헷갈림</div></div>
+                </div>
+                <div className="act-row">
+                  <button className="act-btn" onClick={exitQuiz}>← 설정으로</button>
+                  <button className="act-btn" onClick={()=>launchQuiz(cfgRound,cfgMode,cfgTopics)}>다시 풀기</button>
+                  {wmCnt(cfgRound)>0&&<button className="act-btn" style={{borderColor:"rgba(248,81,73,.4)",color:"var(--er)"}} onClick={()=>launchQuiz(cfgRound,"wrong+marked",[])}>오답+헷갈림 {wmCnt(cfgRound)}문제</button>}
+                  <button className="act-btn pri" onClick={()=>{setScreen("hub");exitQuiz();}}>모듈 선택</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════ 오답 아카이브 ════ */}
+        {screen==="archive" && (
+          <div className="su">
+
+            {/* ── 아카이브 전용 회독 섹션 ── */}
+            <div className="card" style={{marginBottom:16}}>
+              <div className="card-title" style={{marginBottom:12}}>🗂 오답·헷갈림 회독 풀기</div>
+              <div style={{fontSize:12,color:"var(--tx3)",marginBottom:10}}>
+                매 회독에서 틀린·헷갈린 문제가 아카이브 회독에 자동 누적됩니다.
+              </div>
+              <div className="arch-round-tabs">
+                {ROUNDS.map(r=>(
+                  <button key={r} className={`art ${archRound===r?"act":""}`} onClick={()=>{setArchRound(r);saveArchRound(r);}}>
+                    {r}회독
+                    {awTotal(r)>0&&<span className="art-cnt">{awTotal(r)}</span>}
+                  </button>
+                ))}
+              </div>
+              {awTotal(archRound)>0 ? (
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+                  {awCnt(archRound)>0&&(
+                    <button className="retry-btn" style={{flex:1,margin:0}}
+                      onClick={()=>launchQuiz(archRound,"aw_wrong",[])}>
+                      ↺ {archRound}회독 오답 {awCnt(archRound)}문제 풀기
+                    </button>
+                  )}
+                  {amCnt(archRound)>0&&(
+                    <button className="retry-btn mk" style={{flex:1,margin:0}}
+                      onClick={()=>launchQuiz(archRound,"aw_mark",[])}>
+                      ↺ {archRound}회독 헷갈림 {amCnt(archRound)}문제 풀기
+                    </button>
+                  )}
+                  <button className="retry-btn" style={{flex:1,margin:0,borderColor:"var(--gold)",color:"var(--gold)",background:"rgba(212,168,83,.08)"}}
+                    onClick={()=>launchQuiz(archRound,"aw_all",[])}>
+                    ↺ {archRound}회독 전체 ({awTotal(archRound)}문제)
+                  </button>
+                </div>
+              ) : (
+                <div style={{fontSize:13,color:"var(--tx3)",textAlign:"center",padding:"10px 0"}}>
+                  {archRound}회독 아카이브에 문제가 없습니다.
+                </div>
+              )}
+            </div>
+
+            {/* ── 메인 회독별 오답 목록 ── */}
+            {ROUNDS.map(r=>{
+              const items = archItems(r);
+              const wids = wrongMap[r]||new Set(), mids = markedMap[r]||new Set();
+              return (
+                <div key={r} style={{marginBottom:26}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingBottom:7,borderBottom:"1px solid var(--bd2)"}}>
+                    <span style={{fontSize:14,fontWeight:700,color:"var(--gold)",fontFamily:"'Noto Serif KR',serif"}}>{r}회독</span>
+                    <span style={{fontSize:11,color:"var(--tx3)",fontFamily:"'IBM Plex Mono',monospace",marginLeft:"auto"}}>오답 {wCnt(r)} · 헷갈림 {mCnt(r)}</span>
+                  </div>
+                  <div className="arch-filter-row">
+                    <button className={`arch-filter ${archFilter==="wrong"?"act":""}`} onClick={()=>setArchFilter("wrong")}>오답만</button>
+                    <button className={`arch-filter purple ${archFilter==="marked"?"act purple":""}`} onClick={()=>setArchFilter("marked")}>헷갈림만</button>
+                    <button className={`arch-filter ${archFilter==="all"?"act":""}`} onClick={()=>setArchFilter("all")}>전체</button>
+                  </div>
+                  {items.length > 0 ? (
+                    <>
+                      {archFilter!=="marked"&&wCnt(r)>0&&<button className="retry-btn" onClick={()=>{setCfgRound(r);launchQuiz(r,"wrong",[]);}}>↺ {r}회독 오답 {wCnt(r)}문제 다시 풀기</button>}
+                      {archFilter!=="wrong"&&mCnt(r)>0&&<button className="retry-btn mk" onClick={()=>{setCfgRound(r);launchQuiz(r,"marked",[]);}}>↺ {r}회독 헷갈리는 문제 {mCnt(r)}문제 다시 풀기</button>}
+                      {items.map(q=>{
+                        const k=`${r}-${q.id}`;
+                        const isW=wids.has(q.id), isMk=mids.has(q.id);
+                        return (
+                          <div key={q.id} className={`arch-item ${archExp[k]?"exp":""} ${isMk&&!isW?"mk-item":""}`}
+                            onClick={()=>setArchExp(p=>({...p,[k]:!p[k]}))}>
+                            <div className="arch-q">No.{q.id} {q.question}</div>
+                            {q.star && <span className="star-badge">⭐ 중요</span>}
+                            <div className="arch-ans">정답: {q.answer?"○ 옳은 지문":"× 틀린 지문"}</div>
+                            <span className="arch-tag">{TOPIC_ICONS[q.topic]||"📌"} {getMod()?.topics.find(t=>t.key===q.topic)?.label||q.topic}</span>
+                            {isW&&<span className="arch-tag">오답</span>}
+                            {isMk&&<span className="arch-tag mk">🔖 헷갈림</span>}
+                            <div className="arch-exp">{q.explanation}</div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <div style={{fontSize:13,color:"var(--tx3)",padding:"6px 0 14px",textAlign:"center"}}>
+                      {archFilter==="wrong"?"오답 없음":archFilter==="marked"?"헷갈림 표시 없음":"기록 없음"} ✓
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ════ 관리자 ════ */}
+        {screen==="admin" && isAdmin && (
+          <div className="su">
+            {/* 유저 현황 */}
+            <div className="card">
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>👥 접속 유저 현황</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={loadAdminUsers}>🔄 새로고침</button>
+                <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>총 {adminUsers.length}명</span>
+              </div>
+              <div className="admin-note">
+                ✅ Firebase를 통해 모든 기기·브라우저에서 접속한 유저가 자동으로 표시됩니다.
+              </div>
+              {/* ID 직접 검색 */}
+              <div className="admin-search">
+                <input placeholder="유저 ID 직접 입력..." value={adminSearch}
+                  onChange={e=>setAdminSearch(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&adminSearchUser(adminSearch)}/>
+                <button onClick={()=>adminSearchUser(adminSearch)}>조회</button>
+              </div>
+              {adminResult && (
+                <div style={{background:adminResult.notFound?"var(--er-bg)":"var(--sf2)",border:`1px solid ${adminResult.notFound?"rgba(248,81,73,.3)":"var(--bd)"}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
+                  {adminResult.notFound ? (
+                    <div style={{color:"var(--er)",fontSize:13}}>유저 '{adminResult.id}'의 기록이 없습니다.</div>
+                  ) : (
+                    <>
+                      <div style={{fontWeight:700,color:"var(--gold)",marginBottom:8}}>👤 {adminResult.id}</div>
+                      <div style={{display:"flex",gap:12,fontSize:12,flexWrap:"wrap"}}>
+                        <span style={{color:"var(--tx3)"}}>시도 <b style={{color:"var(--tx)",fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.ans}</b></span>
+                        <span style={{color:"var(--ok)"}}>정답 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.cor}</b></span>
+                        <span style={{color:"var(--er)"}}>오답 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.wrg}</b></span>
+                        <span style={{color:"var(--gold)"}}>정답률 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.ans>0?Math.round(adminResult.cor/adminResult.ans*100)+"%":"-"}</b></span>
+                        {(adminResult.lastDate||adminResult.last>0)&&<span style={{color:"var(--tx3)"}}>마지막 접속: <b>{adminResult.lastDate||new Date(adminResult.last).toLocaleDateString("ko-KR")}</b></span>}
+                      </div>
+                      {adminResult.modStats?.map(m=>(
+                        <div key={m.mod} style={{fontSize:11,background:"var(--bg)",border:"1px solid var(--bd2)",borderRadius:6,padding:"5px 10px",marginTop:5,color:"var(--tx3)"}}>
+                          <b style={{color:"var(--tx)"}}>{m.mod}</b> ·
+                          시도 <b style={{color:"var(--tx)"}}>{m.ans}</b> ·
+                          정답 <b style={{color:"var(--ok)"}}>{m.cor}</b> ·
+                          오답 <b style={{color:"var(--er)"}}>{m.wrg}</b> ·
+                          정답률 <b style={{color:"var(--gold)"}}>{m.pct}%</b>
+                          {m.wrongCnt>0&&<> · 오답뱅크 <b style={{color:"var(--er)"}}>{m.wrongCnt}</b></>}
+                          {m.markCnt>0&&<> · 헷갈림 <b style={{color:"var(--purple)"}}>{m.markCnt}</b></>}
+                        </div>
+                      ))}
+                      {/* PIN 초기화 버튼 */}
+                      {!adminResult.notFound && (
+                        <button style={{marginTop:10,padding:"6px 14px",fontSize:11,
+                          background:"var(--er-bg)",border:"1px solid rgba(248,81,73,.3)",
+                          color:"var(--er)",borderRadius:8,cursor:"pointer"}}
+                          onClick={async()=>{
+                            if(!confirm(`${adminResult.id}의 PIN을 초기화하시겠습니까?`)) return;
+                            const safeId = adminResult.id.replace(/[.#$[\]]/g,'_');
+                            const info = await fb.get(`users/${safeId}/info`);
+                            if(info) {
+                              const {pin:_,...rest} = info;
+                              await fb.set(`users/${safeId}/info`, rest);
+                              alert('PIN이 초기화되었습니다. 다음 로그인 시 새 PIN을 설정합니다.');
+                            }
+                          }}>
+                          🔑 PIN 초기화
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+              {adminUsers.length === 0 ? (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)"}}>아직 접속한 유저가 없습니다.</div>
+              ) : adminUsers.map(u=>(
+                <div key={u.id} className="admin-user-card" style={{flexDirection:"column",alignItems:"flex-start"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,width:"100%",flexWrap:"wrap"}}>
+                    <span className="admin-uid">👤 {u.id}</span>
+                    <div className="admin-stats" style={{flex:1}}>
+                      <span className="admin-stat">시도 <b>{u.ans}</b></span>
+                      <span className="admin-stat ok">정답 <b>{u.cor}</b></span>
+                      <span className="admin-stat er">오답 <b>{u.wrg}</b></span>
+                      <span className="admin-stat gold">정답률 <b>{u.ans>0?Math.round(u.cor/u.ans*100)+"%" :"-"}</b></span>
+                      {(u.lastDate||u.last>0)&&<span className="admin-stat">마지막 접속 <b style={{color:"var(--gold)"}}>{u.lastDate||new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
+                    </div>
+                  </div>
+                  {u.modStats && u.modStats.length > 0 && (
+                    <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",width:"100%"}}>
+                      {u.modStats.map(m=>(
+                        <div key={m.mod} style={{fontSize:11,background:"var(--bg)",border:"1px solid var(--bd2)",borderRadius:6,padding:"4px 10px",color:"var(--tx3)"}}>
+                          <b style={{color:"var(--tx)"}}>{m.mod}</b> · 시도 {m.ans} · 정답률 {m.pct}%
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* 수정 내역 */}
+
+            {/* 피드백 목록 */}
+            <div className="card" style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>💬 피드백 목록</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}}
+                  onClick={async()=>{
+                    setAdminFbLoad(true);
+                    const data = await loadAllFeedbacks();
+                    setAdminFbs(data);
+                    setAdminFbLoad(false);
+                  }}>
+                  {adminFbLoad ? "로딩중..." : adminFbs===null ? "📥 불러오기" : "🔄 새로고침"}
+                </button>
+                {adminFbs!==null && (
+                  <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+                    총 {Object.values(adminFbs).reduce((s,a)=>s+a.length,0)}건
+                  </span>
+                )}
+              </div>
+
+              {adminFbs===null && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  불러오기 버튼을 눌러 피드백을 확인하세요.
+                </div>
+              )}
+
+              {adminFbs!==null && Object.keys(adminFbs).length===0 && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  피드백이 없습니다.
+                </div>
+              )}
+
+              {adminFbs!==null && Object.entries(adminFbs).map(([mid, items])=>(
+                <div key={mid} style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",marginBottom:8,
+                    paddingBottom:4,borderBottom:"1px solid var(--bd)"}}>
+                    {MODULE_REGISTRY.find(m=>m.id===mid)?.label || mid} ({items.length}건)
+                  </div>
+                  {items.map((item,i)=>(
+                    <div key={i} className="fb-admin-item">
+                      <div className="fb-admin-meta">
+                        <span className="fb-admin-no">#{item.qid}</span>
+                        <span className="fb-admin-type">{item.type}</span>
+                        <span className="fb-admin-uid">👤 {item.uid}</span>
+                        <span className="fb-admin-date">{item.date||new Date(item.ts).toLocaleDateString("ko-KR")}</span>
+                      </div>
+                      <div className="fb-admin-body">{item.text}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* 수정 내역 카드 */}
+            <div className="card" style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>✏ 수정 내역</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}}
+                  onClick={async()=>{
+                    setAdminEditLoad(true);
+                    const data = await loadAllEdits();
+                    setAdminEdits(data);
+                    setAdminEditLoad(false);
+                  }}>
+                  {adminEditLoad?"로딩중...":adminEdits===null?"📥 불러오기":"🔄 새로고침"}
+                </button>
+                {adminEdits!==null && (
+                  <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+                    총 {Object.values(adminEdits).reduce((s,a)=>s+a.length,0)}건
+                  </span>
+                )}
+              </div>
+              {adminEdits===null && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  불러오기 버튼을 눌러 수정 내역을 확인하세요.
+                </div>
+              )}
+              {adminEdits!==null && Object.keys(adminEdits).length===0 && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  수정 내역이 없습니다.
+                </div>
+              )}
+              {adminEdits!==null && Object.entries(adminEdits).map(([mid,items])=>(
+                <div key={mid} style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",marginBottom:8,
+                    paddingBottom:4,borderBottom:"1px solid var(--bd)"}}>
+                    {MODULE_REGISTRY.find(m=>m.id===mid)?.label||mid} ({items.length}건)
+                  </div>
+                  {items.map((item,i)=>(
+                    <div key={i} className="fb-admin-item" style={{marginBottom:8}}>
+                      <div className="fb-admin-meta">
+                        <span className="fb-admin-no">#{item.qid}</span>
+                        <span className="fb-admin-uid">👤 {item.uid}</span>
+                        <span className="fb-admin-date">{item.date}</span>
+                      </div>
+                      {item.original_q&&item.original_q!==item.question&&(
+                        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:4,
+                          textDecoration:"line-through",padding:"4px 8px",background:"var(--sf2)",borderRadius:4}}>
+                          {item.original_q}
+                        </div>
+                      )}
+                      <div className="fb-admin-body" style={{fontSize:12}}>{item.question}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    </div>
+    </>
+  );
+}
+
+
+/* ── 관리자: 수정 내역 컴포넌트 ─────────────────────────── */
+
+
+/* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
+function LoginScreen({ onLogin }) {
+  const FB_BASE = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+  const [step, setStep]       = React.useState("id");   // id | pin_new | pin_check
+  const [uid,  setUid]        = React.useState(localStorage.getItem("hub_last_uid")||"");
+  const [pin,  setPin]        = React.useState(["","","",""])
+  const [status, setStatus]   = React.useState({msg:"", type:"info"});
+  const [loading, setLoading] = React.useState(false);
+  const pinRefs = [React.useRef(), React.useRef(), React.useRef(), React.useRef()];
+
+  // Firebase 단순 fetch
+  const fbGet = async (path) => {
+    try {
+      const r = await fetch(`${FB_BASE}/${path}.json`);
+      return r.ok ? await r.json() : null;
+    } catch { return null; }
+  };
+  const fbSet = async (path, data) => {
+    try {
+      await fetch(`${FB_BASE}/${path}.json`, {
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+    } catch {}
+  };
+
+  const toSafe = id => id.replace(/[.#$\[\]]/g,'_');
+
+  // PIN 입력 핸들러
+  const handlePinInput = (i, val) => {
+    if (!/^[0-9]?$/.test(val)) return;
+    const next = [...pin];
+    next[i] = val;
+    setPin(next);
+    if (val && i < 3) pinRefs[i+1].current?.focus();
+  };
+  const handlePinKey = (i, e) => {
+    if (e.key === "Backspace" && !pin[i] && i > 0) {
+      pinRefs[i-1].current?.focus();
+    }
+    if (e.key === "Enter") handlePinSubmit();
+  };
+  const pinFull = pin.join("");
+
+  // 1단계: 아이디 확인
+  const handleUnifiedLogin = async () => {
+    const id = uid.trim();
+    if (!id) { setStatus({msg:"아이디를 입력해주세요.", type:"er"}); return; }
+    if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) {
+      setStatus({msg:"20자 이내 한글/영문/숫자/_-만 가능합니다.", type:"er"}); return;
+    }
+    if (pinFull.length !== 4) { setStatus({msg:"PIN 4자리를 모두 입력해주세요.", type:"er"}); return; }
+
+    setLoading(true);
+    setStatus({msg:"확인 중...", type:"info"});
+    const safeId = toSafe(id);
+
+    const existing = await fbGet(`users/${safeId}/info`);
+
+    if (existing && existing.pin) {
+      // 기존 유저 — PIN 대조
+      if (existing.pin !== pinFull) {
+        setLoading(false);
+        setStatus({msg:"PIN이 올바르지 않습니다.", type:"er"});
+        setPin(["","","",""]);
+        setTimeout(()=>pinRefs[0].current?.focus(), 50);
+        return;
+      }
+      // PIN 일치 — 접속시간 갱신 후 로그인
+      await fbSet(`users/${safeId}/info`, {
+        ...existing,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      setStatus({msg:"로그인 성공!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 300);
+    } else {
+      // 신규 유저 — PIN 저장 후 로그인
+      await fbSet(`users/${safeId}/info`, {
+        id, pin: pinFull,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      setStatus({msg:"계정 생성 완료!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 500);
+    }
+  };
+
+  const handleIdNext = async () => {
+
+    const id = uid.trim();
+    if (!id) return;
+    if (!/^[a-zA-Z0-9가-힣_-]{1,20}$/.test(id)) {
+      setStatus({msg:"20자 이내 한글/영문/숫자/_-만 가능합니다.", type:"er"}); return;
+    }
+
+    setLoading(true);
+    setStatus({msg:"확인 중...", type:"info"});
+    const safeId = toSafe(id);
+    const existing = await fbGet(`users/${safeId}/info`);
+    setLoading(false);
+
+    if (existing && existing.pin) {
+      // 기존 유저 → PIN 확인
+      setPin(["","","",""]);
+      setStep("pin_check");
+      setStatus({msg:"등록된 PIN을 입력해주세요.", type:"info"});
+      setTimeout(()=>pinRefs[0].current?.focus(), 100);
+    } else {
+      // 신규 유저 → PIN 등록
+      setPin(["","","",""]);
+      setStep("pin_new");
+      setStatus({msg:"사용할 4자리 PIN을 설정해주세요.", type:"info"});
+      setTimeout(()=>pinRefs[0].current?.focus(), 100);
+    }
+  };
+
+  // 2단계: PIN 제출
+  const handlePinSubmit = async () => {
+    if (pinFull.length !== 4) {
+      setStatus({msg:"4자리를 모두 입력해주세요.", type:"er"}); return;
+    }
+    const id = uid.trim();
+    const safeId = toSafe(id);
+    setLoading(true);
+
+    if (step === "pin_new") {
+      // 신규: PIN 저장 후 로그인
+      await fbSet(`users/${safeId}/info`, {
+        id, pin: pinFull,
+        lastSeen: Date.now(),
+        lastDate: new Date().toLocaleDateString('ko-KR')
+      });
+      setStatus({msg:"PIN 설정 완료!", type:"ok"});
+      setLoading(false);
+      setTimeout(()=>onLogin(id), 500);
+    } else {
+      // 기존: PIN 검증
+      const existing = await fbGet(`users/${safeId}/info`);
+      const correctPin = existing?.pin;
+      if (correctPin === pinFull) {
+        // 접속시간 갱신
+        if (existing) {
+          await fbSet(`users/${safeId}/info`, {
+            ...existing,
+            lastSeen: Date.now(),
+            lastDate: new Date().toLocaleDateString('ko-KR')
+          });
+        }
+        setStatus({msg:"로그인 성공!", type:"ok"});
+        setLoading(false);
+        setTimeout(()=>onLogin(id), 300);
+      } else {
+        setStatus({msg:"PIN이 일치하지 않습니다.", type:"er"});
+        setPin(["","","",""]);
+        setLoading(false);
+        setTimeout(()=>pinRefs[0].current?.focus(), 50);
+      }
+    }
+  };
+
+  const bgVideos = ["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
+  const [bgSrc] = React.useState(() => bgVideos[Math.floor(Math.random() * bgVideos.length)]);
+
+  return (
+    <React.Fragment>
+      {/* 비디오 배경 */}
+      <div className="login-scene">
+        <video key={bgSrc} autoPlay muted loop playsInline preload="auto">
+          <source src={bgSrc} type="video/mp4" />
+        </video>
+      </div>
+
+      {/* 로그인 폼 */}
+      <div className="login-wrap">
+        <div className="login-box">
+          <div className="login-header">
+            <div className="login-logo">⚖︎ 3000제 OX 퀴즈</div>
+            <div className="login-title">형사법 선택형 기출 최신빈출지문</div>
+          </div>
+          <div className="login-card">
+
+          {/* ── 과목 선택 ── */}
+          <div style={{marginBottom:18}}>
+            <div style={{fontSize:10,fontWeight:700,color:"rgba(255,200,210,.35)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:8,textAlign:"center"}}>과목 선택</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>window.location.href="index.html"}
+                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(122,184,216,.35)",background:"rgba(122,184,216,.08)",color:"rgba(150,200,230,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
+                onMouseOver={e=>{e.target.style.background="rgba(122,184,216,.18)";e.target.style.color="rgba(180,220,250,.95)";}}
+                onMouseOut={e=>{e.target.style.background="rgba(122,184,216,.08)";e.target.style.color="rgba(150,200,230,.7)";}}>
+                민사법
+              </button>
+              <button style={{flex:1,padding:"9px 0",borderRadius:10,border:"2px solid rgba(212,120,138,.7)",background:"rgba(212,120,138,.18)",color:"#f8dce4",fontSize:13,fontWeight:700,cursor:"default",textShadow:"0 0 10px rgba(212,120,138,.6)"}}>
+                ⚖ 형사법
+              </button>
+              <button onClick={()=>window.location.href="public-law.html"}
+                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(190,160,100,.35)",background:"rgba(190,160,100,.08)",color:"rgba(210,180,120,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
+                onMouseOver={e=>{e.target.style.background="rgba(190,160,100,.18)";e.target.style.color="rgba(230,200,140,.95)";}}
+                onMouseOut={e=>{e.target.style.background="rgba(190,160,100,.08)";e.target.style.color="rgba(210,180,120,.7)";}}>
+                공법
+              </button>
+            </div>
+          </div>
+
+          {/* ── 과목 선택 ── */}
+          <div style={{marginBottom:18}}>
+            <div style={{fontSize:10,fontWeight:700,color:"rgba(255,200,210,.35)",letterSpacing:".1em",textTransform:"uppercase",marginBottom:8,textAlign:"center"}}>과목 선택</div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>window.location.href="index.html"}
+                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(122,184,216,.35)",background:"rgba(122,184,216,.08)",color:"rgba(150,200,230,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
+                onMouseOver={e=>{e.target.style.background="rgba(122,184,216,.18)";e.target.style.color="rgba(180,220,250,.95)";}}
+                onMouseOut={e=>{e.target.style.background="rgba(122,184,216,.08)";e.target.style.color="rgba(150,200,230,.7)";}}>
+                민사법
+              </button>
+              <button style={{flex:1,padding:"9px 0",borderRadius:10,border:"2px solid rgba(212,120,138,.7)",background:"rgba(212,120,138,.18)",color:"#f8dce4",fontSize:13,fontWeight:700,cursor:"default",textShadow:"0 0 10px rgba(212,120,138,.6)"}}>
+                ⚖ 형사법
+              </button>
+              <button onClick={()=>window.location.href="public-law.html"}
+                style={{flex:1,padding:"9px 0",borderRadius:10,border:"1px solid rgba(190,160,100,.35)",background:"rgba(190,160,100,.08)",color:"rgba(210,180,120,.7)",fontSize:13,fontWeight:500,cursor:"pointer",transition:"all .18s"}}
+                onMouseOver={e=>{e.target.style.background="rgba(190,160,100,.18)";e.target.style.color="rgba(230,200,140,.95)";}}
+                onMouseOut={e=>{e.target.style.background="rgba(190,160,100,.08)";e.target.style.color="rgba(210,180,120,.7)";}}>
+                공법
+              </button>
+            </div>
+          </div>
+            {/* 아이디 입력 */}
+            <div className="login-label">아이디</div>
+            <input className="login-input" value={uid}
+              placeholder="한글/영문/숫자 20자 이내"
+              onChange={e=>{ setUid(e.target.value); setStatus({msg:"",type:"info"}); }}
+              onKeyDown={e=>{ if(e.key==="Enter") pinRefs[0].current?.focus(); }}
+              autoFocus />
+
+            {/* PIN 입력 */}
+            <div className="login-label" style={{marginTop:4}}>
+              PIN {step==="pin_new" ? <span style={{color:"rgba(180,205,240,.6)",fontWeight:400}}>(신규 — 4자리 숫자 설정)</span> : ""}
+            </div>
+            <div className="pin-row" style={{marginTop:4}}>
+              {[0,1,2,3].map(i=>(
+                <input key={i} ref={pinRefs[i]}
+                  className="pin-digit" type="password"
+                  maxLength={1} value={pin[i]}
+                  onChange={e=>handlePinInput(i, e.target.value)}
+                  onKeyDown={e=>handlePinKey(i,e)} />
+              ))}
+            </div>
+            <div className={`pin-status ${status.type}`} style={{color: status.type==="ok"?"rgba(120,200,120,.9)":status.type==="er"?"rgba(255,100,100,.9)":"rgba(180,205,240,.5)"}}>{status.msg}</div>
+            <button className="login-btn" onClick={handleUnifiedLogin} disabled={loading}>
+              {loading ? "처리 중..." : "로그인"}
+            </button>
+
+            <div className="login-hint" style={{marginTop:14}}>
+              아이디 + PIN으로 어느 기기에서든 학습 기록이 이어집니다.<br/>
+              처음 사용하는 아이디는 자동으로 계정이 생성됩니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+
+function AdminFeedbacks({ loadAllFeedbacks }) {
+  const [data, setData] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+  const [filter, setFilter] = React.useState("전체");
+
+  async function load() {
+    setLoading(true);
+    const d = await loadAllFeedbacks();
+    setData(d);
+    setLoading(false);
+  }
+  React.useEffect(()=>{ load(); }, []);
+
+  const allItems = Object.values(data).flat();
+  const filtered = filter==="전체" ? allItems : allItems.filter(f=>f.type===filter);
+  const total = allItems.length;
+
+  return (
+    <div className="card" style={{marginTop:16}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+        <div className="card-title" style={{marginBottom:0}}>💬 피드백 목록 ({total}건)</div>
+        <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={load}>🔄 새로고침</button>
+      </div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+        {["전체","오류 제보","정답 이의","해설 보완","기능 요청","기타"].map(t=>(
+          <button key={t}
+            style={{padding:"4px 12px",borderRadius:14,border:"1px solid var(--bd)",
+              background:filter===t?"var(--gold)":"var(--sf2)",
+              color:filter===t?"#0d1117":"var(--tx3)",
+              fontSize:11,cursor:"pointer",fontWeight:filter===t?700:400}}
+            onClick={()=>setFilter(t)}>{t}</button>
+        ))}
+      </div>
+      {loading ? (
+        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>불러오는 중...</div>
+      ) : filtered.length===0 ? (
+        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>피드백이 없습니다.</div>
+      ) : filtered.map((f,i)=>(
+        <div key={i} className="fb-admin-item">
+          <div className="fb-admin-meta">
+            <span className="fb-admin-no">No.{f.qid}</span>
+            <span className="fb-admin-type">{f.type}</span>
+            <span className="fb-admin-uid">👤 {f.uid}</span>
+            <span className="fb-admin-date">{f.date}</span>
+          </div>
+          <div className="fb-admin-q">{(f.mid||"")} · 문항 {f.qid}</div>
+          <div className="fb-admin-body">{f.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 앱 마운트
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
