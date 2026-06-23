@@ -599,7 +599,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .qcard-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .qcard-no{font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
 .qcard-topic{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--sf2);border:1px solid var(--bd2);color:var(--tx3);}
-.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;text-align:justify;}
+.question{font-family:'Noto Serif KR',serif;font-size:16px;line-height:2.0;color:var(--tx);word-break:keep-all;}
 .reveal{margin-top:18px;padding:14px 16px;border-radius:8px;animation:fi .2s ease;}
 .reveal.ok{background:var(--ok-bg);border:1px solid rgba(63,185,80,.3);}
 .reveal.er{background:var(--er-bg);border:1px solid rgba(248,81,73,.3);}
@@ -657,7 +657,7 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard',system-u
 .arch-item:hover{background:var(--sf2);}
 .arch-item.exp{border-left-color:var(--gold);}
 .arch-item.mk-item{border-left-color:var(--purple);}
-.arch-q{font-size:13px;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;text-align:justify;}
+.arch-q{font-size:13px;line-height:1.6;color:var(--tx);font-family:'Noto Serif KR',serif;word-break:keep-all;}
 .arch-ans{font-size:11px;color:var(--tx3);margin-top:5px;font-family:'IBM Plex Mono',monospace;}
 .arch-tag{font-size:10px;color:var(--tx3);background:var(--sf2);border:1px solid var(--bd2);border-radius:8px;padding:1px 6px;display:inline-block;margin-top:4px;margin-right:4px;}
 .arch-tag.mk{border-color:rgba(188,140,255,.3);color:var(--purple);background:rgba(188,140,255,.08);}
@@ -1584,7 +1584,7 @@ function App() {
                       전체 <span className="cnt-badge">{TOTAL}문제</span>
                     </button>
                     <button className={`pill blue ${cfgMode==="rnd100"?"act":""}`} onClick={()=>{setCfgMode("rnd100");setCfgTopics([]);}}>
-                      무작위 100문제
+                      무작위 100문제 <span style={{fontSize:10,background:"rgba(248,113,113,.18)",color:"#f87171",borderRadius:5,padding:"1px 5px",marginLeft:3,fontWeight:700,letterSpacing:".02em"}}>⏱ 20s</span>
                     </button>
                     <button className={`pill ${cfgMode==="topic"?"act":""}`} onClick={()=>setCfgMode("topic")}>
                       주제 선택
@@ -1598,6 +1598,12 @@ function App() {
                       </button>
                     )}
                   </div>
+                  {cfgMode==="rnd100" && (
+                    <div style={{marginTop:10,padding:"9px 14px",borderRadius:10,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",gap:8,fontSize:12.5,color:"#f87171"}}>
+                      <span style={{fontSize:16}}>⏱</span>
+                      <span>문제당 <strong>20초</strong> 시간 제한이 적용됩니다. 시간 초과 시 자동으로 오답 처리됩니다.</span>
+                    </div>
+                  )}
                   {cfgMode==="topic" && getMod()?.topics && (
                     <div className="topic-grid">
                       {getMod().topics.map(t=>{
