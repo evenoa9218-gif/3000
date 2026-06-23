@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>3000제 OX 퀴즈 — 민법 & 민소법 선택형 기출</title>
+<script>
+(function(){
+  var vids=["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
+  var s=sessionStorage.getItem("ox_bg");
+  if(!s){s=vids[Math.floor(Math.random()*vids.length)];sessionStorage.setItem("ox_bg",s);}
+  var v=document.createElement("video");
+  v.src=s; v.preload="auto"; v.muted=true; v.load();
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -714,6 +723,12 @@ const TOPIC_ICONS = {}
 function App() {
   // ── 로그인/세션 상태
   const [uid,    setUid]    = useState(null);     // 현재 사용자 ID
+  const [bgSrc] = useState(() => {
+    const vids=["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
+    let s=sessionStorage.getItem("ox_bg");
+    if(!s){s=vids[Math.floor(Math.random()*vids.length)];sessionStorage.setItem("ox_bg",s);}
+    return s;
+  });
   const [isAdmin,setIsAdmin]= useState(false);
 
   // ── 화면 상태
@@ -1405,23 +1420,28 @@ function App() {
   // ══════════════════════════════════════════
 
 
-  // 과목 선택 화면
-  if (screen === "subject") return (
-    <><style>{CSS}</style>
-    <SubjectSelect
-      currentSubject="public"
-      onSelect={(sub) => {
+  // 배경 영상 (로그인·과목선택 공용, 한 번만 렌더링)
+  if (!uid || screen === "subject") return (
+    <>
+      <style>{CSS}</style>
+      <div className="login-scene" style={{position:"fixed",inset:0,zIndex:0,overflow:"hidden"}}>
+        <video autoPlay muted loop playsInline preload="auto" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}>
+          <source src={bgSrc} type="video/mp4" />
+        </video>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,rgba(4,12,28,.25) 0%,rgba(8,20,45,.2) 50%,rgba(2,8,20,.3) 100%)"}}></div>
+      </div>
+      {screen === "subject"
+        ? <SubjectSelect
+
+          currentSubject="public"
+          onSelect={(sub) => {
     if (sub === "public")   { setScreen("hub"); }
     else if (sub === "civil")    { sessionStorage.setItem("ox_skip_subject","1"); window.location.href = "index.html"; }
     else if (sub === "criminal") { sessionStorage.setItem("ox_skip_subject","1"); window.location.href = "criminal.html"; }
   }}
-    />
-    </>
-  );
-  // 로그인 전
-  if (!uid) return (
-    <><style>{CSS}</style>
-    <LoginScreen onLogin={tryLogin} />
+          />
+        : <LoginScreen onLogin={tryLogin} />
+      }
     </>
   );
 
@@ -2193,12 +2213,7 @@ function SubjectSelect({ onSelect, currentSubject }) {
   };
   return (
     <React.Fragment>
-      <div className="login-scene">
-        <video key={bgSrc} autoPlay muted loop playsInline preload="auto">
-          <source src={bgSrc} type="video/mp4" />
-        </video>
-      </div>
-      <div className="login-wrap">
+<div className="login-wrap">
         <div className="login-box">
           <div className="login-header">
             <div className="login-logo">⚖︎ OX Quiz</div>
@@ -2403,11 +2418,6 @@ function LoginScreen({ onLogin }) {
   return (
     <React.Fragment>
       {/* 비디오 배경 */}
-      <div className="login-scene">
-        <video key={bgSrc} autoPlay muted loop playsInline preload="auto">
-          <source src={bgSrc} type="video/mp4" />
-        </video>
-      </div>
 
       {/* 로그인 폼 */}
       <div className="login-wrap">
