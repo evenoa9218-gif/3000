@@ -149,11 +149,11 @@ window.storage = window.storage || (() => {
 
 
 const 헌법_RAW = [];
-const 헌법_DATA = 헌법_RAW;
+const 헌법_DATA = 헌법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_헌법.has(String(id))}));
 const 행정법총론_RAW = [];
-const 행정법총론_DATA = 행정법총론_RAW;
+const 행정법총론_DATA = 행정법총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법총론.has(String(id))}));
 const 행정법각론_RAW = [];
-const 행정법각론_DATA = 행정법각론_RAW;
+const 행정법각론_DATA = 행정법각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법각론.has(String(id))}));
 const STAR_IDS_헌법 = new Set([]);
 const STAR_IDS_행정법총론 = new Set([]);
 const STAR_IDS_행정법각론 = new Set([]);
