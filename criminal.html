@@ -149,9 +149,7 @@ window.storage = window.storage || (() => {
 
 
 const 형법총론_RAW = [];
-const 형법총론_DATA = 형법총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_형법총론.has(String(id))}));
 const 형법각론_RAW = [];
-const 형법각론_DATA = 형법각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_형법각론.has(String(id))}));
 const 형사소송법_RAW = [
 ["001", "「형사소송법」제5조에 정한 '관련 사건의 관할'은, 고유관할사건 및 그 관련 사건이 반드시 병합기소되거나 병합되어 심리될 것을 전제요건으로 하는 것은 아니다.", true, "▸ 토지관할을 달리하는 수개의 사건이 관련된 때에는 1개의 사건에 관하여 관할권 있는 법원은 다른 사건까지 관할할 수 있다(제5조). [2006도8568]", "소송주체"],
 ["002", "제1심 법원의 소재지가 피고인이 현재 거주하는 곳인 이상, 그 범죄지나 주소지가 아니더라도 그 판결에 토지관할 위반의 위법은 없다.", true, "▸ 토지관할은 범죄지, 피고인의 주소, 거소 또는 현재지로 한다(제4조 제1항).", "소송주체"],
@@ -221,7 +219,6 @@ const 형사소송법_RAW = [
 ["066", "★ 수사기관이 피의자를 신문함에 있어서 피의자에게 미리 진술거부권을 고지하지 않은 때에는 설령 그 진술의 임의성이 인정되는 경우라도 증거능력이 부정되지만 이는 진술거부권을 고지받지 못한 당해 피의자에 대하여 유죄의 증거로 사용할 수 없다는 의미이므로, 공범에 대하여는 유죄의 증거로 사용할 수 있다.", false, "▸ 검사가 공범에게 미리 진술거부권이 있음을 고지한 사실을 인정할 만한 아무런 자료가 없으므로, 진술의 임의성이 인정되는 경우라도 위법하게 수집된 증거로서 증거능력이 없어 '피고인'에 대한 유죄의 증거로 쓸 수 없다. [2008도8213]", "소송주체"],
 ["067", "☆ 검사가 피의자에게 진술거부권을 고지하였으나, 검사 작성의 피의자신문조서에 진술거부권 행사 여부에 대한 피의자의 답변이 자필로 기재되어 있지 아니하거나 그 답변 부분에 피의자의 기명날인 또는 서명이 되어 있지 아니하였다면 그 피의자신문조서는 '적법한 절차와 방식'에 따라 작성된 것이라고 할 수 없으므로, 그 증거능력을 인정할 수 없다.", true, "▸ 검사 또는 사법경찰관은 피의자가 진술을 거부할 권리 등을 행사할 것인지의 여부를 질문하고 이에 대한 피의자의 답변을 피의자로 하여금 자필로 기재하게 하거나 기명날인 또는 서명하게 하여야 한다(제244조의3 제2항). [2010도3359]", "소송주체"]
 ];
-const 형사소송법_DATA = 형사소송법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_형사소송법.has(String(id))}));
 const STAR_IDS_형법총론 = new Set([]);
 const STAR_IDS_형법각론 = new Set([]);
 const STAR_IDS_형사소송법 = new Set(["003", "004", "006", "007", "008", "009", "010", "012", "013", "014", "016", "017", "022", "025", "026", "027", "028", "029", "030", "031", "032", "033", "034", "035", "036", "042", "043", "044", "052", "053", "054", "061", "062", "063", "065", "066", "067"]);
@@ -231,6 +228,9 @@ const EXAM_YEAR_형사소송법 = {"001":"22변시", "002":"22변시", "003":"18
 const SS_EXAM_형법총론 = {};
 const SS_EXAM_형법각론 = {};
 const SS_EXAM_형사소송법 = {};
+const 형법총론_DATA = 형법총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_형법총론.has(String(id))}));
+const 형법각론_DATA = 형법각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_형법각론.has(String(id))}));
+const 형사소송법_DATA = 형사소송법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_형사소송법.has(String(id))}));
 
 const MODULE_REGISTRY = [
   { id:"형법총론", label:"형법총론", subtitle:"형법 총칙편", icon:"⚖",
