@@ -303,7 +303,19 @@ const MODULE_REGISTRY = [
     topics:[], getData: () => 형법각론_DATA },
   { id:"형사소송법", label:"형사소송법", subtitle:"형사소송법", icon:"⌂︎",
     count: 형사소송법_DATA.length, status:"active", color:"#a84060",
-    topics:[{key:"소송주체",label:"소송주체(법원관할·제척·피고인·변호인)"}], getData: () => 형사소송법_DATA },
+    topics:[
+      {key:"소송주체",label:"소송주체(법원관할·제척·피고인·변호인)"},
+      {key:"수사일반",label:"수사 일반(수사조건·고소·임의수사)"},
+      {key:"체포구속",label:"체포·구속"},
+      {key:"압수수색검증",label:"압수·수색·검증"},
+      {key:"수사종결공소",label:"수사종결·공소"},
+      {key:"공판심리",label:"공판 심리"},
+      {key:"증거법기본",label:"증거법 기본"},
+      {key:"전문법칙",label:"전문법칙"},
+      {key:"증거동의탄핵증명력",label:"증거동의·탄핵·증명력"},
+      {key:"재판상소",label:"재판·상소"},
+      {key:"비상구제특별절차",label:"비상구제·특별절차"},
+    ], getData: () => 형사소송법_DATA },
 ];
 
 // ── 스토리지 키 ──────────────────────────────────────
