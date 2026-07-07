@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="38" fill="#7EC8E3"/>
+  <!-- 기둥 -->
+  <rect x="94" y="48" width="4" height="100" rx="2" fill="#1a3a5c"/>
+  <!-- 받침대 -->
+  <rect x="70" y="144" width="52" height="6" rx="3" fill="#1a3a5c"/>
+  <!-- 중앙 상단 가로대 -->
+  <rect x="52" y="62" width="88" height="4" rx="2" fill="#1a3a5c"/>
+  <!-- 왼쪽 줄 -->
+  <line x1="70" y1="66" x2="64" y2="98" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="90" y1="66" x2="84" y2="98" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 왼쪽 접시 -->
+  <path d="M58 98 Q74 108 90 98" stroke="#1a3a5c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- 오른쪽 줄 -->
+  <line x1="102" y1="66" x2="108" y2="98" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="122" y1="66" x2="128" y2="98" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 오른쪽 접시 -->
+  <path d="M102 98 Q118 108 134 98" stroke="#1a3a5c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- 중앙 핀 -->
+  <circle cx="96" cy="62" r="5" fill="#1a3a5c"/>
+</svg>
