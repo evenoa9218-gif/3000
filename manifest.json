@@ -2,8 +2,8 @@
   "name": "3000제 OX 퀴즈",
   "short_name": "OX 퀴즈",
   "description": "변호사시험 민사법·형사법·공법 선택형 기출 OX 퀴즈",
-  "start_url": "/3000/",
-  "scope": "/3000/",
+  "start_url": "/MCQ/",
+  "scope": "/MCQ/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f1117",
@@ -11,12 +11,12 @@
   "lang": "ko",
   "icons": [
     {
-      "src": "/3000/icon-192.png",
+      "src": "/MCQ/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/3000/icon-512.png",
+      "src": "/MCQ/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -26,17 +26,17 @@
   "shortcuts": [
     {
       "name": "민사법",
-      "url": "/3000/",
+      "url": "/MCQ/",
       "description": "민사법 OX 퀴즈"
     },
     {
       "name": "형사법",
-      "url": "/3000/criminal.html",
+      "url": "/MCQ/criminal.html",
       "description": "형사법 OX 퀴즈"
     },
     {
       "name": "공법",
-      "url": "/3000/public-law.html",
+      "url": "/MCQ/public-law.html",
       "description": "공법 OX 퀴즈"
     }
   ]

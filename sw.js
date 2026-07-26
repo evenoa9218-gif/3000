@@ -1,10 +1,10 @@
-const CACHE = 'ox-quiz-v1';
+const CACHE = 'ox-quiz-v2';
 const ASSETS = [
-  '/3000/',
-  '/3000/index.html',
-  '/3000/criminal.html',
-  '/3000/public-law.html',
-  '/3000/manifest.json'
+  '/MCQ/',
+  '/MCQ/index.html',
+  '/MCQ/criminal.html',
+  '/MCQ/public-law.html',
+  '/MCQ/manifest.json'
 ];
 
 self.addEventListener('install', e => {
@@ -33,7 +33,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => caches.match('/3000/'));
+      }).catch(() => caches.match('/MCQ/'));
     })
   );
 });
