@@ -11,16 +11,6 @@
 <meta name="theme-color" content="#0f1117">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>3000제 OX 퀴즈 — 민법 & 민소법 선택형 기출</title>
-<script>
-(function(){
-  var vids=["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
-  var s=sessionStorage.getItem("ox_bg");
-  if(!s){s=vids[Math.floor(Math.random()*vids.length)];sessionStorage.setItem("ox_bg",s);}
-  var l=document.createElement("link");
-  l.rel="preload"; l.as="video"; l.href=s; l.type="video/mp4";
-  document.head.appendChild(l);
-})();
-</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -3355,6 +3345,21 @@ function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Mat
 
 /* ── CSS ─────────────────────────────────────────── */
 const CSS = `
+/* 배경: 영상 대신 CSS 그라디언트 (28MB 절감) */
+.bg-scene{
+  background:
+    radial-gradient(1200px 800px at 18% 12%, rgba(52,96,168,.28), transparent 60%),
+    radial-gradient(1000px 700px at 82% 78%, rgba(122,84,168,.20), transparent 62%),
+    radial-gradient(900px 600px at 60% 20%, rgba(28,72,124,.22), transparent 58%),
+    linear-gradient(160deg,#050a16 0%,#081428 45%,#040a18 100%);
+  animation: bgdrift 32s ease-in-out infinite alternate;
+}
+@keyframes bgdrift{
+  from{ background-position:0% 0%,100% 100%,50% 0%,0 0; }
+  to  { background-position:12% 8%, 88% 92%, 42% 10%,0 0; }
+}
+@media (prefers-reduced-motion: reduce){ .bg-scene{ animation:none; } }
+
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -3751,17 +3756,6 @@ const TOPIC_ICONS = {
 function App() {
   // ── 로그인/세션 상태
   const [uid,    setUid]    = useState(null);     // 현재 사용자 ID
-  const [bgSrc] = useState(() => {
-    const vids=["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
-    let s=sessionStorage.getItem("ox_bg");
-    if(!s){s=vids[Math.floor(Math.random()*vids.length)];sessionStorage.setItem("ox_bg",s);}
-    return s;
-  });
-  const bgVideoRef = useRef(null);
-  useEffect(() => {
-    const v = bgVideoRef.current;
-    if (v) { v.muted = true; v.play().catch(() => {}); }
-  }, []);
   const [isAdmin,setIsAdmin]= useState(false);
 
   // ── 화면 상태
@@ -4458,9 +4452,7 @@ function App() {
     <>
       <style>{CSS}</style>
       <div className="login-scene" style={{position:"fixed",inset:0,zIndex:0,overflow:"hidden"}}>
-        <video ref={bgVideoRef} autoPlay muted loop playsInline preload="auto" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}>
-          <source src={bgSrc} type="video/mp4" />
-        </video>
+        <div className="bg-scene" style={{position:"absolute",inset:0,width:"100%",height:"100%"}}></div>
         <div style={{position:"absolute",inset:0,background:"linear-gradient(160deg,rgba(4,12,28,.25) 0%,rgba(8,20,45,.2) 50%,rgba(2,8,20,.3) 100%)"}}></div>
       </div>
       {screen === "subject"
@@ -5222,8 +5214,6 @@ function App() {
 
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
 function SubjectSelect({ onSelect, currentSubject }) {
-  const bgVideos = ["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
-  const [bgSrc] = React.useState(() => bgVideos[Math.floor(Math.random() * bgVideos.length)]);
   const btn = (id, label, ac, bc, gc) => {
     const active = currentSubject === id;
     return (
@@ -5445,8 +5435,6 @@ function LoginScreen({ onLogin }) {
     }
   };
 
-  const bgVideos = ["bg_a.mp4","bg_b.mp4","bg_c.mp4","bg_d.mp4"];
-  const [bgSrc] = React.useState(() => bgVideos[Math.floor(Math.random() * bgVideos.length)]);
 
   return (
     <React.Fragment>
