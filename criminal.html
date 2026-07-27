@@ -3241,6 +3241,10 @@ html,body{background:var(--bg);color:var(--tx);font-family:'Pretendard Variable'
 .hdr-sub{font-family:'Noto Serif KR',serif;font-size:13px;color:var(--gold);margin-top:3px;font-weight:600;letter-spacing:.01em;}
 .hdr-user{display:flex;align-items:center;gap:8px;}
 .uid-badge{font-size:12px;color:var(--tx2);background:var(--sf2);border:1px solid var(--bd);border-radius:14px;padding:4px 12px;}
+.subject-switch{font-size:11.5px;color:var(--gold);background:var(--sf2);
+  border:1px solid var(--bd);border-radius:8px;padding:4px 8px;cursor:pointer;
+  font-family:inherit;max-width:110px;}
+.subject-switch:hover{border-color:var(--gold);}
 .logout-btn{font-size:11px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
 .logout-btn:hover{color:var(--er);}
 
@@ -3635,12 +3639,10 @@ function App() {
     const firstMod = MODULE_REGISTRY.find(m => m.status === "active");
     if (firstMod) setActiveModule(firstMod.id);
 
-    if (sessionStorage.getItem("ox_skip_subject")) {
-      sessionStorage.removeItem("ox_skip_subject");
-      setScreen("hub");
-    } else {
-      setScreen("subject");
-    }
+    // 로그인하면 바로 이 과목의 모듈 화면으로 간다. 과목은 헤더에서 바꾼다 —
+    // 들어올 때마다 과목 고르는 화면을 한 번 더 거치는 게 번거로웠다.
+    sessionStorage.removeItem("ox_skip_subject");   // 옛 플래그 잔여물 정리
+    setScreen("hub");
     loadHubStats(id);
   }
 
@@ -4293,7 +4295,7 @@ function App() {
             onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
             {theme==='dark' ? '☀️' : '🌙'}
           </button>
-          <button className="logout-btn" onClick={()=>setScreen("subject")} style={{color:"var(--gold)",borderRadius:8,padding:"4px 10px",border:"1px solid var(--bd)",fontSize:11}}>← 과목</button>
+          <SubjectSwitch current="criminal" />
           <span className="uid-badge">👤 {uid}</span>
           <button className="logout-btn" onClick={()=>{ setUid(null); setIsAdmin(false); localStorage.removeItem("hub_last_uid"); }}>로그아웃</button>
         </div>
@@ -4978,6 +4980,29 @@ function App() {
 
 
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
+/* 과목 전환 — 세 과목이 각각 다른 HTML이라 전환은 페이지 이동이다.
+   (한 파일에 다 담으면 문항 데이터가 수 MB라 첫 로딩이 무거워진다.)
+   예전에는 로그인할 때마다 과목 고르는 화면을 한 번 더 거쳤는데,
+   들어올 때마다 번거로워 헤더에서 바로 바꾸도록 옮겼다. */
+const SUBJECT_PAGES = [
+  { id: "civil",    label: "민사법", href: "index.html" },
+  { id: "criminal", label: "형사법", href: "criminal.html" },
+  { id: "public",   label: "공법",   href: "public-law.html" },
+];
+
+function SubjectSwitch({ current }) {
+  return (
+    <select className="subject-switch" value={current} title="과목 전환"
+      onChange={(e) => {
+        const t = SUBJECT_PAGES.find(s => s.id === e.target.value);
+        if (t && t.id !== current) window.location.href = t.href;
+      }}>
+      {SUBJECT_PAGES.map(s =>
+        <option key={s.id} value={s.id}>⚖ {s.label}</option>)}
+    </select>
+  );
+}
+
 function SubjectSelect({ onSelect, currentSubject }) {
   const btn = (id, label, ac, bc, gc) => {
     const active = currentSubject === id;
