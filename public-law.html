@@ -29,6 +29,7 @@ const fb = {
   },
   // 값 쓰기 (PUT: 덮어쓰기)
   set: async (path, data) => {
+    fbStatsInvalidate();
     const r = await fetch(`${FB_URL}/${path}.json`, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
@@ -59,6 +60,20 @@ const fb = {
 
 // ── Firebase 경로 정의 ──────────────────────────────
 const SUBJECT_NS = "public";
+// 통계는 한 번에 통째로 받아 캐시한다.
+// 예전에는 모듈×회독×종류로 쪼개 70번을 따로 요청했다. 브라우저가 한 호스트에
+// 동시 6개까지만 연결하므로 병렬로 보내도 줄줄이 대기해 몇 초가 걸렸다.
+// 결과가 아니라 '진행 중인 약속'을 캐시한다. 결과만 캐시하면 허브와 모듈이
+// 동시에 부를 때 둘 다 캐시를 놓쳐 같은 걸 두 번 받는다.
+let _statsPromise = null, _statsFor = null;
+function fbStats(sid, force) {
+  if (force || _statsFor !== sid || !_statsPromise) {
+    _statsFor = sid;
+    _statsPromise = fb.get(`users/${sid}/stats`).then(v => v || {});
+  }
+  return _statsPromise;
+}
+function fbStatsInvalidate() { _statsPromise = null; _statsFor = null; }
 const fbPath = {
   info:      (uid)           => `${SUBJECT_NS}/users/${uid}/info`,
   prog:      (uid,mid,r)     => `${SUBJECT_NS}/users/${uid}/stats/${mid}/prog_${r}`,
@@ -934,52 +949,38 @@ function App() {
   async function loadHubStats(userId) {
     if (!userId) return;
     const sid = toSafeId(userId);
-    const stats = {};
-    for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
+    const all = await fbStats(sid);          // 왕복 1번
+    const mods = MODULE_REGISTRY.filter(m=>m.status==="active");
+    const entries = await Promise.all(mods.map(async mod => {
+      const S = all[mod.id] || {};
       const allWrong = new Set(), allMarked = new Set();
-      let answered=0, total=mod.count||0;
       for (const r of ROUNDS) {
-        const fbW = await fb.get(fbPath.wrong(sid,mod.id,r));
-        const w = fbW || await gr(K_WRONG(userId,mod.id,r), []);
-        w.forEach(id=>allWrong.add(id));
-        const fbM = await fb.get(fbPath.marked(sid,mod.id,r));
-        const m2 = fbM || await gr(K_MARKED(userId,mod.id,r), []);
-        m2.forEach(id=>allMarked.add(id));
+        (S[`wrong_${r}`]  || await gr(K_WRONG(userId,mod.id,r), [])).forEach(id=>allWrong.add(id));
+        (S[`marked_${r}`] || await gr(K_MARKED(userId,mod.id,r), [])).forEach(id=>allMarked.add(id));
       }
-      // 진행률: 1회독 기준
-      const fbP = await fb.get(fbPath.prog(sid,mod.id,1));
-      const lsP = await gr(K_PROG(userId,mod.id,1), {answered:[]});
-      const p = fbP || lsP;
-      answered = (p.answered||[]).length;
-      const pct = total ? Math.round(answered/total*100) : 0;
-      stats[mod.id] = {wc: allWrong.size, mc: allMarked.size, answered, pct};
-    }
-    setHubStats(stats);
+      const p = S['prog_1'] || await gr(K_PROG(userId,mod.id,1), {answered:[]});
+      const answered = (p.answered||[]).length;
+      const total = mod.count||0;
+      return [mod.id, { wc: allWrong.size, mc: allMarked.size, answered,
+                        pct: total ? Math.round(answered/total*100) : 0 }];
+    }));
+    setHubStats(Object.fromEntries(entries));
   }
 
   async function loadModuleData(mid) {
     if (!uid) return;
     const sid = toSafeId(uid);
+    const S = (await fbStats(sid))[mid] || {};   // 왕복 0번(허브에서 받아둔 캐시)
     const wm = {}, mm = {}, pm = {}, awm = {}, amm = {};
 
     for (const r of ROUNDS) {
       // Firebase 우선, 없으면 localStorage 폴백
-      const fbW = await fb.get(fbPath.wrong(sid,mid,r));
-      wm[r] = new Set(fbW || await gr(K_WRONG(uid,mid,r), []));
-
-      const fbM = await fb.get(fbPath.marked(sid,mid,r));
-      mm[r] = new Set(fbM || await gr(K_MARKED(uid,mid,r), []));
-
-      const fbP = await fb.get(fbPath.prog(sid,mid,r));
-      const lsP = await gr(K_PROG(uid,mid,r), {answered:[],correct:[],wrong:[]});
-      const p   = fbP || lsP;
-      pm[r] = { answered:new Set(p.answered||[]), correct:new Set(p.correct||[]), wrong:new Set(p.wrong||[]) };
-
-      const fbAW = await fb.get(fbPath.awWrong(sid,mid,r));
-      awm[r] = new Set(fbAW || await gr(K_AW_WRONG(uid,mid,r), []));
-
-      const fbAM = await fb.get(fbPath.awMark(sid,mid,r));
-      amm[r] = new Set(fbAM || await gr(K_AW_MARK(uid,mid,r), []));
+      wm[r]  = new Set(S[`wrong_${r}`]    || await gr(K_WRONG(uid,mid,r), []));
+      mm[r]  = new Set(S[`marked_${r}`]   || await gr(K_MARKED(uid,mid,r), []));
+      const p = S[`prog_${r}`] || await gr(K_PROG(uid,mid,r), {answered:[],correct:[],wrong:[]});
+      pm[r]  = { answered:new Set(p.answered||[]), correct:new Set(p.correct||[]), wrong:new Set(p.wrong||[]) };
+      awm[r] = new Set(S[`aw_wrong_${r}`] || await gr(K_AW_WRONG(uid,mid,r), []));
+      amm[r] = new Set(S[`aw_mark_${r}`]  || await gr(K_AW_MARK(uid,mid,r), []));
     }
 
     setWrongMap(wm); setMarkedMap(mm); setProgMap(pm);
