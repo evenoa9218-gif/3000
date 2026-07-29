@@ -105,9 +105,9 @@ function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
 <script>
 /* 문제 데이터. JSX가 아니라서 Babel을 거칠 이유가 없다 —
    여기 두면 페이지 열 때 변환 비용이 데이터만큼 빠진다. */
-const 헌법_RAW = [];
-const 행정법총론_RAW = [];
-const 행정법각론_RAW = [];
+
+
+
 const STAR_IDS_헌법 = new Set([]);
 const STAR_IDS_행정법총론 = new Set([]);
 const STAR_IDS_행정법각론 = new Set([]);
@@ -209,11 +209,34 @@ window.storage = window.storage || (() => {
 
 
 
-const 헌법_DATA = 헌법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_헌법.has(String(id))}));
 
-const 행정법총론_DATA = 행정법총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법총론.has(String(id))}));
+/* ── 문항 데이터 지연 로드 ──────────────────────────────────
+   예전에는 과목의 모든 모듈 데이터가 HTML에 박혀 있었다. 각론만 풀 사람도
+   총론·형소법까지 받아야 했다. 이제 모듈을 고른 뒤 그 모듈만 가져온다.
+   허브(모듈 선택) 화면은 개수만 필요하므로 데이터를 건드리지 않는다. */
+const MODULE_BUILDERS = {};   // 모듈 id → (rows) => 정규화된 배열
+const MODULE_PENDING  = {};   // 모듈 id → Promise (같은 모듈을 두 번 받지 않는다)
 
-const 행정법각론_DATA = 행정법각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법각론.has(String(id))}));
+function ensureModuleData(id){
+  const build = MODULE_BUILDERS[id];
+  if (!build) return Promise.resolve([]);
+  if (!MODULE_PENDING[id]) {
+    MODULE_PENDING[id] = fetch('data/' + encodeURIComponent(id) + '.json')
+      .then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(build)
+      .catch(err => { delete MODULE_PENDING[id]; throw err; });  // 실패는 다시 시도할 수 있게 둔다
+  }
+  return MODULE_PENDING[id];
+}
+
+let 헌법_DATA = [];
+MODULE_BUILDERS["헌법"] = rows => (헌법_DATA = rows.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_헌법.has(String(id))})));
+
+let 행정법총론_DATA = [];
+MODULE_BUILDERS["행정법총론"] = rows => (행정법총론_DATA = rows.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법총론.has(String(id))})));
+
+let 행정법각론_DATA = [];
+MODULE_BUILDERS["행정법각론"] = rows => (행정법각론_DATA = rows.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법각론.has(String(id))})));
 
 
 
@@ -226,13 +249,13 @@ const SS_EXAM_행정법각론 = {};
 
 const MODULE_REGISTRY = [
   { id:"헌법", label:"헌법", subtitle:"헌법 핵심 판례", icon:"⚖",
-    count: 헌법_DATA.length, status:"soon", color:"#c09050",
+    count: 0, status:"soon", color:"#c09050",
     topics:[], getData: () => 헌법_DATA },
   { id:"행정법총론", label:"행정법총론", subtitle:"행정법 총론", icon:"§",
-    count: 행정법총론_DATA.length, status:"soon", color:"#a87840",
+    count: 0, status:"soon", color:"#a87840",
     topics:[], getData: () => 행정법총론_DATA },
   { id:"행정법각론", label:"행정법각론", subtitle:"행정법 각론", icon:"⌂︎",
-    count: 행정법각론_DATA.length, status:"soon", color:"#906030",
+    count: 0, status:"soon", color:"#906030",
     topics:[], getData: () => 행정법각론_DATA },
 ];
 
@@ -779,6 +802,20 @@ function App() {
   // ── 화면 상태
   const [screen, setScreen] = useState("hub");    // hub | quiz | archive | admin
   const [activeModule, setActiveModule] = useState(null); // 현재 선택된 모듈
+  // 문항 데이터 도착 여부. 데이터는 컴포넌트 밖 변수라 React가 변화를 모르므로
+  // dataReady를 올려 다시 그리게 한다.
+  const [dataReady, setDataReady] = useState(0);
+  const [dataBusy,  setDataBusy]  = useState(false);
+  const [dataErr,   setDataErr]   = useState(null);
+  useEffect(() => {
+    if (!activeModule || screen === "hub") return;
+    let 취소 = false;
+    setDataBusy(true); setDataErr(null);
+    ensureModuleData(activeModule)
+      .then(() => { if(!취소){ setDataBusy(false); setDataReady(n=>n+1); } })
+      .catch(() => { if(!취소){ setDataBusy(false); setDataErr("문제를 불러오지 못했습니다. 새로고침해 주세요."); } });
+    return () => { 취소 = true; };
+  }, [activeModule, screen]);
 
   // ── 퀴즈 설정
   const [cfgRound,  setCfgRound]  = useState(1);
@@ -1627,7 +1664,13 @@ function App() {
         )}
 
         {/* ════ 퀴즈 탭 ════ */}
-        {screen==="quiz" && (
+        {screen==="quiz" && dataBusy && (
+          <div className="su"><div className="card" style={{textAlign:"center",padding:40,color:"var(--tx3)"}}>⚖ 문제 불러오는 중…</div></div>
+        )}
+        {screen==="quiz" && dataErr && (
+          <div className="su"><div className="card" style={{textAlign:"center",padding:40,color:"#c0392b"}}>{dataErr}</div></div>
+        )}
+        {screen==="quiz" && !dataBusy && !dataErr && (
           <div className="su" key={inQuiz?"q":"s"}>
 
             {/* 설정 화면 */}

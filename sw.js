@@ -9,7 +9,7 @@
  * 그래서 **문서(navigate) 요청은 네트워크 우선**으로 바꿨다. 오프라인일 때만
  * 캐시가 답한다. 나머지 자산은 캐시 우선을 유지한다 — 잘 바뀌지 않기 때문이다.
  */
-const CACHE = 'ox-quiz-v4';
+const CACHE = 'ox-quiz-v5';
 const ASSETS = [
   '/MCQ/',
   '/MCQ/index.html',
@@ -47,6 +47,25 @@ self.addEventListener('fetch', e => {
         }
         return res;
       }).catch(() => caches.match(req).then(c => c || caches.match('/MCQ/')))
+    );
+    return;
+  }
+
+  // 문항 데이터는 캐시를 먼저 내주되 뒤에서 새 판을 받아둔다.
+  // 캐시 우선만 쓰면 문제를 고쳐 배포해도 캐시 이름을 올리기 전까지 옛 문제가 남고,
+  // 네트워크 우선으로 하면 1MB짜리를 매번 기다려야 한다. 그 사이를 택했다.
+  if (req.url.includes('/MCQ/data/')) {
+    e.respondWith(
+      caches.match(req).then(cached => {
+        const fresh = fetch(req).then(res => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(req, clone));
+          }
+          return res;
+        });
+        return cached || fresh;
+      })
     );
     return;
   }
