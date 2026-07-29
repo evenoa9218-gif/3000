@@ -102,96 +102,18 @@ function toSafeId(id) { return id.replace(/[.#$\[\]]/g, '_'); }
 <body>
 <div id="root"><div class="loading">⚖ 불러오는 중...</div></div>
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef } = React;
-
-// window.storage — GitHub Pages에서는 localStorage로 폴백
-window.storage = window.storage || (() => {
-  const PREFIX = 'qhub_';
-  return {
-    get: async (key) => {
-      try {
-        const v = localStorage.getItem(PREFIX + key);
-        return v !== null ? { key, value: v } : null;
-      } catch { return null; }
-    },
-    set: async (key, value) => {
-      try {
-        localStorage.setItem(PREFIX + key, value);
-        return { key, value };
-      } catch { return null; }
-    },
-    delete: async (key) => {
-      try { localStorage.removeItem(PREFIX + key); return { key, deleted: true }; } catch { return null; }
-    },
-    list: async (prefix) => {
-      try {
-        const keys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith(PREFIX + (prefix||''))) {
-            keys.push(k.slice(PREFIX.length));
-          }
-        }
-        return { keys };
-      } catch { return { keys: [] }; }
-    }
-  };
-})();
-
-/* ═══════════════════════════════════════════════
-   3000제 퀴즈 허브  —  quiz_hub.jsx
-   아이디 로그인 → 범위별 모듈 선택 → 퀴즈 진행
-═══════════════════════════════════════════════ */
-
-
+<script>
+/* 문제 데이터. JSX가 아니라서 Babel을 거칠 이유가 없다 —
+   여기 두면 페이지 열 때 변환 비용이 데이터만큼 빠진다. */
 const 헌법_RAW = [];
-const 헌법_DATA = 헌법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_헌법.has(String(id))}));
 const 행정법총론_RAW = [];
-const 행정법총론_DATA = 행정법총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법총론.has(String(id))}));
 const 행정법각론_RAW = [];
-const 행정법각론_DATA = 행정법각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법각론.has(String(id))}));
 const STAR_IDS_헌법 = new Set([]);
 const STAR_IDS_행정법총론 = new Set([]);
 const STAR_IDS_행정법각론 = new Set([]);
 const EXAM_YEAR_헌법 = {};
 const EXAM_YEAR_행정법총론 = {};
 const EXAM_YEAR_행정법각론 = {};
-const SS_EXAM_헌법 = {};
-const SS_EXAM_행정법총론 = {};
-const SS_EXAM_행정법각론 = {};
-
-const MODULE_REGISTRY = [
-  { id:"헌법", label:"헌법", subtitle:"헌법 핵심 판례", icon:"⚖",
-    count: 헌법_DATA.length, status:"soon", color:"#c09050",
-    topics:[], getData: () => 헌법_DATA },
-  { id:"행정법총론", label:"행정법총론", subtitle:"행정법 총론", icon:"§",
-    count: 행정법총론_DATA.length, status:"soon", color:"#a87840",
-    topics:[], getData: () => 행정법총론_DATA },
-  { id:"행정법각론", label:"행정법각론", subtitle:"행정법 각론", icon:"⌂︎",
-    count: 행정법각론_DATA.length, status:"soon", color:"#906030",
-    topics:[], getData: () => 행정법각론_DATA },
-];
-
-// ── 스토리지 키 ──────────────────────────────────────
-const ADMIN_ID = "Sol";
-
-const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
-const K_USERS  = "hub_userlist";           // shared: 전체 유저 목록
-const K_UTIME  = (uid) => `hub_utime_${uid}`; // 마지막 접속 시각
-const K_EDITS  = (mid) => `hub_edits_${mid}`; // 문항 수정본
-
-const ROUNDS = [1,2,3,4];
-const K_WRONG  = (uid,mid,r) => `hub_${uid}_${mid}_wrong_${r}`;
-const K_MARKED = (uid,mid,r) => `hub_${uid}_${mid}_marked_${r}`;
-const K_PROG   = (uid,mid,r) => `hub_${uid}_${mid}_prog_${r}`;
-const K_AW_ROUND = (uid,mid)  => `hub_${uid}_${mid}_arch_round`;   // 아카이브 현재 회독
-const K_AW_WRONG = (uid,mid,r)=> `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이브 오답 회독별
-const K_AW_MARK  = (uid,mid,r)=> `hub_${uid}_${mid}_aw_mark_${r}`;  // 아카이브 헷갈림 회독별
-const K_SESSION  = (uid,mid)  => `hub_${uid}_${mid}_session`;       // 이어풀기 세션
-
-
-
 const EXAM_YEAR_각론 = {
   // 계약의종류·성립
   "001":"23변시-34","002":"24.10모-01","003":"23.08모-09",
@@ -242,6 +164,98 @@ const EXAM_YEAR_각론 = {
   // 부당이득
   "106":"21.10모-32","107":"19.10모-29","108":"14변시-19",
 };
+</script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+// window.storage — GitHub Pages에서는 localStorage로 폴백
+window.storage = window.storage || (() => {
+  const PREFIX = 'qhub_';
+  return {
+    get: async (key) => {
+      try {
+        const v = localStorage.getItem(PREFIX + key);
+        return v !== null ? { key, value: v } : null;
+      } catch { return null; }
+    },
+    set: async (key, value) => {
+      try {
+        localStorage.setItem(PREFIX + key, value);
+        return { key, value };
+      } catch { return null; }
+    },
+    delete: async (key) => {
+      try { localStorage.removeItem(PREFIX + key); return { key, deleted: true }; } catch { return null; }
+    },
+    list: async (prefix) => {
+      try {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(PREFIX + (prefix||''))) {
+            keys.push(k.slice(PREFIX.length));
+          }
+        }
+        return { keys };
+      } catch { return { keys: [] }; }
+    }
+  };
+})();
+
+/* ═══════════════════════════════════════════════
+   3000제 퀴즈 허브  —  quiz_hub.jsx
+   아이디 로그인 → 범위별 모듈 선택 → 퀴즈 진행
+═══════════════════════════════════════════════ */
+
+
+
+const 헌법_DATA = 헌법_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_헌법.has(String(id))}));
+
+const 행정법총론_DATA = 행정법총론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법총론.has(String(id))}));
+
+const 행정법각론_DATA = 행정법각론_RAW.map(([id,q,a,e,t])=>({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_행정법각론.has(String(id))}));
+
+
+
+
+
+
+const SS_EXAM_헌법 = {};
+const SS_EXAM_행정법총론 = {};
+const SS_EXAM_행정법각론 = {};
+
+const MODULE_REGISTRY = [
+  { id:"헌법", label:"헌법", subtitle:"헌법 핵심 판례", icon:"⚖",
+    count: 헌법_DATA.length, status:"soon", color:"#c09050",
+    topics:[], getData: () => 헌법_DATA },
+  { id:"행정법총론", label:"행정법총론", subtitle:"행정법 총론", icon:"§",
+    count: 행정법총론_DATA.length, status:"soon", color:"#a87840",
+    topics:[], getData: () => 행정법총론_DATA },
+  { id:"행정법각론", label:"행정법각론", subtitle:"행정법 각론", icon:"⌂︎",
+    count: 행정법각론_DATA.length, status:"soon", color:"#906030",
+    topics:[], getData: () => 행정법각론_DATA },
+];
+
+// ── 스토리지 키 ──────────────────────────────────────
+const ADMIN_ID = "Sol";
+
+const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
+const K_USERS  = "hub_userlist";           // shared: 전체 유저 목록
+const K_UTIME  = (uid) => `hub_utime_${uid}`; // 마지막 접속 시각
+const K_EDITS  = (mid) => `hub_edits_${mid}`; // 문항 수정본
+
+const ROUNDS = [1,2,3,4];
+const K_WRONG  = (uid,mid,r) => `hub_${uid}_${mid}_wrong_${r}`;
+const K_MARKED = (uid,mid,r) => `hub_${uid}_${mid}_marked_${r}`;
+const K_PROG   = (uid,mid,r) => `hub_${uid}_${mid}_prog_${r}`;
+const K_AW_ROUND = (uid,mid)  => `hub_${uid}_${mid}_arch_round`;   // 아카이브 현재 회독
+const K_AW_WRONG = (uid,mid,r)=> `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이브 오답 회독별
+const K_AW_MARK  = (uid,mid,r)=> `hub_${uid}_${mid}_aw_mark_${r}`;  // 아카이브 헷갈림 회독별
+const K_SESSION  = (uid,mid)  => `hub_${uid}_${mid}_session`;       // 이어풀기 세션
+
+
+
+
 
 const SS_EXAM_각론 = {
   // 동시이행의항변권
@@ -2577,8 +2591,19 @@ root.render(React.createElement(App));
 </script>
 <script>
 if('serviceWorker' in navigator){
+  // 새 워커가 제어권을 넘겨받으면 한 번만 새로고침한다.
+  // 이게 없으면 배포 직후 방문자에게 캐시에 남은 옛 화면이 그대로 보이고,
+  // 손으로 새로고침하기 전까지 스스로 회복하지 못한다.
+  const 최초등록 = !navigator.serviceWorker.controller;
+  let 새로고침함 = false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(최초등록 || 새로고침함) return;   // 첫 방문이면 이미 최신이다
+    새로고침함 = true;
+    location.reload();
+  });
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('/MCQ/sw.js').catch(()=>{});
+    // updateViaCache:'none' — sw.js가 HTTP 캐시에 붙잡히면 새 배포를 못 본다.
+    navigator.serviceWorker.register('/MCQ/sw.js',{updateViaCache:'none'}).catch(()=>{});
   });
 }
 </script>
