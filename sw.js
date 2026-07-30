@@ -9,7 +9,7 @@
  * 그래서 **문서(navigate) 요청은 네트워크 우선**으로 바꿨다. 오프라인일 때만
  * 캐시가 답한다. 나머지 자산은 캐시 우선을 유지한다 — 잘 바뀌지 않기 때문이다.
  */
-const CACHE = 'ox-quiz-v6';
+const CACHE = 'ox-quiz-v7';
 const ASSETS = [
   '/MCQ/',
   '/MCQ/index.html',
