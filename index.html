@@ -757,6 +757,43 @@ MODULE_BUILDERS["민법총칙"] = rows => (민법총칙_DATA = rows.map(([id,q,a
 
 const SS_EXAM_민총 = {"SS1":"25.08모-10","SS2":"25.08모-12","SS법인1":"25.06모-11","SS법인2":"25.06모-11","SS물건1":"25.10모-19","SS법률1":"25.06모-12","SS의사1":"25.10모-20","SS의사2":"25.08모-11","SS대리1":"25.06모-13","SS무효1":"25.06모-24","SS소멸1":"25.06모-14","SS소멸2":"25.08모-13","SS소멸3":"25.08모-34","SS소멸4":"25.10모-22"};
 
+// ── 상법총칙 데이터 ────────────────────────────────────
+// id 규칙: 상법 원본은 챕터마다 번호가 001로 리셋되므로 "{챕터명}{원번호}" 형태로 접두어를 붙인다.
+// 상세: .claude/skills/quiz-maker/SKILL.md 3절 표 참조.
+const STAR_IDS_상법총칙 = new Set([]);
+const EXAM_YEAR_상법총칙 = {
+  "상인001":"15변시",
+  "상업사용인001":"15변시","상업사용인002":"18변시","상업사용인003":"22변시","상업사용인004":"22변시",
+  "상업사용인005":"22변시","상업사용인006":"22변시","상업사용인007":"22변시","상업사용인008":"22변시",
+  "상업사용인009":"26변시",
+};
+let 상법총칙_DATA = [];
+MODULE_BUILDERS["상법총칙"] = rows => (상법총칙_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_상법총칙.has(String(id))})));
+
+// ── 상행위법 데이터 (입력 진행 중) ────────────────────────
+const STAR_IDS_상행위법 = new Set([]);
+const EXAM_YEAR_상행위법 = {};
+let 상행위법_DATA = [];
+MODULE_BUILDERS["상행위법"] = rows => (상행위법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_상행위법.has(String(id))})));
+
+// ── 회사법 데이터 (미착수) ────────────────────────────────
+const STAR_IDS_회사법 = new Set([]);
+const EXAM_YEAR_회사법 = {};
+let 회사법_DATA = [];
+MODULE_BUILDERS["회사법"] = rows => (회사법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_회사법.has(String(id))})));
+
+// ── 어음수표법 데이터 (미착수) ────────────────────────────
+const STAR_IDS_어음수표법 = new Set([]);
+const EXAM_YEAR_어음수표법 = {};
+let 어음수표법_DATA = [];
+MODULE_BUILDERS["어음수표법"] = rows => (어음수표법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_어음수표법.has(String(id))})));
+
+// ── 보험법 데이터 (미착수) ────────────────────────────────
+const STAR_IDS_보험법 = new Set([]);
+const EXAM_YEAR_보험법 = {};
+let 보험법_DATA = [];
+MODULE_BUILDERS["보험법"] = rows => (보험법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_보험법.has(String(id))})));
+
 // ── 모듈 레지스트리 ──────────────────────────────────
 // 새 퀴즈 추가 시 여기에 등록
 const MODULE_REGISTRY = [
@@ -907,6 +944,62 @@ const MODULE_REGISTRY = [
       {key:"민사집행종합",       label:"민사집행법·종합문제 기타"},
     ],
     getData: () => 민소법_DATA,
+  },
+  { id:"상법총칙", label:"상법총칙", subtitle:"상법 총칙편", icon:"§",
+    count: 15, status:"soon", color:"#8a6fb0",
+    topics:[
+      {key:"상인",label:"상인"},
+      {key:"상업사용인",label:"상업사용인"},
+      {key:"상호",label:"상호"},
+      {key:"상업등기",label:"상업등기"},
+      {key:"영업양도",label:"영업양도"},
+    ],
+    getData: () => 상법총칙_DATA,
+  },
+  { id:"상행위법", label:"상행위법", subtitle:"상법 상행위편", icon:"≡",
+    count: 0, status:"soon", color:"#7c66a8",
+    topics:[
+      {key:"상행위에대한특칙",label:"상행위에 대한 특칙"},
+      {key:"상사매매",label:"상사매매"},
+      {key:"상호계산",label:"상호계산"},
+      {key:"익명조합",label:"익명조합"},
+      {key:"합자조합",label:"합자조합"},
+      {key:"상행위법통칙종합문제",label:"상행위법 통칙 종합문제"},
+      {key:"대리상",label:"대리상"},
+      {key:"위탁매매업",label:"위탁매매업"},
+      {key:"운송주선업과운송업",label:"운송주선업과 운송업"},
+      {key:"공중접객업",label:"공중접객업"},
+    ],
+    getData: () => 상행위법_DATA,
+  },
+  { id:"회사법", label:"회사법", subtitle:"상법 회사편", icon:"⌂︎",
+    count: 0, status:"soon", color:"#6e5da0",
+    topics:[
+      {key:"설립",label:"설립"},
+      {key:"주식과주주",label:"주식과 주주"},
+      {key:"회사의기관",label:"회사의 기관"},
+      {key:"기업재무",label:"기업재무"},
+      {key:"구조변경",label:"구조변경"},
+      {key:"기타회사",label:"기타회사"},
+    ],
+    getData: () => 회사법_DATA,
+  },
+  { id:"어음수표법", label:"어음·수표법", subtitle:"어음·수표법", icon:"⚖︎",
+    count: 0, status:"soon", color:"#605498",
+    topics:[
+      {key:"어음수표행위",label:"어음·수표행위"},
+      {key:"어음수표상권리의발생",label:"어음·수표상 권리의 발생"},
+      {key:"어음수표상권리의이전",label:"어음·수표상 권리의 이전"},
+      {key:"어음수표상권리의소멸",label:"어음·수표상 권리의 소멸"},
+    ],
+    getData: () => 어음수표법_DATA,
+  },
+  { id:"보험법", label:"보험법", subtitle:"상법 보험편", icon:"⚑",
+    count: 0, status:"soon", color:"#524b90",
+    topics:[
+      {key:"보험법",label:"보험법"},
+    ],
+    getData: () => 보험법_DATA,
   },
 ];
 
@@ -2419,6 +2512,9 @@ function App() {
                         const id = String(cur.id);
                         const ssMatch = id.match(/^SS([가-힣a-zA-Z]*\d+)\.(.+)$/);              const v15Match = id.match(/^15V(\d+)\.(.+)$/);
                         const numMatch = id.match(/^(\d+)\.(.+)$/);
+                        // 상법 계열 모듈: 챕터마다 001로 리셋되므로 id가 "{챕터명}{번호}.{옵션}" 형태다.
+                        const chapterMatch = id.match(/^([가-힣]+\d+)\.(.+)$/);
+                        const SANGBEOP_MODULES = {"상법총칙":EXAM_YEAR_상법총칙,"상행위법":EXAM_YEAR_상행위법,"회사법":EXAM_YEAR_회사법,"어음수표법":EXAM_YEAR_어음수표법,"보험법":EXAM_YEAR_보험법};
                         if (ssMatch) {
                           const ssKey = "SS" + ssMatch[1];
                           const ssYr = (activeModule === "채권각론" ? SS_EXAM_각론 : activeModule === "민법총칙" ? SS_EXAM_민총 : activeModule === "민사소송법" ? SS_EXAM_민소 : activeModule === "물권법" ? SS_EXAM_물권 : SS_EXAM)[ssKey] || ssKey;
@@ -2427,6 +2523,10 @@ function App() {
                         if (v15Match) {
                           const v15yr = `26변시-${v15Match[1]}`;
                           return (<><span style={{color:"var(--red,#e05252)",fontWeight:600}}>{v15yr}</span><span>{`.${v15Match[2]}`}</span></>);
+                        }
+                        if (SANGBEOP_MODULES[activeModule] && chapterMatch) {
+                          const yr = SANGBEOP_MODULES[activeModule][chapterMatch[1]] || "";
+                          return (<>{yr && <span style={{color:"var(--blue)",fontWeight:600}}>{yr}</span>}<span>{id}</span></>);
                         }
                         if (numMatch) {
                           const yr = (activeModule === "채권각론" ? EXAM_YEAR_각론 : activeModule === "민법총칙" ? EXAM_YEAR_민총 : activeModule === "민사소송법" ? EXAM_YEAR_민소 : activeModule === "물권법" ? EXAM_YEAR_물권 : EXAM_YEAR)[numMatch[1].padStart(3,"0")] || "";
