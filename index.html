@@ -821,6 +821,7 @@ const EXAM_YEAR_회사법 = {
   "주식회사045":"16변시", "주식회사046":"16변시", "주식회사047":"16변시", "주식회사048":"16변시", "주식회사049":"16변시",
   "주식회사050.①":"16변시", "주식회사051.①":"16변시", "주식회사052":"19변시", "주식회사053.①":"17변시", "주식회사054.①":"17변시",
   "주식회사055.①":"17변시",
+  "주식회사056.①":"17변시", "주식회사057.①-1":"17변시", "주식회사057.①-2":"25변시", "주식회사058.①":"17변시",
 };
 let 회사법_DATA = [];
 MODULE_BUILDERS["회사법"] = rows => (회사법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_회사법.has(String(id))})));
@@ -1016,7 +1017,7 @@ const MODULE_REGISTRY = [
     getData: () => 상행위법_DATA,
   },
   { id:"회사법", label:"회사법", subtitle:"상법 회사편", icon:"⌂︎",
-    count: 115, status:"soon", color:"#6e5da0",
+    count: 131, status:"soon", color:"#6e5da0",
     topics:[
       {key:"설립",label:"설립"},
       {key:"주식과주주",label:"주식과 주주"},
