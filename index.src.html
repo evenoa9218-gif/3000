@@ -13,6 +13,7 @@
 <title>3000제 OX 퀴즈 — 민법 & 민소법 선택형 기출</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script>
 // ── Firebase REST API 헬퍼 (SDK 없이 fetch로 직접 사용) ──
 const FB_URL = "https://project-1720248149706690221-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -626,67 +627,39 @@ const EXAM_YEAR_각론 = {
   "106":"21.10모-32","107":"19.10모-29","108":"14변시-19",
 };
 </script>
-<script>
-const {
-  useState,
-  useEffect,
-  useRef
-} = React;
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
 
 // window.storage — GitHub Pages에서는 localStorage로 폴백
 window.storage = window.storage || (() => {
   const PREFIX = 'qhub_';
   return {
-    get: async key => {
+    get: async (key) => {
       try {
         const v = localStorage.getItem(PREFIX + key);
-        return v !== null ? {
-          key,
-          value: v
-        } : null;
-      } catch {
-        return null;
-      }
+        return v !== null ? { key, value: v } : null;
+      } catch { return null; }
     },
     set: async (key, value) => {
       try {
         localStorage.setItem(PREFIX + key, value);
-        return {
-          key,
-          value
-        };
-      } catch {
-        return null;
-      }
+        return { key, value };
+      } catch { return null; }
     },
-    delete: async key => {
-      try {
-        localStorage.removeItem(PREFIX + key);
-        return {
-          key,
-          deleted: true
-        };
-      } catch {
-        return null;
-      }
+    delete: async (key) => {
+      try { localStorage.removeItem(PREFIX + key); return { key, deleted: true }; } catch { return null; }
     },
-    list: async prefix => {
+    list: async (prefix) => {
       try {
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && k.startsWith(PREFIX + (prefix || ''))) {
+          if (k && k.startsWith(PREFIX + (prefix||''))) {
             keys.push(k.slice(PREFIX.length));
           }
         }
-        return {
-          keys
-        };
-      } catch {
-        return {
-          keys: []
-        };
-      }
+        return { keys };
+      } catch { return { keys: [] }; }
     }
   };
 })();
@@ -704,17 +677,12 @@ window.storage = window.storage || (() => {
 //  - STAR_IDS에 없던 문항은 여기서 별표로 살린다(정보를 잃지 않는다).
 // 기출출처는 렌더링 단계에서 id로 EXAM_YEAR_* 맵을 조회해 이미 잘 나오므로
 // 여기서는 손대지 않는다. (criminal.html의 normalizeItem 중 ★ 처리만 옮김)
-function normalizeStar(item) {
+function normalizeStar(item){
   let star = item.star;
-  const question = (item.question || '').replace(/(^|§)\s*★\s*/g, (_, head) => {
-    star = true;
-    return head;
-  }).trim();
-  return {
-    ...item,
-    question,
-    star
-  };
+  const question = (item.question || '')
+    .replace(/(^|§)\s*★\s*/g, (_, head)=>{ star = true; return head; })
+    .trim();
+  return { ...item, question, star };
 }
 
 // ── 채권총론 데이터 ──────────────────────────────────
@@ -725,771 +693,331 @@ const STAR_IDS = new Set(["100.⑤", "101.ㄱ", "101.ㄷ", "102.ㄴ", "103.①",
    예전에는 과목의 모든 모듈 데이터가 HTML에 박혀 있었다. 각론만 풀 사람도
    총론·형소법까지 받아야 했다. 이제 모듈을 고른 뒤 그 모듈만 가져온다.
    허브(모듈 선택) 화면은 개수만 필요하므로 데이터를 건드리지 않는다. */
-const MODULE_BUILDERS = {}; // 모듈 id → (rows) => 정규화된 배열
-const MODULE_PENDING = {}; // 모듈 id → Promise (같은 모듈을 두 번 받지 않는다)
+const MODULE_BUILDERS = {};   // 모듈 id → (rows) => 정규화된 배열
+const MODULE_PENDING  = {};   // 모듈 id → Promise (같은 모듈을 두 번 받지 않는다)
 
-function ensureModuleData(id) {
+function ensureModuleData(id){
   const build = MODULE_BUILDERS[id];
   if (!build) return Promise.resolve([]);
   if (!MODULE_PENDING[id]) {
-    MODULE_PENDING[id] = fetch('data/' + encodeURIComponent(id) + '.json').then(r => {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(build).catch(err => {
-      delete MODULE_PENDING[id];
-      throw err;
-    }); // 실패는 다시 시도할 수 있게 둔다
+    MODULE_PENDING[id] = fetch('data/' + encodeURIComponent(id) + '.json')
+      .then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(build)
+      .catch(err => { delete MODULE_PENDING[id]; throw err; });  // 실패는 다시 시도할 수 있게 둔다
   }
   return MODULE_PENDING[id];
 }
+
 let 채권총론_DATA = [];
-MODULE_BUILDERS["채권총론"] = rows => 채권총론_DATA = rows.map(([id, q, a, e, t]) => normalizeStar({
-  id,
-  question: q,
-  answer: a,
-  explanation: e,
-  topic: t,
-  star: STAR_IDS.has(String(id))
-}));
+MODULE_BUILDERS["채권총론"] = rows => (채권총론_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS.has(String(id))})));
+
 
 // ── 채권각론 데이터 ────────────────────────────────────
 
+
+
+
 let 채권각론_DATA = [];
-MODULE_BUILDERS["채권각론"] = rows => 채권각론_DATA = rows.map(([id, q, a, e, t]) => normalizeStar({
-  id,
-  question: q,
-  answer: a,
-  explanation: e,
-  topic: t,
-  star: STAR_IDS_각론.has(String(id))
-}));
+MODULE_BUILDERS["채권각론"] = rows => (채권각론_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_각론.has(String(id))})));
 
 // ── 물권법 데이터 ────────────────────────────────────
 
+
+
+
 let 물권법_DATA = [];
-MODULE_BUILDERS["물권법"] = rows => 물권법_DATA = rows.map(([id, q, a, e, t]) => normalizeStar({
-  id,
-  question: q,
-  answer: a,
-  explanation: e,
-  topic: t,
-  star: STAR_IDS_물권.has(String(id))
-}));
+MODULE_BUILDERS["물권법"] = rows => (물권법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_물권.has(String(id))})));
+
+
+
 const SS_EXAM_물권 = {
-  "SS1": "25.06모-07",
-  "SS2": "25.08모-21",
-  "SS3": "25.06모-09",
-  "SS4": "25.06모-05",
-  "SS5": "25.10모-32",
-  "SS6": "25.06모-08",
-  "SS7": "25.08모-20",
-  "SS8": "25.10모-28",
-  "SS9": "25.10모-34",
-  "SS10": "25.06모-06",
-  "SS11": "25.08모-22",
-  "SS12": "25.06모-04",
-  "SS13": "25.10모-30",
-  "SS14": "25.10모-18",
-  "SS15": "25.08모-24",
-  "SS16": "25.06모-01",
-  "SS17": "25.06모-25",
-  "SS18": "25.10모-33",
-  "SS질권1": "25.06모-02",
-  "SS질권2": "25.08모-35",
-  "SS저당1": "25.06모-03",
-  "SS저당2": "25.08모-23",
-  "SS저당3": "25.08모-25",
-  "SS공동1": "25.10모-29",
-  "SS가등기": "25.10모-35"
+  "SS1":"25.06모-07","SS2":"25.08모-21","SS3":"25.06모-09","SS4":"25.06모-05","SS5":"25.10모-32",
+  "SS6":"25.06모-08","SS7":"25.08모-20","SS8":"25.10모-28","SS9":"25.10모-34","SS10":"25.06모-06","SS11":"25.08모-22","SS12":"25.06모-04","SS13":"25.10모-30","SS14":"25.10모-18","SS15":"25.08모-24","SS16":"25.06모-01","SS17":"25.06모-25","SS18":"25.10모-33","SS질권1":"25.06모-02","SS질권2":"25.08모-35","SS저당1":"25.06모-03","SS저당2":"25.08모-23","SS저당3":"25.08모-25","SS공동1":"25.10모-29","SS가등기":"25.10모-35"
 };
+
+
+
+
+
 let 민소법_DATA = [];
-MODULE_BUILDERS["민사소송법"] = rows => 민소법_DATA = rows.map(([id, q, a, e, t]) => normalizeStar({
-  id,
-  question: q,
-  answer: a,
-  explanation: e,
-  topic: t,
-  star: STAR_IDS_민소.has(String(id))
-}));
-const SS_EXAM_민소 = {
-  "SS민소17": "25.06모-68",
-  "SS민소18": "25.08모-67",
-  "SS민소19": "25.08모-68",
-  "SS민소1": "25.10모-53",
-  "SS민소2": "25.08모-53",
-  "SS민소3": "25.08모-54",
-  "SS민소4": "25.06모-54",
-  "SS민소5": "25.08모-55",
-  "SS민소6": "25.06모-55",
-  "SS민소7": "25.06모-56",
-  "SS민소8": "25.08모-56",
-  "SS민소9": "25.06모-57",
-  "SS민소10": "25.10모-56",
-  "SS민소11": "25.10모-57",
-  "SS민소12": "25.08모-57",
-  "SS민소13": "25.10모-54",
-  "SS민소14": "25.10모-55",
-  "SS민소15": "25.06모-59",
-  "SS민소16": "25.06모-58",
-  "SS민소P7": "25.10모-59",
-  "SS민소P7b": "25.10모-58",
-  "SS민소P7c": "25.06모-67",
-  "SS민소P8": "25.08모-59",
-  "SS민소P9": "25.08모-58",
-  "SS민소P9c": "25.10모-67",
-  "SS민소P8b": "25.06모-60",
-  "SS민소P8c": "25.08모-60",
-  "SS민소P8d": "25.10모-60",
-  "SS민소P8e": "25.06모-61",
-  "SS민소P8f": "25.08모-61",
-  "SS민소P8g": "25.06모-62",
-  "SS민소P8h": "25.08모-62",
-  "SS민소P9a": "25.08모-63",
-  "SS민소P9b": "25.10모-61",
-  "SS민소P9d": "25.08모-64",
-  "SS민소P9e": "25.06모-63",
-  "SS민소P9f": "25.10모-63",
-  "SS민소P10": "25.06모-65",
-  "SS민소P11": "25.08모-66",
-  "SS민소P12": "25.10모-65",
-  "SS민소P10b": "25.06모-66",
-  "SS민소P12b": "25.10모-66"
-};
+MODULE_BUILDERS["민사소송법"] = rows => (민소법_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_민소.has(String(id))})));
+
+
+
+const SS_EXAM_민소 = {"SS민소17":"25.06모-68","SS민소18":"25.08모-67","SS민소19":"25.08모-68","SS민소1":"25.10모-53", "SS민소2":"25.08모-53", "SS민소3":"25.08모-54", "SS민소4":"25.06모-54","SS민소5":"25.08모-55","SS민소6":"25.06모-55","SS민소7":"25.06모-56","SS민소8":"25.08모-56","SS민소9":"25.06모-57","SS민소10":"25.10모-56","SS민소11":"25.10모-57","SS민소12":"25.08모-57","SS민소13":"25.10모-54","SS민소14":"25.10모-55","SS민소15":"25.06모-59","SS민소16":"25.06모-58","SS민소P7":"25.10모-59","SS민소P7b":"25.10모-58","SS민소P7c":"25.06모-67","SS민소P8":"25.08모-59","SS민소P9":"25.08모-58","SS민소P9c":"25.10모-67","SS민소P8b":"25.06모-60","SS민소P8c":"25.08모-60","SS민소P8d":"25.10모-60","SS민소P8e":"25.06모-61","SS민소P8f":"25.08모-61","SS민소P8g":"25.06모-62","SS민소P8h":"25.08모-62","SS민소P9a":"25.08모-63","SS민소P9b":"25.10모-61","SS민소P9d":"25.08모-64","SS민소P9e":"25.06모-63","SS민소P9f":"25.10모-63","SS민소P10":"25.06모-65","SS민소P11":"25.08모-66","SS민소P12":"25.10모-65","SS민소P10b":"25.06모-66","SS민소P12b":"25.10모-66"};
+
+
+
+
+
 let 민법총칙_DATA = [];
-MODULE_BUILDERS["민법총칙"] = rows => 민법총칙_DATA = rows.map(([id, q, a, e, t]) => normalizeStar({
-  id,
-  question: q,
-  answer: a,
-  explanation: e,
-  topic: t,
-  star: STAR_IDS_민총.has(String(id))
-}));
-const SS_EXAM_민총 = {
-  "SS1": "25.08모-10",
-  "SS2": "25.08모-12",
-  "SS법인1": "25.06모-11",
-  "SS법인2": "25.06모-11",
-  "SS물건1": "25.10모-19",
-  "SS법률1": "25.06모-12",
-  "SS의사1": "25.10모-20",
-  "SS의사2": "25.08모-11",
-  "SS대리1": "25.06모-13",
-  "SS무효1": "25.06모-24",
-  "SS소멸1": "25.06모-14",
-  "SS소멸2": "25.08모-13",
-  "SS소멸3": "25.08모-34",
-  "SS소멸4": "25.10모-22"
-};
+MODULE_BUILDERS["민법총칙"] = rows => (민법총칙_DATA = rows.map(([id,q,a,e,t])=>normalizeStar({id,question:q,answer:a,explanation:e,topic:t,star:STAR_IDS_민총.has(String(id))})));
+
+
+
+const SS_EXAM_민총 = {"SS1":"25.08모-10","SS2":"25.08모-12","SS법인1":"25.06모-11","SS법인2":"25.06모-11","SS물건1":"25.10모-19","SS법률1":"25.06모-12","SS의사1":"25.10모-20","SS의사2":"25.08모-11","SS대리1":"25.06모-13","SS무효1":"25.06모-24","SS소멸1":"25.06모-14","SS소멸2":"25.08모-13","SS소멸3":"25.08모-34","SS소멸4":"25.10모-22"};
 
 // ── 모듈 레지스트리 ──────────────────────────────────
 // 새 퀴즈 추가 시 여기에 등록
-const MODULE_REGISTRY = [{
-  id: "채권총론",
-  label: "채권총론",
-  subtitle: "민법 채권총론",
-  icon: "⚖",
-  count: 462,
-  status: "active",
-  // "active" | "soon"
-  color: "#5a9cc5",
-  topics: [{
-    key: "채권의목적",
-    label: "채권의 목적"
-  }, {
-    key: "채무불이행",
-    label: "채무불이행"
-  }, {
-    key: "손해배상",
-    label: "손해배상"
-  }, {
-    key: "채권자지체",
-    label: "채권자지체"
-  }, {
-    key: "채권자대위권",
-    label: "채권자대위권"
-  }, {
-    key: "채권자취소권",
-    label: "채권자취소권"
-  }, {
-    key: "채권양도",
-    label: "채권양도"
-  }, {
-    key: "채무인수",
-    label: "채무인수"
-  }, {
-    key: "변제",
-    label: "변제"
-  }, {
-    key: "변제자대위",
-    label: "변제자대위"
-  }, {
-    key: "대물변제공탁경개면제혼동",
-    label: "대물변제·공탁·경개·면제·혼동"
-  }, {
-    key: "상계",
-    label: "상계"
-  }, {
-    key: "서론분할불가분",
-    label: "서론·분할채권·불가분채권"
-  }, {
-    key: "연대채무",
-    label: "연대채무"
-  }, {
-    key: "부진정연대채무",
-    label: "부진정연대채무"
-  }, {
-    key: "보증채무",
-    label: "보증채무"
-  }, {
-    key: "15V",
-    label: "📝 제15회 변호사시험"
-  }],
-  getData: () => 채권총론_DATA
-}, {
-  id: "채권각론",
-  label: "채권각론",
-  subtitle: "민법 채권각론",
-  icon: "≡",
-  count: 358,
-  status: "active",
-  color: "#3a80a8",
-  topics: [{
-    key: "계약의종류·성립",
-    label: "계약의 종류·성립"
-  }, {
-    key: "동시이행의항변권",
-    label: "동시이행의 항변권"
-  }, {
-    key: "위험부담",
-    label: "위험부담"
-  }, {
-    key: "제3자를위한계약",
-    label: "제3자를 위한 계약"
-  }, {
-    key: "해제",
-    label: "해제"
-  }, {
-    key: "증여",
-    label: "증여"
-  }, {
-    key: "매매일반효력",
-    label: "매매 일반·효력"
-  }, {
-    key: "매도인의담보책임",
-    label: "매도인의 담보책임"
-  }, {
-    key: "민법상임대차",
-    label: "민법상 임대차"
-  }, {
-    key: "주택임대차보호법",
-    label: "주택임대차보호법"
-  }, {
-    key: "상가건물임대차보호법",
-    label: "상가건물 임대차보호법"
-  }, {
-    key: "도급",
-    label: "도급"
-  }, {
-    key: "기타전형계약",
-    label: "기타 전형계약"
-  }, {
-    key: "부당이득",
-    label: "부당이득"
-  }, {
-    key: "일반불법행위",
-    label: "일반 불법행위"
-  }, {
-    key: "특수불법행위",
-    label: "특수 불법행위"
-  }],
-  getData: () => 채권각론_DATA
-}, {
-  id: "민법총칙",
-  label: "민법총칙",
-  subtitle: "민법 총칙편",
-  icon: "§",
-  count: 303,
-  status: "active",
-  color: "#4a8ab5",
-  topics: [{
-    key: "신의성실의원칙",
-    label: "신의성실의 원칙"
-  }, {
-    key: "권리능력·행위능력",
-    label: "권리능력·행위능력"
-  }, {
-    key: "부재와실종",
-    label: "부재와 실종"
-  }, {
-    key: "법인",
-    label: "법인"
-  }, {
-    key: "권리능력없는사단",
-    label: "권리능력 없는 사단"
-  }, {
-    key: "물건",
-    label: "물건"
-  }, {
-    key: "법률행위",
-    label: "법률행위"
-  }, {
-    key: "의사표시",
-    label: "의사표시"
-  }, {
-    key: "대리",
-    label: "대리"
-  }, {
-    key: "무효와취소",
-    label: "무효와 취소"
-  }, {
-    key: "조건과기한",
-    label: "조건과 기한"
-  }, {
-    key: "소멸시효",
-    label: "소멸시효"
-  }],
-  getData: () => 민법총칙_DATA
-}, {
-  id: "물권법",
-  label: "물권법",
-  subtitle: "민법 물권편",
-  icon: "⌂︎",
-  count: 508,
-  status: "active",
-  color: "#3d8ab0",
-  topics: [{
-    key: "물권의소멸·소유권서론기타",
-    label: "물권의 소멸·소유권 서론 기타"
-  }, {
-    key: "등기제도",
-    label: "등기제도"
-  }, {
-    key: "선의취득·동산물권의변동",
-    label: "선의취득·동산물권의 변동"
-  }, {
-    key: "물권적청구권",
-    label: "물권적 청구권"
-  }, {
-    key: "점유권",
-    label: "점유권"
-  }, {
-    key: "취득시효",
-    label: "취득시효"
-  }, {
-    key: "공유·합유·총유",
-    label: "공유·합유·총유"
-  }, {
-    key: "명의신탁",
-    label: "명의신탁"
-  }, {
-    key: "지상권·법정지상권",
-    label: "지상권·법정지상권"
-  }, {
-    key: "지역권·전세권",
-    label: "지역권·전세권"
-  }, {
-    key: "유치권",
-    label: "유치권"
-  }, {
-    key: "질권",
-    label: "질권"
-  }, {
-    key: "저당권",
-    label: "저당권"
-  }, {
-    key: "공동저당·특수저당",
-    label: "공동저당·특수저당"
-  }, {
-    key: "가등기담보법",
-    label: "가등기담보 등에 관한 법률"
-  }],
-  getData: () => 물권법_DATA
-}, {
-  id: "민사소송법",
-  label: "민사소송법",
-  subtitle: "민소법 핵심 판례",
-  icon: "⚖︎",
-  count: 850,
-  status: "active",
-  color: "#3878a0",
-  topics: [{
-    key: "서론",
-    label: "서론"
-  }, {
-    key: "신의성실의원칙",
-    label: "신의성실의 원칙"
-  }, {
-    key: "관할",
-    label: "관할·이송"
-  }, {
-    key: "제척기피회피",
-    label: "제척·기피·회피"
-  }, {
-    key: "당사자",
-    label: "당사자"
-  }, {
-    key: "소송능력대리인",
-    label: "소송능력·법정대리인·소송대리인"
-  }, {
-    key: "소송요건",
-    label: "소송요건"
-  }, {
-    key: "공통소의이익",
-    label: "공통적 소의 이익"
-  }, {
-    key: "확인의소",
-    label: "확인의 소"
-  }, {
-    key: "형성의소",
-    label: "형성의 소"
-  }, {
-    key: "소의제기",
-    label: "소의 제기"
-  }, {
-    key: "중복소송",
-    label: "중복소송금지"
-  }, {
-    key: "소멸시효기간준수",
-    label: "소멸시효 중단·기간준수"
-  }, {
-    key: "처분권주의",
-    label: "처분권주의"
-  }, {
-    key: "변론주의",
-    label: "변론주의"
-  }, {
-    key: "석명권",
-    label: "석명권"
-  }, {
-    key: "주장항변",
-    label: "주장과 항변(공격방어방법)"
-  }, {
-    key: "소송상형성권",
-    label: "소송상 형성권의 행사"
-  }, {
-    key: "소송상합의",
-    label: "소송상 합의"
-  }, {
-    key: "불출석기일기간",
-    label: "불출석·기일·기간·추후보완"
-  }, {
-    key: "송달",
-    label: "송달"
-  }, {
-    key: "중단수계",
-    label: "중단·수계"
-  }, {
-    key: "증거재판상자백",
-    label: "증거·재판상 자백"
-  }, {
-    key: "증거조사",
-    label: "증거조사"
-  }, {
-    key: "서증",
-    label: "서증"
-  }, {
-    key: "증명책임",
-    label: "증명책임"
-  }, {
-    key: "소송종료선언",
-    label: "소송종료선언"
-  }, {
-    key: "취하",
-    label: "취하"
-  }, {
-    key: "재소금지",
-    label: "재소금지"
-  }, {
-    key: "포기인낙",
-    label: "청구의 포기·인낙"
-  }, {
-    key: "재판상화해",
-    label: "재판상 화해"
-  }, {
-    key: "기판력서설작용국면",
-    label: "기판력 서설·작용국면"
-  }, {
-    key: "기판력시적범위",
-    label: "기판력의 시적 범위"
-  }, {
-    key: "기판력객관적범위",
-    label: "기판력의 객관적 범위"
-  }, {
-    key: "기판력주관적범위",
-    label: "기판력의 주관적 범위"
-  }, {
-    key: "판결",
-    label: "판결"
-  }, {
-    key: "청구의병합",
-    label: "청구의 병합"
-  }, {
-    key: "청구의변경",
-    label: "청구의 변경"
-  }, {
-    key: "반소중간확인의소",
-    label: "반소·중간확인의 소"
-  }, {
-    key: "공동소송",
-    label: "공동소송"
-  }, {
-    key: "보조참가",
-    label: "보조참가·소송고지"
-  }, {
-    key: "독립당사자참가",
-    label: "독립당사자참가"
-  }, {
-    key: "임의적당사자변경",
-    label: "임의적 당사자변경·소송승계"
-  }, {
-    key: "상소",
-    label: "상소"
-  }, {
-    key: "재심",
-    label: "재심"
-  }, {
-    key: "민사집행종합",
-    label: "민사집행법·종합문제 기타"
-  }],
-  getData: () => 민소법_DATA
-}];
+const MODULE_REGISTRY = [
+  {
+    id: "채권총론",
+    label: "채권총론",
+    subtitle: "민법 채권총론",
+    icon: "⚖",
+    count: 462,
+    status: "active",  // "active" | "soon"
+    color: "#5a9cc5",
+    topics: [
+      {key:"채권의목적",label:"채권의 목적"},
+      {key:"채무불이행",label:"채무불이행"},
+      {key:"손해배상",label:"손해배상"},
+      {key:"채권자지체",label:"채권자지체"},
+      {key:"채권자대위권",label:"채권자대위권"},
+      {key:"채권자취소권",label:"채권자취소권"},
+      {key:"채권양도",label:"채권양도"},
+      {key:"채무인수",label:"채무인수"},
+      {key:"변제",label:"변제"},
+      {key:"변제자대위",label:"변제자대위"},
+      {key:"대물변제공탁경개면제혼동",label:"대물변제·공탁·경개·면제·혼동"},
+      {key:"상계",label:"상계"},
+      {key:"서론분할불가분",label:"서론·분할채권·불가분채권"},
+      {key:"연대채무",label:"연대채무"},
+      {key:"부진정연대채무",label:"부진정연대채무"},
+      {key:"보증채무",label:"보증채무"},
+      {key:"15V",label:"📝 제15회 변호사시험"},
+    ],
+    getData: () => 채권총론_DATA,
+  },
+  { id:"채권각론", label:"채권각론", subtitle:"민법 채권각론", icon:"≡",
+    count: 358, status:"active", color:"#3a80a8",
+    topics:[
+      {key:"계약의종류·성립",label:"계약의 종류·성립"},
+      {key:"동시이행의항변권",label:"동시이행의 항변권"},
+      {key:"위험부담",label:"위험부담"},
+      {key:"제3자를위한계약",label:"제3자를 위한 계약"},
+      {key:"해제",label:"해제"},
+      {key:"증여",label:"증여"},
+      {key:"매매일반효력",label:"매매 일반·효력"},
+      {key:"매도인의담보책임",label:"매도인의 담보책임"},
+      {key:"민법상임대차",label:"민법상 임대차"},
+      {key:"주택임대차보호법",label:"주택임대차보호법"},
+      {key:"상가건물임대차보호법",label:"상가건물 임대차보호법"},
+      {key:"도급",label:"도급"},
+      {key:"기타전형계약",label:"기타 전형계약"},
+      {key:"부당이득",label:"부당이득"},
+      {key:"일반불법행위",label:"일반 불법행위"},
+      {key:"특수불법행위",label:"특수 불법행위"},
+    ],
+    getData: () => 채권각론_DATA,
+  },
+  {
+    id: "민법총칙",
+    label: "민법총칙",
+    subtitle: "민법 총칙편",
+    icon: "§",
+    count: 303,
+    status: "active",
+    color: "#4a8ab5",
+    topics: [
+      {key:"신의성실의원칙", label:"신의성실의 원칙"},
+      {key:"권리능력·행위능력", label:"권리능력·행위능력"},
+      {key:"부재와실종", label:"부재와 실종"},
+      {key:"법인", label:"법인"},
+      {key:"권리능력없는사단", label:"권리능력 없는 사단"},
+      {key:"물건", label:"물건"},
+      {key:"법률행위", label:"법률행위"},
+      {key:"의사표시", label:"의사표시"},
+      {key:"대리", label:"대리"},
+      {key:"무효와취소", label:"무효와 취소"},
+      {key:"조건과기한", label:"조건과 기한"},
+      {key:"소멸시효", label:"소멸시효"},
+    ],
+    getData: () => 민법총칙_DATA,
+  },
+  { id:"물권법", label:"물권법", subtitle:"민법 물권편", icon:"⌂︎",
+    count: 508, status:"active", color:"#3d8ab0",
+    topics:[
+      {key:"물권의소멸·소유권서론기타",label:"물권의 소멸·소유권 서론 기타"},
+      {key:"등기제도",label:"등기제도"},
+      {key:"선의취득·동산물권의변동",label:"선의취득·동산물권의 변동"},
+      {key:"물권적청구권",label:"물권적 청구권"},
+      {key:"점유권",label:"점유권"},
+      {key:"취득시효",label:"취득시효"},
+      {key:"공유·합유·총유",label:"공유·합유·총유"},
+      {key:"명의신탁",label:"명의신탁"},
+      {key:"지상권·법정지상권",label:"지상권·법정지상권"},
+      {key:"지역권·전세권",label:"지역권·전세권"},
+      {key:"유치권",label:"유치권"},
+      {key:"질권",label:"질권"},
+      {key:"저당권",label:"저당권"},
+      {key:"공동저당·특수저당",label:"공동저당·특수저당"},
+      {key:"가등기담보법",label:"가등기담보 등에 관한 법률"},
+    ],
+    getData: () => 물권법_DATA,
+  },
+  { id:"민사소송법", label:"민사소송법", subtitle:"민소법 핵심 판례", icon:"⚖︎",
+    count: 850, status:"active", color:"#3878a0",
+    topics:[
+      {key:"서론",               label:"서론"},
+      {key:"신의성실의원칙",     label:"신의성실의 원칙"},
+      {key:"관할",               label:"관할·이송"},
+      {key:"제척기피회피",       label:"제척·기피·회피"},
+      {key:"당사자",             label:"당사자"},
+      {key:"소송능력대리인",     label:"소송능력·법정대리인·소송대리인"},
+      {key:"소송요건",           label:"소송요건"},
+      {key:"공통소의이익",       label:"공통적 소의 이익"},
+      {key:"확인의소",           label:"확인의 소"},
+      {key:"형성의소",           label:"형성의 소"},
+      {key:"소의제기",           label:"소의 제기"},
+      {key:"중복소송",           label:"중복소송금지"},
+      {key:"소멸시효기간준수",   label:"소멸시효 중단·기간준수"},
+      {key:"처분권주의",         label:"처분권주의"},
+      {key:"변론주의",           label:"변론주의"},
+      {key:"석명권",             label:"석명권"},
+      {key:"주장항변",           label:"주장과 항변(공격방어방법)"},
+      {key:"소송상형성권",       label:"소송상 형성권의 행사"},
+      {key:"소송상합의",         label:"소송상 합의"},
+      {key:"불출석기일기간",     label:"불출석·기일·기간·추후보완"},
+      {key:"송달",               label:"송달"},
+      {key:"중단수계",           label:"중단·수계"},
+      {key:"증거재판상자백",     label:"증거·재판상 자백"},
+      {key:"증거조사",           label:"증거조사"},
+      {key:"서증",               label:"서증"},
+      {key:"증명책임",           label:"증명책임"},
+      {key:"소송종료선언",       label:"소송종료선언"},
+      {key:"취하",               label:"취하"},
+      {key:"재소금지",           label:"재소금지"},
+      {key:"포기인낙",           label:"청구의 포기·인낙"},
+      {key:"재판상화해",         label:"재판상 화해"},
+      {key:"기판력서설작용국면", label:"기판력 서설·작용국면"},
+      {key:"기판력시적범위",     label:"기판력의 시적 범위"},
+      {key:"기판력객관적범위",   label:"기판력의 객관적 범위"},
+      {key:"기판력주관적범위",   label:"기판력의 주관적 범위"},
+      {key:"판결",               label:"판결"},
+      {key:"청구의병합",         label:"청구의 병합"},
+      {key:"청구의변경",         label:"청구의 변경"},
+      {key:"반소중간확인의소",   label:"반소·중간확인의 소"},
+      {key:"공동소송",           label:"공동소송"},
+      {key:"보조참가",           label:"보조참가·소송고지"},
+      {key:"독립당사자참가",     label:"독립당사자참가"},
+      {key:"임의적당사자변경",   label:"임의적 당사자변경·소송승계"},
+      {key:"상소",               label:"상소"},
+      {key:"재심",               label:"재심"},
+      {key:"민사집행종합",       label:"민사집행법·종합문제 기타"},
+    ],
+    getData: () => 민소법_DATA,
+  },
+];
 
 // ── 스토리지 키 ──────────────────────────────────────
 const ADMIN_ID = "Sol";
-const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
-const K_USERS = "hub_userlist"; // shared: 전체 유저 목록
-const K_UTIME = uid => `hub_utime_${uid}`; // 마지막 접속 시각
-const K_EDITS = mid => `hub_edits_${mid}`; // 문항 수정본
 
-const ROUNDS = [1, 2, 3, 4];
-const K_WRONG = (uid, mid, r) => `hub_${uid}_${mid}_wrong_${r}`;
-const K_MARKED = (uid, mid, r) => `hub_${uid}_${mid}_marked_${r}`;
-const K_PROG = (uid, mid, r) => `hub_${uid}_${mid}_prog_${r}`;
-const K_AW_ROUND = (uid, mid) => `hub_${uid}_${mid}_arch_round`; // 아카이브 현재 회독
-const K_AW_WRONG = (uid, mid, r) => `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이브 오답 회독별
-const K_AW_MARK = (uid, mid, r) => `hub_${uid}_${mid}_aw_mark_${r}`; // 아카이브 헷갈림 회독별
-const K_SESSION = (uid, mid) => `hub_${uid}_${mid}_session`; // 이어풀기 세션
+const K_MODULE = (uid, mid) => `hub_${uid}_${mid}`;
+const K_USERS  = "hub_userlist";           // shared: 전체 유저 목록
+const K_UTIME  = (uid) => `hub_utime_${uid}`; // 마지막 접속 시각
+const K_EDITS  = (mid) => `hub_edits_${mid}`; // 문항 수정본
+
+const ROUNDS = [1,2,3,4];
+const K_WRONG  = (uid,mid,r) => `hub_${uid}_${mid}_wrong_${r}`;
+const K_MARKED = (uid,mid,r) => `hub_${uid}_${mid}_marked_${r}`;
+const K_PROG   = (uid,mid,r) => `hub_${uid}_${mid}_prog_${r}`;
+const K_AW_ROUND = (uid,mid)  => `hub_${uid}_${mid}_arch_round`;   // 아카이브 현재 회독
+const K_AW_WRONG = (uid,mid,r)=> `hub_${uid}_${mid}_aw_wrong_${r}`; // 아카이브 오답 회독별
+const K_AW_MARK  = (uid,mid,r)=> `hub_${uid}_${mid}_aw_mark_${r}`;  // 아카이브 헷갈림 회독별
+const K_SESSION  = (uid,mid)  => `hub_${uid}_${mid}_session`;       // 이어풀기 세션
+
+
+
+
 
 const SS_EXAM_각론 = {
   // 동시이행의항변권
-  "SS1": "25.10모-10",
-  "SS2": "25.08모-33",
-  "SS3": "25.08모-31",
-  "SS4": "25.08모-29",
-  "SS5": "25.08모-30",
-  "SS6": "25.06모-26",
-  "SS7": "25.06모-26"
+  "SS1":"25.10모-10",
+  "SS2":"25.08모-33",
+  "SS3":"25.08모-31",
+  "SS4":"25.08모-29",
+  "SS5":"25.08모-30",
+  "SS6":"25.06모-26","SS7":"25.06모-26",
 };
+
 const EXAM_YEAR = {
   // 채권의목적
-  "001": "25변시-24",
-  "002": "23변시-35",
-  "003": "19변시-32",
-  "004": "24.08모-01",
-  "005": "17.10모-17",
-  "006": "16.06모-16",
+  "001":"25변시-24","002":"23변시-35","003":"19변시-32",
+  "004":"24.08모-01","005":"17.10모-17","006":"16.06모-16",
   // 채무불이행
-  "007": "24변시-18",
-  "008": "21변시-23",
-  "009": "18변시-13",
-  "010": "23.08모-02",
-  "011": "23.10모-16",
-  "012": "19.06모-22",
-  "013": "24변시-16",
-  "014": "23변시-17",
-  "015": "20변시-21",
-  "016": "23.08모-04",
-  "017": "23.06모-20",
-  "018": "23.10모-17",
+  "007":"24변시-18","008":"21변시-23","009":"18변시-13","010":"23.08모-02",
+  "011":"23.10모-16","012":"19.06모-22","013":"24변시-16","014":"23변시-17",
+  "015":"20변시-21","016":"23.08모-04","017":"23.06모-20","018":"23.10모-17",
   // 손해배상
-  "019": "23변시-29",
-  "020": "19.10모-15",
-  "021": "17변시-02",
-  "022": "13변시-23",
-  "023": "24.06모-26",
-  "024": "23.06모-21",
-  "025": "21.06모-26",
-  "026": "16.06모-17",
-  "027": "16.08모-18",
-  "028": "25변시-22",
-  "029": "20변시-16",
-  "030": "13변시-12",
-  "031": "24.08모-04",
-  "032": "23.10모-18",
+  "019":"23변시-29","020":"19.10모-15","021":"17변시-02","022":"13변시-23",
+  "023":"24.06모-26","024":"23.06모-21","025":"21.06모-26","026":"16.06모-17",
+  "027":"16.08모-18","028":"25변시-22","029":"20변시-16","030":"13변시-12",
+  "031":"24.08모-04","032":"23.10모-18",
   // 채권자지체
-  "033": "22.08모-19",
+  "033":"22.08모-19",
   // 채권자대위권
-  "034": "25변시-26",
-  "035": "24변시-25",
-  "036": "22변시-22",
-  "037": "21변시-25",
-  "038": "20변시-30",
-  "039": "19변시-19",
-  "040": "15변시-21",
-  "041": "12변시-22",
-  "042": "24.06모-27",
-  "043": "24.10모-18",
-  "044": "23.08모-05",
-  "045": "23.10모-20",
-  "046": "20.10모-20",
+  "034":"25변시-26","035":"24변시-25","036":"22변시-22","037":"21변시-25",
+  "038":"20변시-30","039":"19변시-19","040":"15변시-21","041":"12변시-22",
+  "042":"24.06모-27","043":"24.10모-18","044":"23.08모-05","045":"23.10모-20",
+  "046":"20.10모-20",
   // 채권자취소권
-  "047": "25변시-11",
-  "048": "24변시-30",
-  "049": "23변시-18",
-  "050": "22변시-04",
-  "051": "22변시-23",
-  "052": "21변시-26",
-  "053": "20변시-15",
-  "054": "19변시-21",
-  "055": "19변시-29",
-  "056": "17변시-09",
-  "057": "24.08모-06",
-  "058": "24.08모-08",
-  "059": "24.10모-21",
-  "060": "23.10모-19",
-  "061": "23.06모-16",
-  "062": "23.08모-06",
-  "063": "23.10모-21",
-  "064": "23.10모-22",
-  "065": "21.06모-18",
-  "066": "20.08모-51",
-  "067": "19.10모-18",
-  "068": "17.06모-09",
+  "047":"25변시-11","048":"24변시-30","049":"23변시-18","050":"22변시-04",
+  "051":"22변시-23","052":"21변시-26","053":"20변시-15","054":"19변시-21",
+  "055":"19변시-29","056":"17변시-09","057":"24.08모-06","058":"24.08모-08",
+  "059":"24.10모-21","060":"23.10모-19","061":"23.06모-16","062":"23.08모-06",
+  "063":"23.10모-21","064":"23.10모-22","065":"21.06모-18","066":"20.08모-51",
+  "067":"19.10모-18","068":"17.06모-09",
   // 채권양도
-  "069": "24변시-24",
-  "070": "23변시-30",
-  "071": "20변시-32",
-  "072": "19변시-31",
-  "073": "18변시-20",
-  "074": "17변시-08",
-  "075": "17변시-65",
-  "076": "16변시-22",
-  "077": "24.08모-07",
-  "078": "24.10모-25",
-  "079": "24.10모-26",
-  "080": "23.08모-08",
-  "081": "22.06모-27",
-  "082": "22.08모-23",
-  "083": "21.06모-21",
+  "069":"24변시-24","070":"23변시-30","071":"20변시-32","072":"19변시-31",
+  "073":"18변시-20","074":"17변시-08","075":"17변시-65","076":"16변시-22",
+  "077":"24.08모-07","078":"24.10모-25","079":"24.10모-26","080":"23.08모-08",
+  "081":"22.06모-27","082":"22.08모-23","083":"21.06모-21",
   // 채무인수
-  "084": "21변시-30",
-  "085": "18변시-22",
-  "086": "17변시-34",
-  "087": "23.06모-17",
-  "088": "20.06모-24",
-  "089": "23변시-22",
-  "090": "22변시-28",
-  "091": "15변시-04",
-  "092": "21.06모-22",
-  "093": "25변시-13",
+  "084":"21변시-30","085":"18변시-22","086":"17변시-34","087":"23.06모-17",
+  "088":"20.06모-24","089":"23변시-22","090":"22변시-28","091":"15변시-04",
+  "092":"21.06모-22","093":"25변시-13",
   // 변제
-  "094": "21.10모-12",
-  "095": "24.06모-25",
-  "096": "24.10모-24",
-  "097": "20변시-25",
-  "098": "17변시-03",
-  "099": "15변시-20",
-  "100": "13변시-16",
-  "101": "24.06모-24",
-  "102": "24.08모-02",
-  "103": "23.08모-03",
+  "094":"21.10모-12","095":"24.06모-25","096":"24.10모-24","097":"20변시-25",
+  "098":"17변시-03","099":"15변시-20","100":"13변시-16","101":"24.06모-24",
+  "102":"24.08모-02","103":"23.08모-03",
   // 변제자대위
-  "104": "25변시-29",
-  "105": "24변시-20",
-  "106": "21변시-22",
-  "107": "14변시-33",
-  "108": "24.10모-23",
-  "109": "23.06모-19",
-  "110": "22.08모-24",
+  "104":"25변시-29","105":"24변시-20","106":"21변시-22","107":"14변시-33",
+  "108":"24.10모-23","109":"23.06모-19","110":"22.08모-24",
   // 대물변제·공탁·경개·면제·혼동
-  "111": "23변시-16",
-  "112": "24.10모-22",
+  "111":"23변시-16","112":"24.10모-22",
   // 상계
-  "114": "21.06모-24",
-  "115": "25변시-21",
-  "116": "21변시-26",
-  "117": "24변시-21",
-  "118": "22변시-30",
-  "119": "21변시-34",
-  "120": "20변시-30",
-  "121": "19변시-08",
-  "122": "19변시-14",
-  "123": "18변시-01",
-  "124": "17변시-01",
-  "125": "16변시-09",
-  "126": "16변시-14",
-  "127": "15변시-08",
-  "128": "14변시-06",
-  "129": "13변시-04",
-  "130": "12변시-07",
+  "114":"21.06모-24","115":"25변시-21","116":"21변시-26",
+  "117":"24변시-21","118":"22변시-30","119":"21변시-34",
+  "120":"20변시-30","121":"19변시-08","122":"19변시-14","123":"18변시-01",
+  "124":"17변시-01","125":"16변시-09","126":"16변시-14","127":"15변시-08",
+  "128":"14변시-06","129":"13변시-04","130":"12변시-07",
   // 서론·분할·불가분
-  "131": "25변시-19",
-  "133": "21.06모-19",
+  "131":"25변시-19","133":"21.06모-19",
   // 연대채무
-  "134": "24변시-22",
-  "135": "18변시-12",
-  "136": "23.06모-22",
+  "134":"24변시-22","135":"18변시-12","136":"23.06모-22",
   // 부진정연대채무
-  "137": "18.10모-22",
+  "137":"18.10모-22",
   // 보증채무
-  "138": "25변시-15",
-  "139": "21변시-05",
-  "140": "21변시-14",
-  "141": "19변시-12",
-  "142": "18변시-09",
-  "143": "17변시-19",
-  "144": "16변시-14",
-  "145": "16변시-24",
-  "146": "15변시-07",
-  "147": "14변시-19",
-  "148": "14변시-31",
-  "149": "13변시-08",
-  "150": "13변시-29",
-  "151": "12변시-15",
-  "152": "12변시-31",
-  "153": "21.06모-07",
-  "154": "21.06모-12",
-  "155": "20.06모-09",
-  "156": "20.10모-08",
-  "157": "17.06모-16",
-  "158": "25변시-17"
+  "138":"25변시-15","139":"21변시-05","140":"21변시-14","141":"19변시-12",
+  "142":"18변시-09","143":"17변시-19","144":"16변시-14","145":"16변시-24",
+  "146":"15변시-07","147":"14변시-19","148":"14변시-31","149":"13변시-08",
+  "150":"13변시-29","151":"12변시-15","152":"12변시-31",
+  "153":"21.06모-07","154":"21.06모-12","155":"20.06모-09",
+  "156":"20.10모-08","157":"17.06모-16","158":"25변시-17",
 };
+
 const SS_EXAM = {
-  "SS1": "25.10모-02",
-  "SS2": "25.08모-02",
-  "SS4": "25.06모-28",
-  "SS5": "25.08모-04",
-  "SS6": "25.10모-04",
-  "SS7": "25.06모-29",
-  "SS8": "25.06모-34",
-  "SS9": "25.08모-05",
-  "SS10": "25.10모-05",
-  "SS11": "25.06모-33",
-  "SS12": "25.08모-06",
-  "SS13": "25.10모-06",
-  "SS14": "25.06mo-31",
-  "SS15": "25.06모-35",
-  "SS16": "25.08모-07",
-  "SS17": "25.10mo-08",
-  "SS18": "25.08모-08",
-  "SS19": "25.08모-09",
-  "SS21": "25.10모-10",
-  "SS22": "25.08모-08",
-  "SS24": "25.08모-01",
-  "SS25": "25.10모-01",
-  "SS26": "25.06모-22",
-  "SS27": "25.08모-03",
-  "SS28": "25.10모-03",
-  "SS29": "25.08모-03"
+  "SS1":"25.10모-02","SS2":"25.08모-02",
+  "SS4":"25.06모-28","SS5":"25.08모-04","SS6":"25.10모-04",
+  "SS7":"25.06모-29","SS8":"25.06모-34","SS9":"25.08모-05","SS10":"25.10모-05",
+  "SS11":"25.06모-33","SS12":"25.08모-06","SS13":"25.10모-06",
+  "SS14":"25.06mo-31","SS15":"25.06모-35","SS16":"25.08모-07","SS17":"25.10mo-08",
+  "SS18":"25.08모-08","SS19":"25.08모-09","SS21":"25.10모-10",
+  "SS22":"25.08모-08","SS24":"25.08모-01","SS25":"25.10모-01",
+  "SS26":"25.06모-22","SS27":"25.08모-03","SS28":"25.10모-03","SS29":"25.08모-03",
 };
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 /* ── CSS ─────────────────────────────────────────── */
 const CSS = `
@@ -1915,135 +1443,84 @@ html.light .subject-tab.on{color:#fff;}
 
 // ── 헬퍼 ─────────────────────────────────────────────
 const TOPIC_ICONS = {
-  "계약의종류·성립": "📝",
-  "동시이행의항변권": "⚖",
-  "위험부담": "⚠",
-  "제3자를위한계약": "🤝",
-  "해제": "🔓",
-  "증여": "🎁",
-  "매매일반효력": "🏷",
-  "매도인의담보책임": "🛡",
-  "민법상임대차": "🏠",
-  "주택임대차보호법": "🏡",
-  "상가건물임대차보호법": "🏢",
-  "도급": "🔨",
-  "기타전형계약": "📋",
-  "사무관리": "📂",
-  "부당이득": "💸",
-  "일반불법행위": "⚡",
-  "특수불법행위": "🚗",
-  "신의성실의원칙": "⚖",
-  "권리능력·행위능력": "👶",
-  "부재와실종": "🔍",
-  "법인": "🏛",
-  "권리능력없는사단": "👥",
-  "물건": "📦",
-  "법률행위": "📝",
-  "의사표시": "💬",
-  "대리": "🤝",
-  "무효와취소": "🔄",
-  "조건과기한": "⏳",
-  "소멸시효": "⌛",
-  "채권의목적": "⚖",
-  "채무불이행": "⚡",
-  "손해배상": "💰",
-  "채권자지체": "⏰",
-  "채권자대위권": "🔗",
-  "채권자취소권": "✂",
-  "채권양도": "📤",
-  "채무인수": "📥",
-  "변제": "✅",
-  "대물변제": "🔄",
-  "상계": "↔",
-  "분할·불가분채권관계": "🔀",
-  "연대채무": "👥",
-  "보증채무": "🛡"
-};
+  "계약의종류·성립":"📝","동시이행의항변권":"⚖","위험부담":"⚠",
+  "제3자를위한계약":"🤝","해제":"🔓","증여":"🎁","매매일반효력":"🏷",
+  "매도인의담보책임":"🛡","민법상임대차":"🏠","주택임대차보호법":"🏡",
+  "상가건물임대차보호법":"🏢","도급":"🔨","기타전형계약":"📋",
+  "사무관리":"📂","부당이득":"💸","일반불법행위":"⚡","특수불법행위":"🚗",
+  "신의성실의원칙":"⚖","권리능력·행위능력":"👶","부재와실종":"🔍","법인":"🏛","권리능력없는사단":"👥",
+  "물건":"📦","법률행위":"📝","의사표시":"💬","대리":"🤝","무효와취소":"🔄","조건과기한":"⏳","소멸시효":"⌛",
+  "채권의목적":"⚖","채무불이행":"⚡","손해배상":"💰","채권자지체":"⏰","채권자대위권":"🔗","채권자취소권":"✂","채권양도":"📤","채무인수":"📥","변제":"✅","대물변제":"🔄","상계":"↔","분할·불가분채권관계":"🔀","연대채무":"👥","보증채무":"🛡"};
 
 // ── 메인 앱 ───────────────────────────────────────────
 function App() {
   // ── 로그인/세션 상태
   // 저장된 id를 곧바로 읽어 시작한다. null로 시작하면 첫 그림이 반드시
   // 로그인 화면이 되고, 그 뒤에 허브로 바뀌면서 화면이 한 번 번쩍인다.
-  const [uid, setUid] = useState(() => {
-    try {
-      return localStorage.getItem("hub_last_uid") || null;
-    } catch {
-      return null;
-    }
+  const [uid,    setUid]    = useState(() => {
+    try { return localStorage.getItem("hub_last_uid") || null; } catch { return null; }
   });
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin,setIsAdmin]= useState(false);
 
   // ── 화면 상태
-  const [screen, setScreen] = useState("hub"); // hub | quiz | archive | admin
+  const [screen, setScreen] = useState("hub");    // hub | quiz | archive | admin
   const [activeModule, setActiveModule] = useState(null); // 현재 선택된 모듈
   // 문항 데이터 도착 여부. 데이터는 컴포넌트 밖 변수라 React가 변화를 모르므로
   // dataReady를 올려 다시 그리게 한다.
   const [dataReady, setDataReady] = useState(0);
-  const [dataBusy, setDataBusy] = useState(false);
-  const [dataErr, setDataErr] = useState(null);
+  const [dataBusy,  setDataBusy]  = useState(false);
+  const [dataErr,   setDataErr]   = useState(null);
   useEffect(() => {
     if (!activeModule || screen === "hub") return;
     let 취소 = false;
-    setDataBusy(true);
-    setDataErr(null);
-    ensureModuleData(activeModule).then(() => {
-      if (!취소) {
-        setDataBusy(false);
-        setDataReady(n => n + 1);
-      }
-    }).catch(() => {
-      if (!취소) {
-        setDataBusy(false);
-        setDataErr("문제를 불러오지 못했습니다. 새로고침해 주세요.");
-      }
-    });
-    return () => {
-      취소 = true;
-    };
+    setDataBusy(true); setDataErr(null);
+    ensureModuleData(activeModule)
+      .then(() => { if(!취소){ setDataBusy(false); setDataReady(n=>n+1); } })
+      .catch(() => { if(!취소){ setDataBusy(false); setDataErr("문제를 불러오지 못했습니다. 새로고침해 주세요."); } });
+    return () => { 취소 = true; };
   }, [activeModule, screen]);
 
   // ── 퀴즈 설정
-  const [cfgRound, setCfgRound] = useState(1);
-  const [cfgMode, setCfgMode] = useState("all");
+  const [cfgRound,  setCfgRound]  = useState(1);
+  const [cfgMode,   setCfgMode]   = useState("all");
   const [cfgTopics, setCfgTopics] = useState([]);
 
   // ── 퀴즈 진행
-  const [inQuiz, setInQuiz] = useState(false);
-  const [queue, setQueue] = useState([]);
-  const [qidx, setQidx] = useState(0);
+  const [inQuiz,   setInQuiz]   = useState(false);
+  const [queue,    setQueue]    = useState([]);
+  const [qidx,     setQidx]     = useState(0);
   const [answered, setAnswered] = useState(null);
-  const [userAns, setUserAns] = useState(null);
-  const [showExp, setShowExp] = useState(false);
-  const [sessCor, setSessCor] = useState(0);
-  const [sessErr, setSessErr] = useState(0);
+  const [userAns,  setUserAns]  = useState(null);
+  const [showExp,  setShowExp]  = useState(false);
+  const [sessCor,  setSessCor]  = useState(0);
+  const [sessErr,  setSessErr]  = useState(0);
   const [sessMark, setSessMark] = useState(0);
-  const [done, setDone] = useState(false);
-  const [label, setLabel] = useState("");
+  const [done,     setDone]     = useState(false);
+  const [label,    setLabel]    = useState("");
   const [timerLeft, setTimerLeft] = useState(20);
-  const timerRef = React.useRef(null);
-  const qidxRef = React.useRef(0);
-  const queueRef = React.useRef([]);
+  const timerRef  = React.useRef(null);
+  const qidxRef   = React.useRef(0);
+  const queueRef  = React.useRef([]);
 
   // ── 스토리지 (모듈별 회독별)
-  const [hubStats, setHubStats] = useState({}); // {modId: {wc, mc, pct}}
-  const [wrongMap, setWrongMap] = useState({});
+  const [hubStats,  setHubStats]  = useState({});  // {modId: {wc, mc, pct}}
+  const [wrongMap,  setWrongMap]  = useState({});
   const [markedMap, setMarkedMap] = useState({});
-  const [progMap, setProgMap] = useState({});
+  const [progMap,   setProgMap]   = useState({});
 
   // ── 아카이브
-  const [archExp, setArchExp] = useState({});
-  const [archFilter, setArchFilter] = useState("wrong");
+  const [archExp,     setArchExp]     = useState({});
+  const [archFilter,  setArchFilter]  = useState("wrong");
 
   // ── 피드백
-  const [fbOpen, setFbOpen] = useState(false);
-  const [fbType, setFbType] = useState("오류 제보");
-  const [fbText, setFbText] = useState("");
-  const [fbList, setFbList] = useState([]); // 현재 문항 피드백
+  const [fbOpen,    setFbOpen]    = useState(false);
+  const [fbType,    setFbType]    = useState("오류 제보");
+  const [fbText,    setFbText]    = useState("");
+  const [fbList,    setFbList]    = useState([]);  // 현재 문항 피드백
   const [fbLoading, setFbLoading] = useState(false);
-  const [archRound, setArchRound] = useState(1);
-  const [awWrongMap, setAwWrongMap] = useState({});
-  const [awMarkMap, setAwMarkMap] = useState({});
+  const [archRound,   setArchRound]   = useState(1);
+  const [awWrongMap,  setAwWrongMap]  = useState({});
+  const [awMarkMap,   setAwMarkMap]   = useState({});
 
   // ── 문항 수정본 (공유)
   const [userEdits, setUserEdits] = useState({});
@@ -2052,67 +1529,41 @@ function App() {
   const [savedSession, setSavedSession] = useState(null);
 
   // ── 관리자
-  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminUsers,  setAdminUsers]  = useState([]);
   const [adminSearch, setAdminSearch] = useState("");
   const [adminResult, setAdminResult] = useState(null);
-  const [adminFbs, setAdminFbs] = useState(null); // null=미로드, {}=로드완료
+  const [adminFbs,    setAdminFbs]    = useState(null);  // null=미로드, {}=로드완료
   const [adminFbLoad, setAdminFbLoad] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState(null);
-  const [editQ, setEditQ] = useState('');
-  const [editE, setEditE] = useState('');
-  const [adminEdits, setAdminEdits] = useState(null);
-  const [adminEditLoad, setAdminEditLoad] = useState(false);
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [editQ,       setEditQ]       = useState('');
+  const [editE,       setEditE]       = useState('');
+  const [adminEdits,  setAdminEdits]  = useState(null);
+  const [adminEditLoad,setAdminEditLoad]=useState(false);
 
   // ── 테마 (dark / light)
   const [theme, setTheme] = React.useState(() => {
-    try {
-      return localStorage.getItem('quiz_theme') || 'light';
-    } catch {
-      return 'light';
-    }
+    try { return localStorage.getItem('quiz_theme') || 'light'; } catch { return 'light'; }
   });
   React.useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light');
-    try {
-      localStorage.setItem('quiz_theme', theme);
-    } catch {}
+    try { localStorage.setItem('quiz_theme', theme); } catch {}
   }, [theme]);
 
   // ── 초기화: 로컬스토리지에서 마지막 uid 복원
   useEffect(() => {
-    const saved = (() => {
-      try {
-        return localStorage.getItem("hub_last_uid") || "";
-      } catch {
-        return "";
-      }
-    })();
-    if (saved) {
-      tryLogin(saved, true);
-      return;
-    }
+    const saved = (() => { try { return localStorage.getItem("hub_last_uid") || ""; } catch { return ""; } })();
+    if (saved) { tryLogin(saved, true); return; }
     // 로그인은 허브가 맡는다. 여기에는 로그인 수단이 없으므로 허브로 보낸다.
     window.location.replace("/");
   }, []);
 
   // ── 스토리지 저장 헬퍼
-  const sw = async (key, val) => {
-    try {
-      await window.storage.set(key, JSON.stringify(val));
-    } catch {}
-  };
-  const gr = async (key, fallback) => {
-    try {
-      const r = await window.storage.get(key);
-      return r ? JSON.parse(r.value) : fallback;
-    } catch {
-      return fallback;
-    }
-  };
+  const sw = async (key, val) => { try { await window.storage.set(key, JSON.stringify(val)); } catch {} };
+  const gr = async (key, fallback) => { try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : fallback; } catch { return fallback; } };
 
   // ── 로그인
-  async function tryLogin(id, silent = false) {
+  async function tryLogin(id, silent=false) {
     if (!id.trim()) return;
     const isAdm = id === ADMIN_ID;
     setUid(id);
@@ -2125,9 +1576,7 @@ function App() {
       try {
         const existing = await fb.get(`users/${safeId}/info`);
         await fb.set(`users/${safeId}/info`, {
-          ...(existing || {
-            id
-          }),
+          ...(existing || { id }),
           lastSeen: Date.now(),
           lastDate: new Date().toLocaleDateString('ko-KR')
         });
@@ -2141,7 +1590,7 @@ function App() {
 
     // 로그인하면 바로 이 과목의 모듈 화면으로 간다. 과목은 헤더에서 바꾼다 —
     // 들어올 때마다 과목 고르는 화면을 한 번 더 거치는 게 번거로웠다.
-    sessionStorage.removeItem("ox_skip_subject"); // 옛 플래그 잔여물 정리
+    sessionStorage.removeItem("ox_skip_subject");   // 옛 플래그 잔여물 정리
     setScreen("hub");
     loadHubStats(id);
   }
@@ -2150,162 +1599,123 @@ function App() {
   async function loadHubStats(userId) {
     if (!userId) return;
     const sid = toSafeId(userId);
-    const all = await fbStats(sid); // 왕복 1번
-    const mods = MODULE_REGISTRY.filter(m => m.status === "active");
+    const all = await fbStats(sid);          // 왕복 1번
+    const mods = MODULE_REGISTRY.filter(m=>m.status==="active");
     const entries = await Promise.all(mods.map(async mod => {
       const S = all[mod.id] || {};
-      const allWrong = new Set(),
-        allMarked = new Set();
+      const allWrong = new Set(), allMarked = new Set();
       for (const r of ROUNDS) {
-        (S[`wrong_${r}`] || (await gr(K_WRONG(userId, mod.id, r), []))).forEach(id => allWrong.add(id));
-        (S[`marked_${r}`] || (await gr(K_MARKED(userId, mod.id, r), []))).forEach(id => allMarked.add(id));
+        (S[`wrong_${r}`]  || await gr(K_WRONG(userId,mod.id,r), [])).forEach(id=>allWrong.add(id));
+        (S[`marked_${r}`] || await gr(K_MARKED(userId,mod.id,r), [])).forEach(id=>allMarked.add(id));
       }
-      const p = S['prog_1'] || (await gr(K_PROG(userId, mod.id, 1), {
-        answered: []
-      }));
-      const answered = (p.answered || []).length;
-      const total = mod.count || 0;
-      return [mod.id, {
-        wc: allWrong.size,
-        mc: allMarked.size,
-        answered,
-        pct: total ? Math.round(answered / total * 100) : 0
-      }];
+      const p = S['prog_1'] || await gr(K_PROG(userId,mod.id,1), {answered:[]});
+      const answered = (p.answered||[]).length;
+      const total = mod.count||0;
+      return [mod.id, { wc: allWrong.size, mc: allMarked.size, answered,
+                        pct: total ? Math.round(answered/total*100) : 0 }];
     }));
     setHubStats(Object.fromEntries(entries));
   }
+
   async function loadModuleData(mid) {
     if (!uid) return;
     const sid = toSafeId(uid);
-    const S = (await fbStats(sid))[mid] || {}; // 왕복 0번(허브에서 받아둔 캐시)
-    const wm = {},
-      mm = {},
-      pm = {},
-      awm = {},
-      amm = {};
+    const S = (await fbStats(sid))[mid] || {};   // 왕복 0번(허브에서 받아둔 캐시)
+    const wm = {}, mm = {}, pm = {}, awm = {}, amm = {};
+
     for (const r of ROUNDS) {
       // Firebase 우선, 없으면 localStorage 폴백
-      wm[r] = new Set(S[`wrong_${r}`] || (await gr(K_WRONG(uid, mid, r), [])));
-      mm[r] = new Set(S[`marked_${r}`] || (await gr(K_MARKED(uid, mid, r), [])));
-      const p = S[`prog_${r}`] || (await gr(K_PROG(uid, mid, r), {
-        answered: [],
-        correct: [],
-        wrong: []
-      }));
-      pm[r] = {
-        answered: new Set(p.answered || []),
-        correct: new Set(p.correct || []),
-        wrong: new Set(p.wrong || [])
-      };
-      awm[r] = new Set(S[`aw_wrong_${r}`] || (await gr(K_AW_WRONG(uid, mid, r), [])));
-      amm[r] = new Set(S[`aw_mark_${r}`] || (await gr(K_AW_MARK(uid, mid, r), [])));
+      wm[r]  = new Set(S[`wrong_${r}`]    || await gr(K_WRONG(uid,mid,r), []));
+      mm[r]  = new Set(S[`marked_${r}`]   || await gr(K_MARKED(uid,mid,r), []));
+      const p = S[`prog_${r}`] || await gr(K_PROG(uid,mid,r), {answered:[],correct:[],wrong:[]});
+      pm[r]  = { answered:new Set(p.answered||[]), correct:new Set(p.correct||[]), wrong:new Set(p.wrong||[]) };
+      awm[r] = new Set(S[`aw_wrong_${r}`] || await gr(K_AW_WRONG(uid,mid,r), []));
+      amm[r] = new Set(S[`aw_mark_${r}`]  || await gr(K_AW_MARK(uid,mid,r), []));
     }
-    setWrongMap(wm);
-    setMarkedMap(mm);
-    setProgMap(pm);
-    setAwWrongMap(awm);
-    setAwMarkMap(amm);
+
+    setWrongMap(wm); setMarkedMap(mm); setProgMap(pm);
+    setAwWrongMap(awm); setAwMarkMap(amm);
 
     // 아카이브 회독
-    const fbAR = await fb.get(fbPath.archRound(sid, mid));
-    const arVal = fbAR ?? (await gr(K_AW_ROUND(uid, mid), 1));
+    const fbAR = await fb.get(fbPath.archRound(sid,mid));
+    const arVal = fbAR ?? await gr(K_AW_ROUND(uid,mid), 1);
     setArchRound(arVal);
 
     // 세션
-    const fbSess = await fb.get(fbPath.session(sid, mid));
-    const lsSess = await gr(K_SESSION(uid, mid), null);
+    const fbSess = await fb.get(fbPath.session(sid,mid));
+    const lsSess = await gr(K_SESSION(uid,mid), null);
     setSavedSession(fbSess || lsSess);
 
     // 수정본 (Firebase 공유)
     const fbEdits = await fb.list(`edits/${mid}`);
     const edits = {};
-    for (const ed of Object.values(fbEdits || {})) {
-      if (ed?.qid) edits[ed.qid] = {
-        question: ed.question,
-        explanation: ed.explanation
-      };
+    for (const ed of Object.values(fbEdits||{})) {
+      if (ed?.qid) edits[ed.qid] = {question:ed.question, explanation:ed.explanation};
     }
     setUserEdits(edits);
   }
-  useEffect(() => {
-    if (uid && activeModule) loadModuleData(activeModule);
-  }, [uid, activeModule]);
+
+  useEffect(() => { if (uid && activeModule) loadModuleData(activeModule); }, [uid, activeModule]);
 
   // 수정본 저장 (공유: 모든 유저에게 적용)
   const saveEdit = async (qid, q, e) => {
-    const next = {
-      ...userEdits
-    };
+    const next = {...userEdits};
     if (q === null) {
       delete next[qid];
     } else {
-      next[qid] = {
-        ...(next[qid] || {}),
-        question: q,
-        explanation: e
-      };
+      next[qid] = { ...(next[qid]||{}), question: q, explanation: e };
     }
     setUserEdits(next);
     await window.storage.set(K_EDITS(activeModule), JSON.stringify(next));
   };
 
   // 현재 문항에 수정본 적용
-  const applyEdit = q => {
+  const applyEdit = (q) => {
     if (!q) return q;
     const ed = userEdits[q.id];
     if (!ed) return q;
-    return {
-      ...q,
-      question: ed.question ?? q.question,
-      explanation: ed.explanation ?? q.explanation
-    };
+    return { ...q, question: ed.question ?? q.question, explanation: ed.explanation ?? q.explanation };
   };
 
   // 이중 저장: Firebase(공유) + localStorage(빠른 읽기)
-  const _fbsw = (path, data) => {
-    fb.set(path, data);
-  }; // fire-and-forget
+  const _fbsw = (path, data) => { fb.set(path, data); }; // fire-and-forget
 
-  const saveWrong = (r, s) => {
+  const saveWrong = (r,s) => {
     const arr = [...s];
-    sw(K_WRONG(uid, activeModule, r), arr);
-    _fbsw(fbPath.wrong(toSafeId(uid), activeModule, r), arr);
+    sw(K_WRONG(uid,activeModule,r), arr);
+    _fbsw(fbPath.wrong(toSafeId(uid),activeModule,r), arr);
   };
-  const saveMarked = (r, s) => {
+  const saveMarked = (r,s) => {
     const arr = [...s];
-    sw(K_MARKED(uid, activeModule, r), arr);
-    _fbsw(fbPath.marked(toSafeId(uid), activeModule, r), arr);
+    sw(K_MARKED(uid,activeModule,r), arr);
+    _fbsw(fbPath.marked(toSafeId(uid),activeModule,r), arr);
   };
-  const saveProg = (r, p) => {
-    const obj = {
-      answered: [...p.answered],
-      correct: [...p.correct],
-      wrong: [...p.wrong]
-    };
-    sw(K_PROG(uid, activeModule, r), obj);
-    _fbsw(fbPath.prog(toSafeId(uid), activeModule, r), obj);
+  const saveProg = (r,p) => {
+    const obj = {answered:[...p.answered],correct:[...p.correct],wrong:[...p.wrong]};
+    sw(K_PROG(uid,activeModule,r), obj);
+    _fbsw(fbPath.prog(toSafeId(uid),activeModule,r), obj);
   };
-  const saveAwWrong = (r, s) => {
+  const saveAwWrong = (r,s) => {
     const arr = [...s];
-    sw(K_AW_WRONG(uid, activeModule, r), arr);
-    _fbsw(fbPath.awWrong(toSafeId(uid), activeModule, r), arr);
+    sw(K_AW_WRONG(uid,activeModule,r), arr);
+    _fbsw(fbPath.awWrong(toSafeId(uid),activeModule,r), arr);
   };
-  const saveAwMark = (r, s) => {
+  const saveAwMark = (r,s) => {
     const arr = [...s];
-    sw(K_AW_MARK(uid, activeModule, r), arr);
-    _fbsw(fbPath.awMark(toSafeId(uid), activeModule, r), arr);
+    sw(K_AW_MARK(uid,activeModule,r), arr);
+    _fbsw(fbPath.awMark(toSafeId(uid),activeModule,r), arr);
   };
-  const saveArchRound = r => {
-    sw(K_AW_ROUND(uid, activeModule), r);
-    _fbsw(fbPath.archRound(toSafeId(uid), activeModule), r);
+  const saveArchRound = (r) => {
+    sw(K_AW_ROUND(uid,activeModule), r);
+    _fbsw(fbPath.archRound(toSafeId(uid),activeModule), r);
   };
-  const saveSession = sess => {
-    sw(K_SESSION(uid, activeModule), sess || null);
-    _fbsw(fbPath.session(toSafeId(uid), activeModule), sess || null);
+  const saveSession = (sess) => {
+    sw(K_SESSION(uid,activeModule), sess || null);
+    _fbsw(fbPath.session(toSafeId(uid),activeModule), sess || null);
   };
 
   // ── 퀴즈 시작
-  function launchQuiz(round, mode, topics, resumeData = null, forceNew = false) {
+  function launchQuiz(round, mode, topics, resumeData=null, forceNew=false) {
     const mod = MODULE_REGISTRY.find(m => m.id === activeModule);
     if (!mod) return;
     const all = mod.getData();
@@ -2314,24 +1724,22 @@ function App() {
     // 아카이브 전용 회독(aw_*): archRound 기준
     if (mode === "aw_wrong") {
       const r = archRound;
-      pool = all.filter(q => (awWrongMap[r] || new Set()).has(q.id));
+      pool = all.filter(q => (awWrongMap[r]||new Set()).has(q.id));
       if (!pool.length) return;
       lbl = `아카이브 ${r}회독 · 오답 (${pool.length}문제)`;
     } else if (mode === "aw_mark") {
       const r = archRound;
-      pool = all.filter(q => (awMarkMap[r] || new Set()).has(q.id));
+      pool = all.filter(q => (awMarkMap[r]||new Set()).has(q.id));
       if (!pool.length) return;
       lbl = `아카이브 ${r}회독 · 헷갈림 (${pool.length}문제)`;
     } else if (mode === "aw_all") {
       const r = archRound;
-      const wids = awWrongMap[r] || new Set(),
-        mids = awMarkMap[r] || new Set();
-      pool = all.filter(q => wids.has(q.id) || mids.has(q.id));
+      const wids = awWrongMap[r]||new Set(), mids = awMarkMap[r]||new Set();
+      pool = all.filter(q => wids.has(q.id)||mids.has(q.id));
       if (!pool.length) return;
       lbl = `아카이브 ${r}회독 · 전체 (${pool.length}문제)`;
     } else if (mode === "wrong+marked") {
-      const wids = wrongMap[round] || new Set(),
-        mids = markedMap[round] || new Set();
+      const wids = wrongMap[round]||new Set(), mids = markedMap[round]||new Set();
       pool = all.filter(q => wids.has(q.id) || mids.has(q.id));
       if (!pool.length) return;
       lbl = `${round}회독 오답+헷갈림 (${pool.length}문제)`;
@@ -2344,7 +1752,7 @@ function App() {
       lbl = `${round}회독 · ⭐ 중요문제 (${pool.length}문제)`;
     } else if (mode === "topic") {
       pool = topics.length > 0 ? all.filter(q => topics.some(t => t === "15V" ? String(q.id).startsWith("15V") : q.topic === t)) : [...all];
-      lbl = `${round}회독 · ${topics.length > 0 ? topics.map(t => mod.topics.find(x => x.key === t)?.label || t).join(', ') : '전체'} (${pool.length}문제)`;
+      lbl = `${round}회독 · ${topics.length > 0 ? topics.map(t=>mod.topics.find(x=>x.key===t)?.label||t).join(', ') : '전체'} (${pool.length}문제)`;
     } else {
       pool = [...all];
       lbl = `${round}회독 전체 ${all.length}문제`;
@@ -2353,12 +1761,16 @@ function App() {
     // 이어풀기: resumeData가 있으면 복원, 없으면 섞어서 시작
     let finalQueue, startIdx;
     // forceNew=false이고 resumeData 없으면 savedSession 자동 사용
-    const effectiveResume = forceNew ? null : resumeData || savedSession;
-    const topicsMatch = mode !== "topic" || effectiveResume && [...(effectiveResume.topics || [])].sort().join(",") === [...topics].sort().join(",");
-    if (effectiveResume && effectiveResume.mode === mode && effectiveResume.round === round && effectiveResume.module === activeModule && topicsMatch) {
+    const effectiveResume = forceNew ? null : (resumeData || savedSession);
+    const topicsMatch = mode !== "topic" || (
+      effectiveResume &&
+      [...(effectiveResume.topics||[])].sort().join(",") === [...topics].sort().join(",")
+    );
+    if (effectiveResume && effectiveResume.mode === mode && effectiveResume.round === round
+      && effectiveResume.module === activeModule && topicsMatch) {
       // 저장된 큐 순서 복원 (ID 배열로 저장 → 실제 문제 객체로 매핑)
-      const qMap = Object.fromEntries(all.map(q => [q.id, q]));
-      const restored = (effectiveResume.queueIds || []).map(id => qMap[id]).filter(Boolean);
+      const qMap = Object.fromEntries(all.map(q=>[q.id, q]));
+      const restored = (effectiveResume.queueIds||[]).map(id=>qMap[id]).filter(Boolean);
       if (restored.length > 0) {
         finalQueue = restored;
         startIdx = effectiveResume.qidx || 0;
@@ -2374,128 +1786,84 @@ function App() {
 
     // 세션 저장
     const sessData = {
-      mode,
-      round,
-      topics,
-      queueIds: finalQueue.map(q => q.id),
+      mode, round, topics,
+      queueIds: finalQueue.map(q=>q.id),
       qidx: startIdx,
       label: lbl,
-      module: activeModule
+      module: activeModule,
     };
     saveSession(sessData);
     setSavedSession(sessData);
+
     setQueue(finalQueue);
-    setQidx(startIdx);
-    setAnswered(null);
-    setUserAns(null);
-    setShowExp(false);
-    setFbList([]);
-    setFbOpen(false);
-    setSessCor(0);
-    setSessErr(0);
-    setSessMark(0);
-    setDone(false);
-    setLabel(lbl);
-    setInQuiz(true);
-    setScreen("quiz");
+    setQidx(startIdx); setAnswered(null); setUserAns(null); setShowExp(false);
+    setFbList([]); setFbOpen(false);
+    setSessCor(0); setSessErr(0); setSessMark(0);
+    setDone(false); setLabel(lbl); setInQuiz(true); setScreen("quiz");
   }
+
   function exitQuiz() {
     // 종료 시 현재 위치 저장 (qidx 갱신된 상태 유지 → 이어풀기용)
-    setInQuiz(false);
-    setDone(false);
-    setScreen("quiz");
+    setInQuiz(false); setDone(false); setScreen("quiz");
   }
+
   function handleAnswer(choice) {
     if (answered !== null) return;
     const cur = queue[qidx];
     const correct = choice === cur.answer;
-    setUserAns(choice);
-    setAnswered(correct ? "ok" : "er");
-    setShowExp(false);
+    setUserAns(choice); setAnswered(correct ? "ok" : "er"); setShowExp(false);
     const r = cfgRound;
     const np = {
-      answered: new Set([...(progMap[r]?.answered || []), cur.id]),
-      correct: new Set([...(progMap[r]?.correct || [])]),
-      wrong: new Set([...(progMap[r]?.wrong || [])])
+      answered: new Set([...(progMap[r]?.answered||[]), cur.id]),
+      correct:  new Set([...(progMap[r]?.correct||[])]),
+      wrong:    new Set([...(progMap[r]?.wrong||[])])
     };
-    const nw = new Set(wrongMap[r] || []);
-    if (correct) {
-      np.correct.add(cur.id);
-      setSessCor(p => p + 1);
-    } else {
-      np.wrong.add(cur.id);
-      nw.add(cur.id);
-      setSessErr(p => p + 1);
-    }
-    setProgMap(pm => ({
-      ...pm,
-      [r]: np
-    }));
-    setWrongMap(wm => ({
-      ...wm,
-      [r]: nw
-    }));
-    saveProg(r, np);
-    saveWrong(r, nw);
+    const nw = new Set(wrongMap[r]||[]);
+    if (correct) { np.correct.add(cur.id); setSessCor(p=>p+1); }
+    else { np.wrong.add(cur.id); nw.add(cur.id); setSessErr(p=>p+1); }
+    setProgMap(pm=>({...pm,[r]:np}));
+    setWrongMap(wm=>({...wm,[r]:nw}));
+    saveProg(r,np); saveWrong(r,nw);
 
     // 아카이브 회독용 오답 추가 (메인 오답은 아카이브 현재 회독에도 자동 적재)
     if (!correct) {
       const ar = archRound;
-      const nawm = new Set(awWrongMap[ar] || []);
+      const nawm = new Set(awWrongMap[ar]||[]);
       nawm.add(cur.id);
-      setAwWrongMap(m => ({
-        ...m,
-        [ar]: nawm
-      }));
+      setAwWrongMap(m=>({...m,[ar]:nawm}));
       saveAwWrong(ar, nawm);
     }
   }
+
   function toggleMark() {
-    const cur = queue[qidx];
-    const r = cfgRound;
-    const nm = new Set(markedMap[r] || []);
-    if (nm.has(cur.id)) {
-      nm.delete(cur.id);
-      setSessMark(p => Math.max(0, p - 1));
-    } else {
-      nm.add(cur.id);
-      setSessMark(p => p + 1);
-    }
-    setMarkedMap(mm => ({
-      ...mm,
-      [r]: nm
-    }));
-    saveMarked(r, nm);
+    const cur = queue[qidx]; const r = cfgRound;
+    const nm = new Set(markedMap[r]||[]);
+    if (nm.has(cur.id)) { nm.delete(cur.id); setSessMark(p=>Math.max(0,p-1)); }
+    else { nm.add(cur.id); setSessMark(p=>p+1); }
+    setMarkedMap(mm=>({...mm,[r]:nm}));
+    saveMarked(r,nm);
 
     // 아카이브 회독용 헷갈림도 동기화
     const ar = archRound;
-    const namm = new Set(awMarkMap[ar] || []);
-    if (nm.has(cur.id)) namm.add(cur.id);else namm.delete(cur.id);
-    setAwMarkMap(m => ({
-      ...m,
-      [ar]: namm
-    }));
+    const namm = new Set(awMarkMap[ar]||[]);
+    if (nm.has(cur.id)) namm.add(cur.id); else namm.delete(cur.id);
+    setAwMarkMap(m=>({...m,[ar]:namm}));
     saveAwMark(ar, namm);
   }
+
   function handleNext() {
-    if (qidx + 1 >= queue.length) {
+    if (qidx+1 >= queue.length) {
       setDone(true);
       saveSession(null); // 완료 시 세션 삭제
       setSavedSession(null);
     } else {
-      const nextIdx = qidx + 1;
+      const nextIdx = qidx+1;
       setQidx(nextIdx);
-      setAnswered(null);
-      setUserAns(null);
-      setShowExp(false);
-      setFbList([]);
-      setFbOpen(false);
+      setAnswered(null); setUserAns(null); setShowExp(false);
+      setFbList([]); setFbOpen(false);
       // 세션 qidx 갱신
       if (savedSession) {
-        const updated = {
-          ...savedSession,
-          qidx: nextIdx
-        };
+        const updated = {...savedSession, qidx: nextIdx};
         setSavedSession(updated);
         saveSession(updated);
       }
@@ -2503,35 +1871,23 @@ function App() {
   }
 
   // ── rnd100 타이머: qidx·inQuiz 변화 시 리셋 ──────────────
-  useEffect(() => {
-    qidxRef.current = qidx;
-  }, [qidx]);
-  useEffect(() => {
-    queueRef.current = queue;
-  }, [queue]);
+  useEffect(() => { qidxRef.current = qidx; }, [qidx]);
+  useEffect(() => { queueRef.current = queue; }, [queue]);
+
   useEffect(() => {
     if (cfgMode !== "rnd100" || !inQuiz || done) {
-      clearInterval(timerRef.current);
-      return;
+      clearInterval(timerRef.current); return;
     }
     clearInterval(timerRef.current);
     setTimerLeft(20);
     timerRef.current = setInterval(() => {
-      setTimerLeft(t => {
-        if (t <= 1) {
-          clearInterval(timerRef.current);
-          return 0;
-        }
-        return t - 1;
-      });
+      setTimerLeft(t => { if (t <= 1) { clearInterval(timerRef.current); return 0; } return t - 1; });
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, [qidx, inQuiz, cfgMode, done]);
 
   // 답변 시 타이머 정지
-  useEffect(() => {
-    if (answered !== null) clearInterval(timerRef.current);
-  }, [answered]);
+  useEffect(() => { if (answered !== null) clearInterval(timerRef.current); }, [answered]);
 
   // 시간 초과 처리
   useEffect(() => {
@@ -2539,130 +1895,76 @@ function App() {
     const cur = queue[qidx];
     if (!cur) return;
     // 오답 강제 처리
-    setAnswered("er");
-    setUserAns(null);
-    setShowExp(false);
+    setAnswered("er"); setUserAns(null); setShowExp(false);
     setSessErr(p => p + 1);
     const r = cfgRound;
     const np = {
-      answered: new Set([...(progMap[r]?.answered || []), cur.id]),
-      correct: new Set([...(progMap[r]?.correct || [])]),
-      wrong: new Set([...(progMap[r]?.wrong || [])])
+      answered: new Set([...(progMap[r]?.answered||[]), cur.id]),
+      correct:  new Set([...(progMap[r]?.correct ||[])]),
+      wrong:    new Set([...(progMap[r]?.wrong   ||[])])
     };
     np.wrong.add(cur.id);
-    const nw = new Set(wrongMap[r] || []);
-    nw.add(cur.id);
-    setProgMap(pm => ({
-      ...pm,
-      [r]: np
-    }));
-    setWrongMap(wm => ({
-      ...wm,
-      [r]: nw
-    }));
-    saveProg(r, np);
-    saveWrong(r, nw);
+    const nw = new Set(wrongMap[r]||[]); nw.add(cur.id);
+    setProgMap(pm=>({...pm,[r]:np})); setWrongMap(wm=>({...wm,[r]:nw}));
+    saveProg(r,np); saveWrong(r,nw);
     const ar = archRound;
-    const nawm = new Set(awWrongMap[ar] || []);
-    nawm.add(cur.id);
-    setAwWrongMap(m => ({
-      ...m,
-      [ar]: nawm
-    }));
-    saveAwWrong(ar, nawm);
+    const nawm = new Set(awWrongMap[ar]||[]); nawm.add(cur.id);
+    setAwWrongMap(m=>({...m,[ar]:nawm})); saveAwWrong(ar,nawm);
     // 1.3초 후 자동 다음 문제
     setTimeout(() => {
       const nextIdx = qidxRef.current + 1;
       if (nextIdx >= queueRef.current.length) {
-        setDone(true);
-        saveSession(null);
-        setSavedSession(null);
+        setDone(true); saveSession(null); setSavedSession(null);
       } else {
-        setQidx(nextIdx);
-        setAnswered(null);
-        setUserAns(null);
-        setShowExp(false);
-        setFbList([]);
-        setFbOpen(false);
+        setQidx(nextIdx); setAnswered(null); setUserAns(null);
+        setShowExp(false); setFbList([]); setFbOpen(false);
       }
     }, 1300);
   }, [timerLeft]); // eslint-disable-line
 
+
   async function resetModule() {
     if (!confirm(`${activeModule} 모듈 전체 기록을 초기화하시겠습니까?`)) return;
     for (const r of ROUNDS) {
-      const np = {
-        answered: new Set(),
-        correct: new Set(),
-        wrong: new Set()
-      };
-      setProgMap(pm => ({
-        ...pm,
-        [r]: np
-      }));
-      setWrongMap(wm => ({
-        ...wm,
-        [r]: new Set()
-      }));
-      setMarkedMap(mm => ({
-        ...mm,
-        [r]: new Set()
-      }));
-      saveProg(r, np);
-      saveWrong(r, new Set());
-      saveMarked(r, new Set());
+      const np = {answered:new Set(),correct:new Set(),wrong:new Set()};
+      setProgMap(pm=>({...pm,[r]:np}));
+      setWrongMap(wm=>({...wm,[r]:new Set()}));
+      setMarkedMap(mm=>({...mm,[r]:new Set()}));
+      saveProg(r,np); saveWrong(r,new Set()); saveMarked(r,new Set());
     }
   }
 
   // ── 헬퍼
-  const getMod = () => MODULE_REGISTRY.find(m => m.id === activeModule);
-  const getAll = () => getMod()?.getData() || [];
-  const wCnt = r => (wrongMap[r] || new Set()).size;
-  const mCnt = r => (markedMap[r] || new Set()).size;
-  const wmCnt = r => new Set([...(wrongMap[r] || new Set()), ...(markedMap[r] || new Set())]).size;
-  const awCnt = r => (awWrongMap[r] || new Set()).size;
-  const amCnt = r => (awMarkMap[r] || new Set()).size;
-  const awTotal = r => {
-    const w = awWrongMap[r] || new Set(),
-      m = awMarkMap[r] || new Set();
-    return new Set([...w, ...m]).size;
-  };
-  const tCnt = k => getAll().filter(q => k === "15V" ? String(q.id).startsWith("15V") : q.topic === k).length;
-  const tWrong = (r, k) => getAll().filter(q => (k === "15V" ? String(q.id).startsWith("15V") : q.topic === k) && (wrongMap[r] || new Set()).has(q.id)).length;
-  const tProg = (r, k) => {
-    const all = getAll().filter(q => k === "15V" ? String(q.id).startsWith("15V") : q.topic === k);
-    const ans = progMap[r]?.answered || new Set();
-    const done = all.filter(q => ans.has(q.id)).length;
-    return {
-      done,
-      total: all.length,
-      pct: all.length ? Math.round(done / all.length * 100) : 0
-    };
-  };
-  const TOTAL = getAll().length;
-  const getProg = r => {
-    const p = progMap[r] || {
-      answered: new Set()
-    };
-    return {
-      ans: p.answered.size,
-      pct: Math.round(p.answered.size / Math.max(TOTAL, 1) * 100)
-    };
-  };
+  const getMod   = () => MODULE_REGISTRY.find(m => m.id === activeModule);
+  const getAll   = () => getMod()?.getData() || [];
+  const wCnt     = r => (wrongMap[r]||new Set()).size;
+  const mCnt     = r => (markedMap[r]||new Set()).size;
+  const wmCnt    = r => new Set([...(wrongMap[r]||new Set()), ...(markedMap[r]||new Set())]).size;
+  const awCnt    = r => (awWrongMap[r]||new Set()).size;
+  const amCnt    = r => (awMarkMap[r]||new Set()).size;
+  const awTotal  = r => { const w=awWrongMap[r]||new Set(), m=awMarkMap[r]||new Set(); return new Set([...w,...m]).size; };
+  const tCnt     = k => getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k).length;
+  const tWrong   = (r,k) => getAll().filter(q=>(k==="15V" ? String(q.id).startsWith("15V") : q.topic===k)&&(wrongMap[r]||new Set()).has(q.id)).length;
+  const tProg    = (r,k) => { const all=getAll().filter(q=> k==="15V" ? String(q.id).startsWith("15V") : q.topic===k); const ans=(progMap[r]?.answered||new Set()); const done=all.filter(q=>ans.has(q.id)).length; return {done, total:all.length, pct:all.length?Math.round(done/all.length*100):0}; };
+  const TOTAL    = getAll().length;
+  const getProg  = r => { const p=progMap[r]||{answered:new Set()}; return { ans:p.answered.size, pct:Math.round(p.answered.size/Math.max(TOTAL,1)*100) }; };
   const canStart = cfgMode !== "topic" || cfgTopics.length > 0;
   // 이어풀기 세션이 현재 설정과 매칭되는지 확인
-  const hasResume = savedSession && savedSession.round === cfgRound && savedSession.mode === cfgMode && savedSession.module === activeModule && (cfgMode !== "topic" || (savedSession.topics || []).join(",") === [...cfgTopics].sort().join(",")) && (savedSession.qidx || 0) > 0 && (savedSession.queueIds || []).length > (savedSession.qidx || 0);
-  const startCnt = cfgMode === "all" ? TOTAL : cfgMode === "rnd100" ? 100 : cfgMode === "topic" ? getAll().filter(q => cfgTopics.includes(q.topic)).length : cfgMode === "wrong+marked" ? wmCnt(cfgRound) : 0;
-  const cur = applyEdit(queue[qidx]);
-  const curMark = cur && (markedMap[cfgRound] || new Set()).has(cur.id);
+  const hasResume = savedSession && savedSession.round===cfgRound && savedSession.mode===cfgMode
+    && savedSession.module===activeModule
+    && (cfgMode!=="topic" || (savedSession.topics||[]).join(",")===[...cfgTopics].sort().join(","))
+    && (savedSession.qidx||0) > 0
+    && (savedSession.queueIds||[]).length > (savedSession.qidx||0);
+  const startCnt = cfgMode==="all" ? TOTAL : cfgMode==="rnd100" ? 100 : cfgMode==="topic" ? getAll().filter(q=>cfgTopics.includes(q.topic)).length : cfgMode==="wrong+marked" ? wmCnt(cfgRound) : 0;
+  const cur      = applyEdit(queue[qidx]);
+  const curMark  = cur && (markedMap[cfgRound]||new Set()).has(cur.id);
 
   // 아카이브 표시
   const archItems = r => {
-    const wids = wrongMap[r] || new Set(),
-      mids = markedMap[r] || new Set();
-    if (archFilter === "wrong") return getAll().filter(q => wids.has(q.id));
-    if (archFilter === "marked") return getAll().filter(q => mids.has(q.id) && !wids.has(q.id));
-    return getAll().filter(q => wids.has(q.id) || mids.has(q.id));
+    const wids = wrongMap[r]||new Set(), mids = markedMap[r]||new Set();
+    if (archFilter==="wrong")  return getAll().filter(q=>wids.has(q.id));
+    if (archFilter==="marked") return getAll().filter(q=>mids.has(q.id)&&!wids.has(q.id));
+    return getAll().filter(q=>wids.has(q.id)||mids.has(q.id));
   };
 
   // 관리자 유저 목록 로드
@@ -2670,11 +1972,11 @@ function App() {
   async function loadFeedbacks(qid, mid) {
     try {
       const data = await fb.list(`feedbacks/${mid}/${toSafeId(String(qid))}`);
-      const items = Object.values(data || {}).filter(Boolean).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      const items = Object.values(data||{})
+        .filter(Boolean)
+        .sort((a,b)=>(b.ts||0)-(a.ts||0));
       setFbList(items);
-    } catch {
-      setFbList([]);
-    }
+    } catch { setFbList([]); }
   }
 
   // ── 피드백 제출
@@ -2685,20 +1987,14 @@ function App() {
       const key = Date.now().toString();
       const safeQid = toSafeId(String(qid));
       await fb.set(`feedbacks/${mid}/${safeQid}/${key}`, {
-        uid,
-        type: fbType,
-        text: fbText.trim(),
+        uid, type: fbType, text: fbText.trim(),
         ts: Date.now(),
         date: new Date().toLocaleDateString('ko-KR'),
-        qid: String(qid),
-        mid
+        qid: String(qid), mid,
       });
-      setFbText("");
-      setFbOpen(false);
+      setFbText(""); setFbOpen(false);
       loadFeedbacks(qid, mid);
-    } catch (e) {
-      alert("피드백 저장 실패: " + e.message);
-    }
+    } catch(e) { alert("피드백 저장 실패: " + e.message); }
     setFbLoading(false);
   }
 
@@ -2719,28 +2015,18 @@ function App() {
     const safeQid = toSafeId(String(qid));
     try {
       await fb.set(`edits/${activeModule}/${safeQid}`, {
-        uid,
-        ts: Date.now(),
+        uid, ts: Date.now(),
         date: new Date().toLocaleDateString('ko-KR'),
-        qid: String(qid),
-        mid: activeModule,
+        qid: String(qid), mid: activeModule,
         question: editQ.trim(),
         explanation: editE.trim(),
         original_q: editTarget.question,
-        original_e: editTarget.explanation
+        original_e: editTarget.explanation,
       });
-      const next = {
-        ...userEdits,
-        [qid]: {
-          question: editQ.trim(),
-          explanation: editE.trim()
-        }
-      };
+      const next = {...userEdits, [qid]: {question:editQ.trim(), explanation:editE.trim()}};
       setUserEdits(next);
       setEditOpen(false);
-    } catch (e) {
-      alert('수정 저장 실패: ' + e.message);
-    }
+    } catch(e) { alert('수정 저장 실패: ' + e.message); }
   }
 
   // ── 수정 원복
@@ -2748,56 +2034,46 @@ function App() {
     if (!window.confirm('원본으로 복원할까요?')) return;
     const safeQid = toSafeId(String(qid));
     await fb.set(`edits/${activeModule}/${safeQid}`, null);
-    const next = {
-      ...userEdits
-    };
-    delete next[qid];
-    setUserEdits(next);
+    const next = {...userEdits}; delete next[qid]; setUserEdits(next);
   }
 
   // ── 관리자: 전체 수정 내역 로드
   async function loadAllEdits() {
     try {
       const allMods = {};
-      for (const mod of MODULE_REGISTRY.filter(m => m.status === 'active')) {
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==='active')) {
         const modData = await fb.list(`edits/${mod.id}`);
-        const items = Object.values(modData || {}).filter(Boolean).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        const items = Object.values(modData||{}).filter(Boolean)
+          .sort((a,b)=>(b.ts||0)-(a.ts||0));
         if (items.length) allMods[mod.id] = items;
       }
       return allMods;
-    } catch {
-      return {};
-    }
+    } catch { return {}; }
   }
+
   async function loadAllFeedbacks() {
     try {
       const allMods = {};
-      for (const mod of MODULE_REGISTRY.filter(m => m.status === "active")) {
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
         const modData = await fb.list(`feedbacks/${mod.id}`);
         const items = [];
-        for (const [qid, qFbs] of Object.entries(modData || {})) {
-          for (const fb_item of Object.values(qFbs || {})) {
-            if (fb_item) items.push({
-              ...fb_item,
-              qid,
-              modLabel: mod.label
-            });
+        for (const [qid, qFbs] of Object.entries(modData||{})) {
+          for (const fb_item of Object.values(qFbs||{})) {
+            if (fb_item) items.push({...fb_item, qid, modLabel:mod.label});
           }
         }
-        if (items.length) allMods[mod.id] = items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+        if (items.length) allMods[mod.id] = items.sort((a,b)=>(b.ts||0)-(a.ts||0));
       }
       return allMods;
-    } catch {
-      return {};
-    }
+    } catch { return {}; }
   }
+
+
   async function loadAdminUsers() {
     // Firebase에서 전체 유저 + 완전한 학습 통계 조회
     const fbAll = await fb.list('users');
-    if (!fbAll) {
-      setAdminUsers([]);
-      return;
-    }
+    if (!fbAll) { setAdminUsers([]); return; }
+
     const users = [];
     for (const [safeId, userData] of Object.entries(fbAll)) {
       if (!userData || typeof userData !== 'object') continue;
@@ -2807,46 +2083,30 @@ function App() {
       if (!id || id === ADMIN_ID) continue;
       const lastSeen = info.lastSeen || userData.lastSeen || 0;
       const lastDate = info.lastDate || userData.lastDate || '';
+
       const stats = userData?.stats || {};
-      let total_ans = 0,
-        total_cor = 0,
-        total_wrg = 0;
+      let total_ans=0, total_cor=0, total_wrg=0;
       const modStats = [];
-      for (const mod of MODULE_REGISTRY.filter(m => m.status === "active")) {
+
+      for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
         const modData = stats[mod.id] || {};
-        let m_ans = 0,
-          m_cor = 0,
-          m_wrg = 0;
+        let m_ans=0, m_cor=0, m_wrg=0;
         for (const r of ROUNDS) {
           const p = modData[`prog_${r}`] || {};
-          m_ans += (p.answered || []).length;
-          m_cor += (p.correct || []).length;
-          m_wrg += (p.wrong || []).length;
+          m_ans += (p.answered||[]).length;
+          m_cor += (p.correct||[]).length;
+          m_wrg += (p.wrong||[]).length;
         }
-        total_ans += m_ans;
-        total_cor += m_cor;
-        total_wrg += m_wrg;
-        if (m_ans > 0) modStats.push({
-          mod: mod.label,
-          ans: m_ans,
-          cor: m_cor,
-          wrg: m_wrg,
-          pct: m_ans > 0 ? Math.round(m_cor / m_ans * 100) : 0
-        });
+        total_ans+=m_ans; total_cor+=m_cor; total_wrg+=m_wrg;
+        if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
+          pct: m_ans>0?Math.round(m_cor/m_ans*100):0});
       }
-      users.push({
-        id,
-        last: lastSeen,
-        lastDate,
-        ans: total_ans,
-        cor: total_cor,
-        wrg: total_wrg,
-        modStats
-      });
+      users.push({ id, last:lastSeen, lastDate, ans:total_ans, cor:total_cor, wrg:total_wrg, modStats });
     }
-    users.sort((a, b) => (b.last || 0) - (a.last || 0));
+    users.sort((a,b)=>(b.last||0)-(a.last||0));
     setAdminUsers(users);
   }
+
   async function adminSearchUser(searchId) {
     if (!searchId.trim()) return;
     const id = searchId.trim();
@@ -2854,92 +2114,54 @@ function App() {
 
     // Firebase에서 완전한 데이터 조회
     const userData = await fb.get(`users/${safeId}`);
-    if (!userData) {
-      setAdminResult({
-        id,
-        notFound: true
-      });
-      return;
-    }
+    if (!userData) { setAdminResult({id, notFound:true}); return; }
 
     // info 서브키 있는 경우(신규)와 없는 경우(구버전) 모두 지원
-    const info = userData.info || {};
+    const info  = userData.info  || {};
     const stats = userData.stats || {};
     const lastSeen_ = info.lastSeen || userData.lastSeen || 0;
     const lastDate_ = info.lastDate || userData.lastDate || '';
-    let total_ans = 0,
-      total_cor = 0,
-      total_wrg = 0;
+    let total_ans=0, total_cor=0, total_wrg=0;
     const modStats = [];
-    for (const mod of MODULE_REGISTRY.filter(m => m.status === "active")) {
+
+    for (const mod of MODULE_REGISTRY.filter(m=>m.status==="active")) {
       const modData = stats[mod.id] || {};
-      let m_ans = 0,
-        m_cor = 0,
-        m_wrg = 0,
-        m_wrg_cnt = 0,
-        m_mk_cnt = 0;
+      let m_ans=0, m_cor=0, m_wrg=0, m_wrg_cnt=0, m_mk_cnt=0;
       for (const r of ROUNDS) {
         const p = modData[`prog_${r}`] || {};
-        m_ans += (p.answered || []).length;
-        m_cor += (p.correct || []).length;
-        m_wrg += (p.wrong || []).length;
-        m_wrg_cnt += (modData[`wrong_${r}`] || []).length;
-        m_mk_cnt += (modData[`marked_${r}`] || []).length;
+        m_ans += (p.answered||[]).length;
+        m_cor += (p.correct||[]).length;
+        m_wrg += (p.wrong||[]).length;
+        m_wrg_cnt += (modData[`wrong_${r}`]||[]).length;
+        m_mk_cnt  += (modData[`marked_${r}`]||[]).length;
       }
-      total_ans += m_ans;
-      total_cor += m_cor;
-      total_wrg += m_wrg;
-      if (m_ans > 0) modStats.push({
-        mod: mod.label,
-        ans: m_ans,
-        cor: m_cor,
-        wrg: m_wrg,
-        pct: m_ans > 0 ? Math.round(m_cor / m_ans * 100) : 0,
-        wrongCnt: m_wrg_cnt,
-        markCnt: m_mk_cnt
-      });
+      total_ans+=m_ans; total_cor+=m_cor; total_wrg+=m_wrg;
+      if (m_ans>0) modStats.push({mod:mod.label, ans:m_ans, cor:m_cor, wrg:m_wrg,
+        pct:m_ans>0?Math.round(m_cor/m_ans*100):0, wrongCnt:m_wrg_cnt, markCnt:m_mk_cnt});
     }
-    if (!lastSeen_ && total_ans === 0) {
-      setAdminResult({
-        id,
-        notFound: true
-      });
-      return;
-    }
-    setAdminResult({
-      id,
-      last: lastSeen_,
-      lastDate: lastDate_,
-      ans: total_ans,
-      cor: total_cor,
-      wrg: total_wrg,
-      modStats
-    });
+
+    if (!lastSeen_ && total_ans===0) { setAdminResult({id, notFound:true}); return; }
+    setAdminResult({id, last:lastSeen_, lastDate:lastDate_, ans:total_ans, cor:total_cor, wrg:total_wrg, modStats});
   }
-  useEffect(() => {
-    if (isAdmin && screen === "admin") loadAdminUsers();
-  }, [screen, isAdmin]);
+
+  useEffect(() => { if (isAdmin && screen==="admin") loadAdminUsers(); }, [screen, isAdmin]);
 
   // ══════════════════════════════════════════
   //  렌더
   // ══════════════════════════════════════════
 
+
   // 로그인 화면과 과목선택 화면은 없앴다 — 로그인은 허브가, 과목 전환은
   // 헤더의 민사법/형사법/공법 버튼이 맡는다. id가 없으면 위에서 허브로 보낸다.
-  if (!uid) return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS));
+  if (!uid) return <><style>{CSS}</style></>;
+
   function renderExp(exp) {
     if (!exp) return null;
     const boxStyle = {
-      background: 'var(--sf2)',
-      border: '1px solid var(--bd2)',
-      borderLeft: '3px solid var(--blue)',
-      borderRadius: 6,
-      padding: '6px 10px',
-      margin: '4px 0',
-      fontSize: 14,
-      color: 'var(--tx2)',
-      fontFamily: "'Noto Sans KR', sans-serif",
-      lineHeight: 1.6
+      background:'var(--sf2)', border:'1px solid var(--bd2)',
+      borderLeft:'3px solid var(--blue)', borderRadius:6,
+      padding:'6px 10px', margin:'4px 0', fontSize:14,
+      color:'var(--tx2)', fontFamily:"'Noto Sans KR', sans-serif", lineHeight:1.6
     };
     // ▸ 앞 또는 \n[AI해설] 앞에서 분리
     const segs = exp.split(/(?=▸)|\n(?=\[AI해설\])/).filter(s => s.trim());
@@ -2947,1424 +2169,841 @@ function App() {
       const t = seg.trim();
       // [AI해설] 섹션
       if (t.startsWith('[AI해설]')) {
-        return /*#__PURE__*/React.createElement("div", {
-          key: si,
-          style: {
-            marginTop: 10,
-            paddingTop: 8,
-            borderTop: '1px dashed rgba(255,255,255,.1)',
-            fontSize: 14,
-            color: 'var(--tx3)',
-            lineHeight: 1.7
-          }
-        }, /*#__PURE__*/React.createElement("span", {
-          style: {
-            display: 'inline-block',
-            background: 'rgba(82,167,254,.15)',
-            color: 'var(--blue)',
-            borderRadius: 4,
-            padding: '1px 6px',
-            fontSize: 10,
-            fontWeight: 700,
-            marginRight: 6
-          }
-        }, "AI해설"), t.slice('[AI해설]'.length).trim());
+        return (
+          <div key={si} style={{marginTop:10,paddingTop:8,borderTop:'1px dashed rgba(255,255,255,.1)',fontSize:14,color:'var(--tx3)',lineHeight:1.7}}>
+            <span style={{display:'inline-block',background:'rgba(82,167,254,.15)',color:'var(--blue)',borderRadius:4,padding:'1px 6px',fontSize:10,fontWeight:700,marginRight:6}}>AI해설</span>
+            {t.slice('[AI해설]'.length).trim()}
+          </div>
+        );
       }
       // [조문] 전체 섹션 → 박스
       if (t.startsWith('[조문]')) {
-        return /*#__PURE__*/React.createElement("div", {
-          key: si,
-          style: {
-            ...boxStyle,
-            marginBottom: si < segs.length - 1 ? 6 : 0
-          }
-        }, t.slice('[조문]'.length).trim());
+        return <div key={si} style={{...boxStyle, marginBottom: si < segs.length-1 ? 6 : 0}}>{t.slice('[조문]'.length).trim()}</div>;
       }
       // 일반 ▸ 섹션 — 인라인 제NNN조 / [법조문] / [조문] 박스 처리
       const parts = seg.split(/(제\d+조[^가-힣\n]{5,150}[가-힣]|\[법조문\][^\n]+|\[조문\][^\n]+)/g);
-      const nextIsAI = segs[si + 1]?.trim().startsWith('[AI해설]');
-      return /*#__PURE__*/React.createElement("div", {
-        key: si,
-        style: {
-          marginBottom: si < segs.length - 1 && !nextIsAI ? 10 : 0
-        }
-      }, parts.map((p, pi) => {
-        const pt = p.trim();
-        if (/^제\d+조/.test(pt) || /^\[법조문\]/.test(pt)) return /*#__PURE__*/React.createElement("div", {
-          key: pi,
-          style: boxStyle
-        }, p);
-        if (/^\[조문\]/.test(pt)) return /*#__PURE__*/React.createElement("div", {
-          key: pi,
-          style: boxStyle
-        }, p.replace(/^\[조문\]\s*/, ''));
-        return /*#__PURE__*/React.createElement("span", {
-          key: pi,
-          style: {
-            whiteSpace: 'pre-wrap'
-          }
-        }, p);
-      }));
+      const nextIsAI = segs[si+1]?.trim().startsWith('[AI해설]');
+      return (
+        <div key={si} style={{marginBottom: si < segs.length-1 && !nextIsAI ? 10 : 0}}>
+          {parts.map((p, pi) => {
+            const pt = p.trim();
+            if (/^제\d+조/.test(pt) || /^\[법조문\]/.test(pt)) return <div key={pi} style={boxStyle}>{p}</div>;
+            if (/^\[조문\]/.test(pt)) return <div key={pi} style={boxStyle}>{p.replace(/^\[조문\]\s*/,'')}</div>;
+            return <span key={pi} style={{whiteSpace:'pre-wrap'}}>{p}</span>;
+          })}
+        </div>
+      );
     });
   }
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("style", null, CSS), /*#__PURE__*/React.createElement("div", {
-    className: "app"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hdr"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hdr-left"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hdr-title"
-  }, "⚖︎ OX 퀴즈"), /*#__PURE__*/React.createElement("div", {
-    className: "hdr-sub"
-  }, "민법 & 민소법 선택형 기출 최신빈출지문")), /*#__PURE__*/React.createElement("div", {
-    className: "hdr-user"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "theme-toggle",
-    title: "테마 전환",
-    onClick: () => setTheme(t => t === 'dark' ? 'light' : 'dark')
-  }, theme === 'dark' ? '☀️' : '🌙'), /*#__PURE__*/React.createElement(HubLink, null), /*#__PURE__*/React.createElement(SubjectSwitch, {
-    current: "civil"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "uid-badge"
-  }, "👤 ", uid), /*#__PURE__*/React.createElement("button", {
-    className: "logout-btn",
-    onClick: () => {
-      setUid(null);
-      setIsAdmin(false);
-      localStorage.removeItem("hub_last_uid");
-    }
-  }, "로그아웃"))), /*#__PURE__*/React.createElement("div", {
-    className: "tabs"
-  }, [["hub", "모듈 선택"], activeModule && getMod()?.status === "active" ? ["quiz", "퀴즈"] : null, activeModule && getMod()?.status === "active" ? ["archive", "오답 아카이브"] : null, isAdmin ? ["admin", "관리자"] : null].filter(Boolean).map(([t, l]) => /*#__PURE__*/React.createElement("button", {
-    key: t,
-    className: `tab ${screen === t ? "act" : ""}`,
-    onClick: () => {
-      setScreen(t);
-      if (t !== "quiz") {
-        setInQuiz(false);
-        setDone(false);
-      }
-    }
-  }, l))), /*#__PURE__*/React.createElement("div", {
-    className: "main"
-  }, screen === "hub" && /*#__PURE__*/React.createElement("div", {
-    className: "su"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title"
-  }, "학습 범위 선택"), /*#__PURE__*/React.createElement("div", {
-    className: "hub-notice"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "hub-notice-icon"
-  }, "📖"), /*#__PURE__*/React.createElement("span", null, "3000제 + 제 15회 변호사시험: 유니온 발췌. 오류 발견시 직접 수정 가능, 기타 이용자가 수정 불가한 문제를 발견한 경우나 원하는 기능 건의 등은 퀴즈 내 피드백 기능을 이용해주세요.")), /*#__PURE__*/React.createElement("div", {
-    className: "hub-grid"
-  }, MODULE_REGISTRY.map(mod => {
-    const isActive = mod.status === "active";
-    const hs = hubStats[mod.id] || {};
-    const wc = hs.wc || 0;
-    const mc = hs.mc || 0;
-    const pct = hs.pct || 0;
-    const answered = hs.answered || 0;
-    const isSel = activeModule === mod.id;
-    return /*#__PURE__*/React.createElement("div", {
-      key: mod.id,
-      className: `module-card ${isActive ? "active" : "soon"}${mod.id === "민사소송법" ? " civ-proc" : ""}`,
-      style: isSel && isActive ? {
-        border: `1px solid ${mod.color}`,
-        background: `rgba(${mod.color.match(/\w\w/g)?.map(h => parseInt(h, 16)).join(',')},0.05)`
-      } : {},
-      onClick: () => {
-        if (!isActive) return;
-        setActiveModule(mod.id);
-        loadModuleData(mod.id);
-        setScreen("quiz");
-        setInQuiz(false);
-        setDone(false);
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "module-accent",
-      style: {
-        background: mod.color
-      }
-    }), !isActive && /*#__PURE__*/React.createElement("span", {
-      className: "soon-badge"
-    }, "준비중"), /*#__PURE__*/React.createElement("div", {
-      className: "module-icon"
-    }, mod.icon), /*#__PURE__*/React.createElement("div", {
-      className: "module-name"
-    }, mod.label), /*#__PURE__*/React.createElement("div", {
-      className: "module-sub"
-    }, mod.subtitle), /*#__PURE__*/React.createElement("div", {
-      className: "module-stats"
-    }, isActive ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-      className: "module-stat gold"
-    }, mod.count, "문제"), wc > 0 && /*#__PURE__*/React.createElement("span", {
-      className: "module-stat er"
-    }, "오답 ", wc), mc > 0 && /*#__PURE__*/React.createElement("span", {
-      className: "module-stat",
-      style: {
-        color: "var(--purple)",
-        borderColor: "rgba(188,140,255,.2)"
-      }
-    }, "헷갈림 ", mc)) : /*#__PURE__*/React.createElement("span", {
-      className: "module-stat"
-    }, mod.count || "?", " 문제")), isActive && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      className: "module-bar"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "module-bar-fill",
-      style: {
-        width: `${pct}%`,
-        background: mod.color
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      className: "module-prog-text"
-    }, answered, "/", mod.count, " 풀이 (", pct, "%)")));
-  })))), screen === "quiz" && dataBusy && /*#__PURE__*/React.createElement("div", {
-    className: "su"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      textAlign: "center",
-      padding: 40,
-      color: "var(--tx3)"
-    }
-  }, "⚖ 문제 불러오는 중…")), screen === "quiz" && dataErr && /*#__PURE__*/React.createElement("div", {
-    className: "su"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      textAlign: "center",
-      padding: 40,
-      color: "#c0392b"
-    }
-  }, dataErr)), screen === "quiz" && !dataBusy && !dataErr && /*#__PURE__*/React.createElement("div", {
-    className: "su",
-    key: inQuiz ? "q" : "s"
-  }, !inQuiz && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title"
-  }, "📖 회독 선택"), /*#__PURE__*/React.createElement("div", {
-    className: "pill-row"
-  }, ROUNDS.map(r => /*#__PURE__*/React.createElement("button", {
-    key: r,
-    className: `pill ${cfgRound === r ? "act" : ""}`,
-    onClick: () => setCfgRound(r)
-  }, r, "회독", wCnt(r) > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "wrong-badge"
-  }, "오답 ", wCnt(r)))))), /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title"
-  }, "🎯 문제 범위"), /*#__PURE__*/React.createElement("div", {
-    className: "pill-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: `pill ${cfgMode === "all" ? "act" : ""}`,
-    onClick: () => {
-      setCfgMode("all");
-      setCfgTopics([]);
-    }
-  }, "전체 ", /*#__PURE__*/React.createElement("span", {
-    className: "cnt-badge"
-  }, TOTAL, "문제")), /*#__PURE__*/React.createElement("button", {
-    className: `pill blue ${cfgMode === "rnd100" ? "act" : ""}`,
-    onClick: () => {
-      setCfgMode("rnd100");
-      setCfgTopics([]);
-    }
-  }, "무작위 100문제 ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 10,
-      background: "rgba(248,113,113,.18)",
-      color: "#f87171",
-      borderRadius: 5,
-      padding: "1px 5px",
-      marginLeft: 3,
-      fontWeight: 700,
-      letterSpacing: ".02em"
-    }
-  }, "⏱ 20s")), /*#__PURE__*/React.createElement("button", {
-    className: `pill ${cfgMode === "topic" ? "act" : ""}`,
-    onClick: () => setCfgMode("topic")
-  }, "주제 선택"), /*#__PURE__*/React.createElement("button", {
-    className: `pill star ${cfgMode === "star" ? "act" : ""}`,
-    onClick: () => {
-      setCfgMode("star");
-      setCfgTopics([]);
-    }
-  }, "⭐ 중요문제 ", /*#__PURE__*/React.createElement("span", {
-    className: "cnt-badge"
-  }, getAll().filter(q => q.star).length, "문제")), wmCnt(cfgRound) > 0 && /*#__PURE__*/React.createElement("button", {
-    className: `pill red ${cfgMode === "wrong+marked" ? "act" : ""}`,
-    onClick: () => {
-      setCfgMode("wrong+marked");
-      setCfgTopics([]);
-    }
-  }, "오답+헷갈림 ", /*#__PURE__*/React.createElement("span", {
-    className: "cnt-badge"
-  }, wmCnt(cfgRound), "문제"))), cfgMode === "rnd100" && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 10,
-      padding: "9px 14px",
-      borderRadius: 10,
-      background: "rgba(248,113,113,.08)",
-      border: "1px solid rgba(248,113,113,.25)",
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      fontSize: 12.5,
-      color: "#f87171"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 16
-    }
-  }, "⏱"), /*#__PURE__*/React.createElement("span", null, "문제당 ", /*#__PURE__*/React.createElement("strong", null, "20초"), " 시간 제한이 적용됩니다. 시간 초과 시 자동으로 오답 처리됩니다.")), cfgMode === "topic" && getMod()?.topics && /*#__PURE__*/React.createElement("div", {
-    className: "topic-grid"
-  }, getMod().topics.map(t => {
-    const cnt = tCnt(t.key),
-      wc = tWrong(cfgRound, t.key),
-      sel = cfgTopics.includes(t.key);
-    const icon = TOPIC_ICONS[t.key] || "📌";
-    const {
-      done: tDone,
-      total: tTotal,
-      pct: tPct
-    } = tProg(cfgRound, t.key);
-    const isAllDone = tPct === 100;
-    return /*#__PURE__*/React.createElement("div", {
-      key: t.key,
-      className: `tc ${sel ? "act" : ""} ${isAllDone ? "done-tc" : ""}`,
-      onClick: () => setCfgTopics(p => p.includes(t.key) ? p.filter(x => x !== t.key) : [...p, t.key])
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "tc-icon"
-    }, icon), /*#__PURE__*/React.createElement("div", {
-      className: "tc-name"
-    }, t.label), /*#__PURE__*/React.createElement("div", {
-      className: "tc-cnt"
-    }, cnt, "문제 ", wc > 0 && /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: 'var(--er)',
-        marginLeft: 4
-      }
-    }, "오답 ", wc)), /*#__PURE__*/React.createElement("div", {
-      className: "tc-prog-wrap"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "tc-prog-bar-bg"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "tc-prog-bar-fill",
-      style: {
-        width: tPct + '%'
-      }
-    })), /*#__PURE__*/React.createElement("span", {
-      className: "tc-prog-pct"
-    }, tPct, "%")));
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "start-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "start-btn",
-    disabled: !canStart,
-    onClick: () => launchQuiz(cfgRound, cfgMode, cfgTopics)
-  }, canStart ? hasResume ? `▶ 이어풀기 (${(savedSession.queueIds || []).length - (savedSession.qidx || 0)}문제 남음)` : `▶ 시작 (${cfgMode === "rnd100" ? 100 : startCnt}문제)` : "주제를 선택하세요"), hasResume && /*#__PURE__*/React.createElement("button", {
-    className: "start-btn",
-    style: {
-      background: 'var(--sf2)',
-      color: 'var(--tx2)',
-      border: '1px solid var(--bd)',
-      fontWeight: 400
-    },
-    onClick: () => launchQuiz(cfgRound, cfgMode, cfgTopics, null, true)
-  }, "처음부터"), cfgMode === "topic" && cfgTopics.length > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "start-hint"
-  }, cfgTopics.map(k => getMod()?.topics.find(t => t.key === k)?.label || k).join(", "), "· ", /*#__PURE__*/React.createElement("span", {
-    className: "clear-link",
-    onClick: () => setCfgTopics([])
-  }, "초기화")))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "right"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "rst-btn",
-    onClick: resetModule
-  }, "전체 기록 초기화"))), inQuiz && !done && cur && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
-    className: "back-btn",
-    onClick: exitQuiz
-  }, "← 설정으로"), /*#__PURE__*/React.createElement("div", {
-    className: "prog-wrap"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prog-top"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "prog-label"
-  }, label), /*#__PURE__*/React.createElement("span", {
-    className: "prog-num"
-  }, qidx + 1, /*#__PURE__*/React.createElement("span", null, "/", queue.length))), /*#__PURE__*/React.createElement("div", {
-    className: "prog-bar"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "prog-fill",
-    style: {
-      width: `${(qidx + 1) / queue.length * 100}%`,
-      background: "linear-gradient(90deg,var(--gf),var(--gold))"
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "prog-stats"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "ps ok"
-  }, "정답 ", /*#__PURE__*/React.createElement("strong", null, sessCor)), /*#__PURE__*/React.createElement("span", {
-    className: "ps er"
-  }, "오답 ", /*#__PURE__*/React.createElement("strong", null, sessErr)), /*#__PURE__*/React.createElement("span", {
-    className: "ps"
-  }, "정답률 ", /*#__PURE__*/React.createElement("strong", null, qidx > 0 ? Math.round(sessCor / qidx * 100) : "-", "%")), /*#__PURE__*/React.createElement("span", {
-    className: "ps mk"
-  }, "헷갈림 ", /*#__PURE__*/React.createElement("strong", null, sessMark)))), /*#__PURE__*/React.createElement("div", {
-    className: "qcard"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "qcard-meta"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "qcard-no",
-    style: {
-      display: "flex",
-      flexDirection: "column",
-      gap: 1
-    }
-  }, (() => {
-    const id = String(cur.id);
-    const ssMatch = id.match(/^SS([가-힣a-zA-Z]*\d+)\.(.+)$/);
-    const v15Match = id.match(/^15V(\d+)\.(.+)$/);
-    const numMatch = id.match(/^(\d+)\.(.+)$/);
-    if (ssMatch) {
-      const ssKey = "SS" + ssMatch[1];
-      const ssYr = (activeModule === "채권각론" ? SS_EXAM_각론 : activeModule === "민법총칙" ? SS_EXAM_민총 : activeModule === "민사소송법" ? SS_EXAM_민소 : activeModule === "물권법" ? SS_EXAM_물권 : SS_EXAM)[ssKey] || ssKey;
-      return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: "var(--blue)",
-          fontWeight: 600
-        }
-      }, ssYr), /*#__PURE__*/React.createElement("span", null, id));
-    }
-    if (v15Match) {
-      const v15yr = `26변시-${v15Match[1]}`;
-      return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: "var(--red,#e05252)",
-          fontWeight: 600
-        }
-      }, v15yr), /*#__PURE__*/React.createElement("span", null, `.${v15Match[2]}`));
-    }
-    if (numMatch) {
-      const yr = (activeModule === "채권각론" ? EXAM_YEAR_각론 : activeModule === "민법총칙" ? EXAM_YEAR_민총 : activeModule === "민사소송법" ? EXAM_YEAR_민소 : activeModule === "물권법" ? EXAM_YEAR_물권 : EXAM_YEAR)[numMatch[1].padStart(3, "0")] || "";
-      return /*#__PURE__*/React.createElement(React.Fragment, null, yr && /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: "var(--blue)",
-          fontWeight: 600
-        }
-      }, yr), /*#__PURE__*/React.createElement("span", null, id));
-    }
-    return /*#__PURE__*/React.createElement("span", null, id);
-  })()), cur.star && /*#__PURE__*/React.createElement("span", {
-    className: "star-badge"
-  }, "⭐ 중요"), /*#__PURE__*/React.createElement("button", {
-    className: "edit-btn",
-    onClick: () => openEdit(cur)
-  }, "✏ 수정"), /*#__PURE__*/React.createElement("button", {
-    className: "fb-btn",
-    onClick: () => {
-      loadFeedbacks(cur.id, activeModule);
-      setFbOpen(true);
-      setFbText("");
-      setFbType("오류 제보");
-    }
-  }, "💬 피드백"), /*#__PURE__*/React.createElement("span", {
-    className: "qcard-topic"
-  }, TOPIC_ICONS[cur.topic] || "📌", " ", getMod()?.topics.find(t => t.key === cur.topic)?.label || cur.topic)), (() => {
-    function stripPrefix(s) {
-      return (s || '').replace(/^[ㄱ-ㅎ①-⑳⑴-⑽]\.?\s*/, '').trim();
-    }
-    const parts = (cur.question || '').split('§');
-    if (parts.length >= 2) {
-      return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-        className: "fact-box"
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "fact-label"
-      }, "🗂 사실관계"), parts[0].trim()), /*#__PURE__*/React.createElement("div", {
-        className: "question"
-      }, stripPrefix(parts[1])));
-    }
-    return /*#__PURE__*/React.createElement("div", {
-      className: "question"
-    }, stripPrefix(cur.question));
-  })(), answered !== null && /*#__PURE__*/React.createElement("div", {
-    className: `reveal ${answered}`
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rv-label"
-  }, answered === "ok" ? "⭕" : "❌", /*#__PURE__*/React.createElement("span", {
-    className: "rv-verdict"
-  }, answered === "ok" ? `정답 (${cur.answer ? "○ 옳은 지문" : "× 틀린 지문"})` : `오답. 정답: ${cur.answer ? "○ 옳은 지문" : "× 틀린 지문"}`)), showExp ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "rv-exp"
-  }, renderExp(cur.explanation)), /*#__PURE__*/React.createElement("span", {
-    className: "rv-toggle",
-    onClick: () => setShowExp(false)
-  }, "▴ 접기")) : /*#__PURE__*/React.createElement("span", {
-    className: "rv-toggle",
-    onClick: () => setShowExp(true)
-  }, "▸ 해설 보기"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: `mark-btn ${curMark ? "marked" : ""}`,
-    onClick: toggleMark
-  }, curMark ? "🔖 헷갈림 표시됨 (클릭하여 해제)" : "🔖 헷갈리는 문제로 표시"))), fbList.length > 0 && answered !== null && /*#__PURE__*/React.createElement("div", {
-    className: "fb-list"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--tx3)",
-      marginBottom: 8,
-      fontWeight: 700
-    }
-  }, "💬 이 문항 피드백 ", fbList.length, "건"), fbList.slice(0, 3).map((f, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "fb-item"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-item-head"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "fb-item-type"
-  }, f.type), /*#__PURE__*/React.createElement("span", {
-    className: "fb-item-uid"
-  }, "👤 ", f.uid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-item-date"
-  }, f.date)), /*#__PURE__*/React.createElement("div", {
-    className: "fb-item-body"
-  }, f.text))))), !(inQuiz && !done) && /*#__PURE__*/React.createElement("button", {
-    className: "fb-float-btn",
-    onClick: () => {
-      setFbOpen(true);
-      setFbText("");
-      setFbType("일반 피드백");
-    }
-  }, "💬 피드백"), editOpen && editTarget && /*#__PURE__*/React.createElement("div", {
-    className: "fb-overlay",
-    onClick: e => {
-      if (e.target === e.currentTarget) setEditOpen(false);
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-modal",
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-modal-title"
-  }, "✏ 문제 수정"), /*#__PURE__*/React.createElement("div", {
-    className: "fb-modal-sub",
-    style: {
-      marginBottom: 14,
-      fontSize: 11,
-      color: "var(--tx3)"
-    }
-  }, "수정 내용은 모든 이용자에게 즉시 반영됩니다."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "var(--tx2)",
-      marginBottom: 6,
-      fontWeight: 600
-    }
-  }, "문제"), /*#__PURE__*/React.createElement("textarea", {
-    className: "fb-textarea",
-    rows: 5,
-    value: editQ,
-    onChange: e => setEditQ(e.target.value)
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "var(--tx2)",
-      margin: "12px 0 6px",
-      fontWeight: 600
-    }
-  }, "해설"), /*#__PURE__*/React.createElement("textarea", {
-    className: "fb-textarea",
-    rows: 3,
-    value: editE,
-    onChange: e => setEditE(e.target.value)
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "fb-row",
-    style: {
-      justifyContent: "space-between"
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "fb-cancel",
-    style: {
-      color: "var(--er)",
-      borderColor: "var(--er)"
-    },
-    onClick: () => resetEdit(editTarget.id)
-  }, "원복"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "fb-cancel",
-    onClick: () => setEditOpen(false)
-  }, "취소"), /*#__PURE__*/React.createElement("button", {
-    className: "fb-submit",
-    onClick: submitEdit
-  }, "저장"))))), fbOpen && /*#__PURE__*/React.createElement("div", {
-    className: "fb-overlay",
-    onClick: e => {
-      if (e.target === e.currentTarget) setFbOpen(false);
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-modal"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-modal-title"
-  }, "💬 피드백 작성"), /*#__PURE__*/React.createElement("div", {
-    className: "fb-modal-sub"
-  }, "No.", cur.id, " · ", getMod()?.topics.find(t => t.key === cur.topic)?.label || cur.topic), /*#__PURE__*/React.createElement("div", {
-    className: "fb-qref"
-  }, (cur.question || '').split('§').pop().trim().slice(0, 100), "..."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--tx3)",
-      marginBottom: 8
-    }
-  }, "유형 선택"), /*#__PURE__*/React.createElement("div", {
-    className: "fb-select-row"
-  }, ["오류 제보", "정답 이의", "해설 보완", "기능 요청", "기타"].map(t => /*#__PURE__*/React.createElement("button", {
-    key: t,
-    className: `fb-type ${fbType === t ? "sel" : ""}`,
-    onClick: () => setFbType(t)
-  }, t))), /*#__PURE__*/React.createElement("textarea", {
-    className: "fb-textarea",
-    rows: 4,
-    placeholder: "내용을 입력해주세요...",
-    value: fbText,
-    onChange: e => setFbText(e.target.value)
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "fb-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "fb-cancel",
-    onClick: () => setFbOpen(false)
-  }, "취소"), /*#__PURE__*/React.createElement("button", {
-    className: "fb-submit",
-    disabled: fbLoading || !fbText.trim(),
-    onClick: () => submitFeedback(cur.id, activeModule)
-  }, fbLoading ? "저장 중..." : "제출")))), cfgMode === "rnd100" && answered === null && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "center",
-      marginBottom: 4
-    }
-  }, /*#__PURE__*/React.createElement(CircleTimer, {
-    timeLeft: timerLeft
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "ox-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: `ox o ${userAns === true ? "sel-o" : ""}`,
-    onClick: () => handleAnswer(true),
-    disabled: answered !== null
-  }, "○"), /*#__PURE__*/React.createElement("button", {
-    className: `ox x ${userAns === false ? "sel-x" : ""}`,
-    onClick: () => handleAnswer(false),
-    disabled: answered !== null
-  }, "✕")), answered !== null && /*#__PURE__*/React.createElement("button", {
-    className: "next-btn",
-    onClick: handleNext
-  }, qidx + 1 < queue.length ? "다음 문제 →" : "결과 보기")), inQuiz && done && /*#__PURE__*/React.createElement("div", {
-    className: "done-card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "done-icon"
-  }, "🏛"), /*#__PURE__*/React.createElement("div", {
-    className: "done-title"
-  }, "완료!"), /*#__PURE__*/React.createElement("div", {
-    className: "done-sub"
-  }, label), /*#__PURE__*/React.createElement("div", {
-    className: "done-stats"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ds c"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ds-n"
-  }, sessCor), /*#__PURE__*/React.createElement("div", {
-    className: "ds-l"
-  }, "정답")), /*#__PURE__*/React.createElement("div", {
-    className: "ds w"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ds-n"
-  }, sessErr), /*#__PURE__*/React.createElement("div", {
-    className: "ds-l"
-  }, "오답")), /*#__PURE__*/React.createElement("div", {
-    className: "ds r"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ds-n"
-  }, queue.length > 0 ? Math.round(sessCor / queue.length * 100) : 0, "%"), /*#__PURE__*/React.createElement("div", {
-    className: "ds-l"
-  }, "정답률")), /*#__PURE__*/React.createElement("div", {
-    className: "ds m"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ds-n"
-  }, sessMark), /*#__PURE__*/React.createElement("div", {
-    className: "ds-l"
-  }, "헷갈림"))), /*#__PURE__*/React.createElement("div", {
-    className: "act-row"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    onClick: exitQuiz
-  }, "← 설정으로"), /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    onClick: () => launchQuiz(cfgRound, cfgMode, cfgTopics)
-  }, "다시 풀기"), wmCnt(cfgRound) > 0 && /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    style: {
-      borderColor: "rgba(248,81,73,.4)",
-      color: "var(--er)"
-    },
-    onClick: () => launchQuiz(cfgRound, "wrong+marked", [])
-  }, "오답+헷갈림 ", wmCnt(cfgRound), "문제"), /*#__PURE__*/React.createElement("button", {
-    className: "act-btn pri",
-    onClick: () => {
-      setScreen("hub");
-      exitQuiz();
-    }
-  }, "모듈 선택")))), screen === "archive" && /*#__PURE__*/React.createElement("div", {
-    className: "su"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title",
-    style: {
-      marginBottom: 12
-    }
-  }, "🗂 오답·헷갈림 회독 풀기"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: "var(--tx3)",
-      marginBottom: 10
-    }
-  }, "매 회독에서 틀린·헷갈린 문제가 아카이브 회독에 자동 누적됩니다."), /*#__PURE__*/React.createElement("div", {
-    className: "arch-round-tabs"
-  }, ROUNDS.map(r => /*#__PURE__*/React.createElement("button", {
-    key: r,
-    className: `art ${archRound === r ? "act" : ""}`,
-    onClick: () => {
-      setArchRound(r);
-      saveArchRound(r);
-    }
-  }, r, "회독", awTotal(r) > 0 && /*#__PURE__*/React.createElement("span", {
-    className: "art-cnt"
-  }, awTotal(r))))), awTotal(archRound) > 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      flexWrap: "wrap",
-      marginTop: 10
-    }
-  }, awCnt(archRound) > 0 && /*#__PURE__*/React.createElement("button", {
-    className: "retry-btn",
-    style: {
-      flex: 1,
-      margin: 0
-    },
-    onClick: () => launchQuiz(archRound, "aw_wrong", [])
-  }, "↺ ", archRound, "회독 오답 ", awCnt(archRound), "문제 풀기"), amCnt(archRound) > 0 && /*#__PURE__*/React.createElement("button", {
-    className: "retry-btn mk",
-    style: {
-      flex: 1,
-      margin: 0
-    },
-    onClick: () => launchQuiz(archRound, "aw_mark", [])
-  }, "↺ ", archRound, "회독 헷갈림 ", amCnt(archRound), "문제 풀기"), /*#__PURE__*/React.createElement("button", {
-    className: "retry-btn",
-    style: {
-      flex: 1,
-      margin: 0,
-      borderColor: "var(--gold)",
-      color: "var(--gold)",
-      background: "rgba(212,168,83,.08)"
-    },
-    onClick: () => launchQuiz(archRound, "aw_all", [])
-  }, "↺ ", archRound, "회독 전체 (", awTotal(archRound), "문제)")) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: "var(--tx3)",
-      textAlign: "center",
-      padding: "10px 0"
-    }
-  }, archRound, "회독 아카이브에 문제가 없습니다.")), ROUNDS.map(r => {
-    const items = archItems(r);
-    const wids = wrongMap[r] || new Set(),
-      mids = markedMap[r] || new Set();
-    return /*#__PURE__*/React.createElement("div", {
-      key: r,
-      style: {
-        marginBottom: 26
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 10,
-        paddingBottom: 7,
-        borderBottom: "1px solid var(--bd2)"
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 14,
-        fontWeight: 700,
-        color: "var(--gold)",
-        fontFamily: "'Noto Serif KR',serif"
-      }
-    }, r, "회독"), /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 11,
-        color: "var(--tx3)",
-        fontFamily: "'IBM Plex Mono',monospace",
-        marginLeft: "auto"
-      }
-    }, "오답 ", wCnt(r), " · 헷갈림 ", mCnt(r))), /*#__PURE__*/React.createElement("div", {
-      className: "arch-filter-row"
-    }, /*#__PURE__*/React.createElement("button", {
-      className: `arch-filter ${archFilter === "wrong" ? "act" : ""}`,
-      onClick: () => setArchFilter("wrong")
-    }, "오답만"), /*#__PURE__*/React.createElement("button", {
-      className: `arch-filter purple ${archFilter === "marked" ? "act purple" : ""}`,
-      onClick: () => setArchFilter("marked")
-    }, "헷갈림만"), /*#__PURE__*/React.createElement("button", {
-      className: `arch-filter ${archFilter === "all" ? "act" : ""}`,
-      onClick: () => setArchFilter("all")
-    }, "전체")), items.length > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, archFilter !== "marked" && wCnt(r) > 0 && /*#__PURE__*/React.createElement("button", {
-      className: "retry-btn",
-      onClick: () => {
-        setCfgRound(r);
-        launchQuiz(r, "wrong", []);
-      }
-    }, "↺ ", r, "회독 오답 ", wCnt(r), "문제 다시 풀기"), archFilter !== "wrong" && mCnt(r) > 0 && /*#__PURE__*/React.createElement("button", {
-      className: "retry-btn mk",
-      onClick: () => {
-        setCfgRound(r);
-        launchQuiz(r, "marked", []);
-      }
-    }, "↺ ", r, "회독 헷갈리는 문제 ", mCnt(r), "문제 다시 풀기"), items.map(q => {
-      const k = `${r}-${q.id}`;
-      const isW = wids.has(q.id),
-        isMk = mids.has(q.id);
-      return /*#__PURE__*/React.createElement("div", {
-        key: q.id,
-        className: `arch-item ${archExp[k] ? "exp" : ""} ${isMk && !isW ? "mk-item" : ""}`,
-        onClick: () => setArchExp(p => ({
-          ...p,
-          [k]: !p[k]
-        }))
-      }, /*#__PURE__*/React.createElement("div", {
-        className: "arch-q"
-      }, "No.", q.id, " ", q.question), q.star && /*#__PURE__*/React.createElement("span", {
-        className: "star-badge"
-      }, "⭐ 중요"), /*#__PURE__*/React.createElement("div", {
-        className: "arch-ans"
-      }, "정답: ", q.answer ? "○ 옳은 지문" : "× 틀린 지문"), /*#__PURE__*/React.createElement("span", {
-        className: "arch-tag"
-      }, TOPIC_ICONS[q.topic] || "📌", " ", getMod()?.topics.find(t => t.key === q.topic)?.label || q.topic), isW && /*#__PURE__*/React.createElement("span", {
-        className: "arch-tag"
-      }, "오답"), isMk && /*#__PURE__*/React.createElement("span", {
-        className: "arch-tag mk"
-      }, "🔖 헷갈림"), /*#__PURE__*/React.createElement("div", {
-        className: "arch-exp"
-      }, q.explanation));
-    })) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 13,
-        color: "var(--tx3)",
-        padding: "6px 0 14px",
-        textAlign: "center"
-      }
-    }, archFilter === "wrong" ? "오답 없음" : archFilter === "marked" ? "헷갈림 표시 없음" : "기록 없음", " ✓"));
-  })), screen === "admin" && isAdmin && /*#__PURE__*/React.createElement("div", {
-    className: "su"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "👥 접속 유저 현황"), /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    style: {
-      flex: "none",
-      padding: "6px 14px",
-      fontSize: 12
-    },
-    onClick: loadAdminUsers
-  }, "🔄 새로고침"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "var(--tx3)",
-      marginLeft: "auto"
-    }
-  }, "총 ", adminUsers.length, "명")), /*#__PURE__*/React.createElement("div", {
-    className: "admin-note"
-  }, "✅ Firebase를 통해 모든 기기·브라우저에서 접속한 유저가 자동으로 표시됩니다."), /*#__PURE__*/React.createElement("div", {
-    className: "admin-search"
-  }, /*#__PURE__*/React.createElement("input", {
-    placeholder: "유저 ID 직접 입력...",
-    value: adminSearch,
-    onChange: e => setAdminSearch(e.target.value),
-    onKeyDown: e => e.key === "Enter" && adminSearchUser(adminSearch)
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => adminSearchUser(adminSearch)
-  }, "조회")), adminResult && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: adminResult.notFound ? "var(--er-bg)" : "var(--sf2)",
-      border: `1px solid ${adminResult.notFound ? "rgba(248,81,73,.3)" : "var(--bd)"}`,
-      borderRadius: 10,
-      padding: "12px 16px",
-      marginBottom: 12
-    }
-  }, adminResult.notFound ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "var(--er)",
-      fontSize: 13
-    }
-  }, "유저 '", adminResult.id, "'의 기록이 없습니다.") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      color: "var(--gold)",
-      marginBottom: 8
-    }
-  }, "👤 ", adminResult.id), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 12,
-      fontSize: 12,
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--tx3)"
-    }
-  }, "시도 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--tx)",
-      fontFamily: "'IBM Plex Mono',monospace"
-    }
-  }, adminResult.ans)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--ok)"
-    }
-  }, "정답 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      fontFamily: "'IBM Plex Mono',monospace"
-    }
-  }, adminResult.cor)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--er)"
-    }
-  }, "오답 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      fontFamily: "'IBM Plex Mono',monospace"
-    }
-  }, adminResult.wrg)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--gold)"
-    }
-  }, "정답률 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      fontFamily: "'IBM Plex Mono',monospace"
-    }
-  }, adminResult.ans > 0 ? Math.round(adminResult.cor / adminResult.ans * 100) + "%" : "-")), (adminResult.lastDate || adminResult.last > 0) && /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "var(--tx3)"
-    }
-  }, "마지막 접속: ", /*#__PURE__*/React.createElement("b", null, adminResult.lastDate || new Date(adminResult.last).toLocaleDateString("ko-KR")))), adminResult.modStats?.map(m => /*#__PURE__*/React.createElement("div", {
-    key: m.mod,
-    style: {
-      fontSize: 11,
-      background: "var(--bg)",
-      border: "1px solid var(--bd2)",
-      borderRadius: 6,
-      padding: "5px 10px",
-      marginTop: 5,
-      color: "var(--tx3)"
-    }
-  }, /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--tx)"
-    }
-  }, m.mod), " · 시도 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--tx)"
-    }
-  }, m.ans), " · 정답 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--ok)"
-    }
-  }, m.cor), " · 오답 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--er)"
-    }
-  }, m.wrg), " · 정답률 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--gold)"
-    }
-  }, m.pct, "%"), m.wrongCnt > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, " · 오답뱅크 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--er)"
-    }
-  }, m.wrongCnt)), m.markCnt > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, " · 헷갈림 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--purple)"
-    }
-  }, m.markCnt)))), !adminResult.notFound && /*#__PURE__*/React.createElement("button", {
-    style: {
-      marginTop: 10,
-      padding: "6px 14px",
-      fontSize: 11,
-      background: "var(--er-bg)",
-      border: "1px solid rgba(248,81,73,.3)",
-      color: "var(--er)",
-      borderRadius: 8,
-      cursor: "pointer"
-    },
-    onClick: async () => {
-      if (!confirm(`${adminResult.id}의 PIN을 초기화하시겠습니까?`)) return;
-      const safeId = adminResult.id.replace(/[.#$[\]]/g, '_');
-      const info = await fb.get(`users/${safeId}/info`);
-      if (info) {
-        const {
-          pin: _,
-          ...rest
-        } = info;
-        await fb.set(`users/${safeId}/info`, rest);
-        alert('PIN이 초기화되었습니다. 다음 로그인 시 새 PIN을 설정합니다.');
-      }
-    }
-  }, "🔑 PIN 초기화"))), adminUsers.length === 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: "20px",
-      color: "var(--tx3)"
-    }
-  }, "아직 접속한 유저가 없습니다.") : adminUsers.map(u => /*#__PURE__*/React.createElement("div", {
-    key: u.id,
-    className: "admin-user-card",
-    style: {
-      flexDirection: "column",
-      alignItems: "flex-start"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      width: "100%",
-      flexWrap: "wrap"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "admin-uid"
-  }, "👤 ", u.id), /*#__PURE__*/React.createElement("div", {
-    className: "admin-stats",
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "admin-stat"
-  }, "시도 ", /*#__PURE__*/React.createElement("b", null, u.ans)), /*#__PURE__*/React.createElement("span", {
-    className: "admin-stat ok"
-  }, "정답 ", /*#__PURE__*/React.createElement("b", null, u.cor)), /*#__PURE__*/React.createElement("span", {
-    className: "admin-stat er"
-  }, "오답 ", /*#__PURE__*/React.createElement("b", null, u.wrg)), /*#__PURE__*/React.createElement("span", {
-    className: "admin-stat gold"
-  }, "정답률 ", /*#__PURE__*/React.createElement("b", null, u.ans > 0 ? Math.round(u.cor / u.ans * 100) + "%" : "-")), (u.lastDate || u.last > 0) && /*#__PURE__*/React.createElement("span", {
-    className: "admin-stat"
-  }, "마지막 접속 ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--gold)"
-    }
-  }, u.lastDate || new Date(u.last).toLocaleDateString("ko-KR"))))), u.modStats && u.modStats.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 8,
-      marginTop: 6,
-      flexWrap: "wrap",
-      width: "100%"
-    }
-  }, u.modStats.map(m => /*#__PURE__*/React.createElement("div", {
-    key: m.mod,
-    style: {
-      fontSize: 11,
-      background: "var(--bg)",
-      border: "1px solid var(--bd2)",
-      borderRadius: 6,
-      padding: "4px 10px",
-      color: "var(--tx3)"
-    }
-  }, /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: "var(--tx)"
-    }
-  }, m.mod), " · 시도 ", m.ans, " · 정답률 ", m.pct, "%")))))), /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "💬 피드백 목록"), /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    style: {
-      flex: "none",
-      padding: "6px 14px",
-      fontSize: 12
-    },
-    onClick: async () => {
-      setAdminFbLoad(true);
-      const data = await loadAllFeedbacks();
-      setAdminFbs(data);
-      setAdminFbLoad(false);
-    }
-  }, adminFbLoad ? "로딩중..." : adminFbs === null ? "📥 불러오기" : "🔄 새로고침"), adminFbs !== null && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "var(--tx3)",
-      marginLeft: "auto"
-    }
-  }, "총 ", Object.values(adminFbs).reduce((s, a) => s + a.length, 0), "건")), adminFbs === null && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: "20px",
-      color: "var(--tx3)",
-      fontSize: 13
-    }
-  }, "불러오기 버튼을 눌러 피드백을 확인하세요."), adminFbs !== null && Object.keys(adminFbs).length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: "20px",
-      color: "var(--tx3)",
-      fontSize: 13
-    }
-  }, "피드백이 없습니다."), adminFbs !== null && Object.entries(adminFbs).map(([mid, items]) => /*#__PURE__*/React.createElement("div", {
-    key: mid,
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "var(--gold)",
-      marginBottom: 8,
-      paddingBottom: 4,
-      borderBottom: "1px solid var(--bd)"
-    }
-  }, MODULE_REGISTRY.find(m => m.id === mid)?.label || mid, " (", items.length, "건)"), items.map((item, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "fb-admin-item"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-meta"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-no"
-  }, "#", item.qid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-type"
-  }, item.type), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-uid"
-  }, "👤 ", item.uid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-date"
-  }, item.date || new Date(item.ts).toLocaleDateString("ko-KR"))), /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-body"
-  }, item.text)))))), /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "✏ 수정 내역"), /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    style: {
-      flex: "none",
-      padding: "6px 14px",
-      fontSize: 12
-    },
-    onClick: async () => {
-      setAdminEditLoad(true);
-      const data = await loadAllEdits();
-      setAdminEdits(data);
-      setAdminEditLoad(false);
-    }
-  }, adminEditLoad ? "로딩중..." : adminEdits === null ? "📥 불러오기" : "🔄 새로고침"), adminEdits !== null && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: "var(--tx3)",
-      marginLeft: "auto"
-    }
-  }, "총 ", Object.values(adminEdits).reduce((s, a) => s + a.length, 0), "건")), adminEdits === null && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: "20px",
-      color: "var(--tx3)",
-      fontSize: 13
-    }
-  }, "불러오기 버튼을 눌러 수정 내역을 확인하세요."), adminEdits !== null && Object.keys(adminEdits).length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: "20px",
-      color: "var(--tx3)",
-      fontSize: 13
-    }
-  }, "수정 내역이 없습니다."), adminEdits !== null && Object.entries(adminEdits).map(([mid, items]) => /*#__PURE__*/React.createElement("div", {
-    key: mid,
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: "var(--gold)",
-      marginBottom: 8,
-      paddingBottom: 4,
-      borderBottom: "1px solid var(--bd)"
-    }
-  }, MODULE_REGISTRY.find(m => m.id === mid)?.label || mid, " (", items.length, "건)"), items.map((item, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "fb-admin-item",
-    style: {
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-meta"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-no"
-  }, "#", item.qid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-uid"
-  }, "👤 ", item.uid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-date"
-  }, item.date)), item.original_q && item.original_q !== item.question && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: "var(--tx3)",
-      marginBottom: 4,
-      textDecoration: "line-through",
-      padding: "4px 8px",
-      background: "var(--sf2)",
-      borderRadius: 4
-    }
-  }, item.original_q), /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-body",
-    style: {
-      fontSize: 12
-    }
-  }, item.question))))))))));
+
+  return (
+    <><style>{CSS}</style>
+    <div className="app">
+
+      {/* 헤더 */}
+      <div className="hdr">
+        <div className="hdr-left">
+          <div className="hdr-title">⚖︎ OX 퀴즈</div>
+          <div className="hdr-sub">민법 &amp; 민소법 선택형 기출 최신빈출지문</div>
+        </div>
+        <div className="hdr-user">
+          <button className="theme-toggle" title="테마 전환"
+            onClick={()=>setTheme(t=>t==='dark'?'light':'dark')}>
+            {theme==='dark' ? '☀️' : '🌙'}
+          </button>
+          <HubLink />
+          <SubjectSwitch current="civil" />
+          <span className="uid-badge">👤 {uid}</span>
+          <button className="logout-btn" onClick={()=>{ setUid(null); setIsAdmin(false); localStorage.removeItem("hub_last_uid"); }}>로그아웃</button>
+        </div>
+      </div>
+
+      {/* 탭 */}
+      <div className="tabs">
+        {[
+          ["hub","모듈 선택"],
+          activeModule && getMod()?.status==="active" ? ["quiz","퀴즈"] : null,
+          activeModule && getMod()?.status==="active" ? ["archive","오답 아카이브"] : null,
+          isAdmin ? ["admin","관리자"] : null,
+        ].filter(Boolean).map(([t,l])=>(
+          <button key={t} className={`tab ${screen===t?"act":""}`}
+            onClick={()=>{ setScreen(t); if(t!=="quiz"){setInQuiz(false);setDone(false);} }}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div className="main">
+
+        {/* ════ 허브 ════ */}
+        {screen==="hub" && (
+          <div className="su">
+            <div style={{marginBottom:14}}>
+              <div className="card-title">학습 범위 선택</div>
+              <div className="hub-notice">
+                <span className="hub-notice-icon">📖</span>
+                <span>3000제 + 제 15회 변호사시험: 유니온 발췌. 오류 발견시 직접 수정 가능, 기타 이용자가 수정 불가한 문제를 발견한 경우나 원하는 기능 건의 등은 퀴즈 내 피드백 기능을 이용해주세요.</span>
+              </div>
+              <div className="hub-grid">
+                {MODULE_REGISTRY.map(mod => {
+
+
+                  const isActive = mod.status==="active";
+                  const hs = hubStats[mod.id] || {};
+                  const wc = hs.wc || 0;
+                  const mc = hs.mc || 0;
+                  const pct = hs.pct || 0;
+                  const answered = hs.answered || 0;
+                  const isSel = activeModule===mod.id;
+                  return (
+                    <div key={mod.id}
+                      className={`module-card ${isActive?"active":"soon"}${mod.id==="민사소송법"?" civ-proc":""}`}
+                      style={isSel&&isActive?{border:`1px solid ${mod.color}`,background:`rgba(${mod.color.match(/\w\w/g)?.map(h=>parseInt(h,16)).join(',')},0.05)`}:{}}
+                      onClick={()=>{
+                        if(!isActive) return;
+                        setActiveModule(mod.id);
+                        loadModuleData(mod.id);
+                        setScreen("quiz"); setInQuiz(false); setDone(false);
+                      }}>
+                      <div className="module-accent" style={{background:mod.color}}/>
+                      {!isActive && <span className="soon-badge">준비중</span>}
+                      <div className="module-icon">{mod.icon}</div>
+                      <div className="module-name">{mod.label}</div>
+                      <div className="module-sub">{mod.subtitle}</div>
+                      <div className="module-stats">
+                        {isActive ? (
+                          <>
+                            <span className="module-stat gold">{mod.count}문제</span>
+                            {wc>0&&<span className="module-stat er">오답 {wc}</span>}
+                            {mc>0&&<span className="module-stat" style={{color:"var(--purple)",borderColor:"rgba(188,140,255,.2)"}}>헷갈림 {mc}</span>}
+                          </>
+                        ) : (
+                          <span className="module-stat">{mod.count||"?"} 문제</span>
+                        )}
+                      </div>
+                      {isActive && (
+                        <>
+                          <div className="module-bar"><div className="module-bar-fill" style={{width:`${pct}%`,background:mod.color}}/></div>
+                          <div className="module-prog-text">{answered}/{mod.count} 풀이 ({pct}%)</div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ 퀴즈 탭 ════ */}
+        {screen==="quiz" && dataBusy && (
+          <div className="su"><div className="card" style={{textAlign:"center",padding:40,color:"var(--tx3)"}}>⚖ 문제 불러오는 중…</div></div>
+        )}
+        {screen==="quiz" && dataErr && (
+          <div className="su"><div className="card" style={{textAlign:"center",padding:40,color:"#c0392b"}}>{dataErr}</div></div>
+        )}
+        {screen==="quiz" && !dataBusy && !dataErr && (
+          <div className="su" key={inQuiz?"q":"s"}>
+
+            {/* 설정 화면 */}
+            {!inQuiz && (
+              <>
+                <div className="card">
+                  <div className="card-title">📖 회독 선택</div>
+                  <div className="pill-row">
+                    {ROUNDS.map(r=>(
+                      <button key={r} className={`pill ${cfgRound===r?"act":""}`} onClick={()=>setCfgRound(r)}>
+                        {r}회독
+                        {wCnt(r)>0&&<span className="wrong-badge">오답 {wCnt(r)}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="card">
+                  <div className="card-title">🎯 문제 범위</div>
+                  <div className="pill-row">
+                    <button className={`pill ${cfgMode==="all"?"act":""}`} onClick={()=>{setCfgMode("all");setCfgTopics([]);}}>
+                      전체 <span className="cnt-badge">{TOTAL}문제</span>
+                    </button>
+                    <button className={`pill blue ${cfgMode==="rnd100"?"act":""}`} onClick={()=>{setCfgMode("rnd100");setCfgTopics([]);}}>
+                      무작위 100문제 <span style={{fontSize:10,background:"rgba(248,113,113,.18)",color:"#f87171",borderRadius:5,padding:"1px 5px",marginLeft:3,fontWeight:700,letterSpacing:".02em"}}>⏱ 20s</span>
+                    </button>
+                    <button className={`pill ${cfgMode==="topic"?"act":""}`} onClick={()=>setCfgMode("topic")}>
+                      주제 선택
+                    </button>
+                    <button className={`pill star ${cfgMode==="star"?"act":""}`} onClick={()=>{setCfgMode("star");setCfgTopics([]);}}>
+                      ⭐ 중요문제 <span className="cnt-badge">{getAll().filter(q=>q.star).length}문제</span>
+                    </button>
+                    {wmCnt(cfgRound)>0&&(
+                      <button className={`pill red ${cfgMode==="wrong+marked"?"act":""}`} onClick={()=>{setCfgMode("wrong+marked");setCfgTopics([]);}}>
+                        오답+헷갈림 <span className="cnt-badge">{wmCnt(cfgRound)}문제</span>
+                      </button>
+                    )}
+                  </div>
+                  {cfgMode==="rnd100" && (
+                    <div style={{marginTop:10,padding:"9px 14px",borderRadius:10,background:"rgba(248,113,113,.08)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",gap:8,fontSize:12.5,color:"#f87171"}}>
+                      <span style={{fontSize:16}}>⏱</span>
+                      <span>문제당 <strong>20초</strong> 시간 제한이 적용됩니다. 시간 초과 시 자동으로 오답 처리됩니다.</span>
+                    </div>
+                  )}
+                  {cfgMode==="topic" && getMod()?.topics && (
+                    <div className="topic-grid">
+                      {getMod().topics.map(t=>{
+                        const cnt=tCnt(t.key), wc=tWrong(cfgRound,t.key), sel=cfgTopics.includes(t.key);
+                        const icon = TOPIC_ICONS[t.key]||"📌";
+                        const {done:tDone,total:tTotal,pct:tPct}=tProg(cfgRound,t.key);
+                        const isAllDone = tPct===100;
+                        return (
+                          <div key={t.key} className={`tc ${sel?"act":""} ${isAllDone?"done-tc":""}`}
+                            onClick={()=>setCfgTopics(p=>p.includes(t.key)?p.filter(x=>x!==t.key):[...p,t.key])}>
+                            <div className="tc-icon">{icon}</div>
+                            <div className="tc-name">{t.label}</div>
+                            <div className="tc-cnt">{cnt}문제 {wc>0&&<span style={{color:'var(--er)',marginLeft:4}}>오답 {wc}</span>}</div>
+                            <div className="tc-prog-wrap">
+                              <div className="tc-prog-bar-bg"><div className="tc-prog-bar-fill" style={{width:tPct+'%'}}></div></div>
+                              <span className="tc-prog-pct">{tPct}%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="start-row">
+                    <button className="start-btn" disabled={!canStart}
+                      onClick={()=>launchQuiz(cfgRound, cfgMode, cfgTopics)}>
+                      {canStart ? (hasResume ? `▶ 이어풀기 (${(savedSession.queueIds||[]).length-(savedSession.qidx||0)}문제 남음)` : `▶ 시작 (${cfgMode==="rnd100"?100:startCnt}문제)`) : "주제를 선택하세요"}
+                    </button>
+                    {hasResume && (
+                      <button className="start-btn" style={{background:'var(--sf2)',color:'var(--tx2)',border:'1px solid var(--bd)',fontWeight:400}}
+                        onClick={()=>launchQuiz(cfgRound, cfgMode, cfgTopics, null, true)}>
+                        처음부터
+                      </button>
+                    )}
+                    {cfgMode==="topic"&&cfgTopics.length>0&&(
+                      <span className="start-hint">
+                        {cfgTopics.map(k=>getMod()?.topics.find(t=>t.key===k)?.label||k).join(", ")}
+                        · <span className="clear-link" onClick={()=>setCfgTopics([])}>초기화</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <button className="rst-btn" onClick={resetModule}>전체 기록 초기화</button>
+                </div>
+              </>
+            )}
+
+            {/* 퀴즈 진행 */}
+            {inQuiz && !done && cur && (
+              <>
+                <button className="back-btn" onClick={exitQuiz}>← 설정으로</button>
+                <div className="prog-wrap">
+                  <div className="prog-top">
+                    <span className="prog-label">{label}</span>
+                    <span className="prog-num">{qidx+1}<span>/{queue.length}</span></span>
+                  </div>
+                  <div className="prog-bar">
+                    <div className="prog-fill" style={{width:`${(qidx+1)/queue.length*100}%`,background:"linear-gradient(90deg,var(--gf),var(--gold))"}}/>
+                  </div>
+                  <div className="prog-stats">
+                    <span className="ps ok">정답 <strong>{sessCor}</strong></span>
+                    <span className="ps er">오답 <strong>{sessErr}</strong></span>
+                    <span className="ps">정답률 <strong>{qidx>0?Math.round(sessCor/qidx*100):"-"}%</strong></span>
+                    <span className="ps mk">헷갈림 <strong>{sessMark}</strong></span>
+                  </div>
+                </div>
+                <div className="qcard">
+                  <div className="qcard-meta">
+                    <span className="qcard-no" style={{display:"flex",flexDirection:"column",gap:1}}>
+                      {(() => {
+                        const id = String(cur.id);
+                        const ssMatch = id.match(/^SS([가-힣a-zA-Z]*\d+)\.(.+)$/);              const v15Match = id.match(/^15V(\d+)\.(.+)$/);
+                        const numMatch = id.match(/^(\d+)\.(.+)$/);
+                        if (ssMatch) {
+                          const ssKey = "SS" + ssMatch[1];
+                          const ssYr = (activeModule === "채권각론" ? SS_EXAM_각론 : activeModule === "민법총칙" ? SS_EXAM_민총 : activeModule === "민사소송법" ? SS_EXAM_민소 : activeModule === "물권법" ? SS_EXAM_물권 : SS_EXAM)[ssKey] || ssKey;
+                          return (<><span style={{color:"var(--blue)",fontWeight:600}}>{ssYr}</span><span>{id}</span></>);
+                        }
+                        if (v15Match) {
+                          const v15yr = `26변시-${v15Match[1]}`;
+                          return (<><span style={{color:"var(--red,#e05252)",fontWeight:600}}>{v15yr}</span><span>{`.${v15Match[2]}`}</span></>);
+                        }
+                        if (numMatch) {
+                          const yr = (activeModule === "채권각론" ? EXAM_YEAR_각론 : activeModule === "민법총칙" ? EXAM_YEAR_민총 : activeModule === "민사소송법" ? EXAM_YEAR_민소 : activeModule === "물권법" ? EXAM_YEAR_물권 : EXAM_YEAR)[numMatch[1].padStart(3,"0")] || "";
+                          return (<>{yr && <span style={{color:"var(--blue)",fontWeight:600}}>{yr}</span>}<span>{id}</span></>);
+                        }
+                        return <span>{id}</span>;
+                      })()}
+                    </span>
+                    {cur.star && <span className="star-badge">⭐ 중요</span>}
+                    <button className="edit-btn" onClick={()=>openEdit(cur)}>
+                      ✏ 수정
+                    </button>
+                    <button className="fb-btn" onClick={()=>{ loadFeedbacks(cur.id, activeModule); setFbOpen(true); setFbText(""); setFbType("오류 제보"); }}>
+                      💬 피드백
+                    </button>
+                    <span className="qcard-topic">{TOPIC_ICONS[cur.topic]||"📌"} {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</span>
+                  </div>
+                  {(() => {
+                  function stripPrefix(s) {
+                    return (s||'').replace(/^[ㄱ-ㅎ①-⑳⑴-⑽]\.?\s*/, '').trim();
+                  }
+                  const parts = (cur.question || '').split('§');
+                  if (parts.length >= 2) {
+                    return (
+                      <div>
+                        <div className="fact-box">
+                          <div className="fact-label">🗂 사실관계</div>
+                          {parts[0].trim()}
+                        </div>
+                        <div className="question">{stripPrefix(parts[1])}</div>
+                      </div>
+                    );
+                  }
+                  return <div className="question">{stripPrefix(cur.question)}</div>;
+                })()}
+                  {answered !== null && (
+                    <div className={`reveal ${answered}`}>
+                      <div className="rv-label">
+                        {answered==="ok"?"⭕":"❌"}
+                        <span className="rv-verdict">
+                          {answered==="ok" ? `정답 (${cur.answer?"○ 옳은 지문":"× 틀린 지문"})` : `오답. 정답: ${cur.answer?"○ 옳은 지문":"× 틀린 지문"}`}
+                        </span>
+                      </div>
+                      {showExp
+                        ? <><div className="rv-exp">{renderExp(cur.explanation)}</div><span className="rv-toggle" onClick={()=>setShowExp(false)}>▴ 접기</span></>
+                        : <span className="rv-toggle" onClick={()=>setShowExp(true)}>▸ 해설 보기</span>
+                      }
+                      <div style={{marginTop:10}}>
+                        <button className={`mark-btn ${curMark?"marked":""}`} onClick={toggleMark}>
+                          {curMark ? "🔖 헷갈림 표시됨 (클릭하여 해제)" : "🔖 헷갈리는 문제로 표시"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* 피드백 목록 - 정답 확인 후 표시 */}
+                  {fbList.length > 0 && answered !== null && (
+                    <div className="fb-list">
+                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8,fontWeight:700}}>💬 이 문항 피드백 {fbList.length}건</div>
+                      {fbList.slice(0,3).map((f,i)=>(
+                        <div key={i} className="fb-item">
+                          <div className="fb-item-head">
+                            <span className="fb-item-type">{f.type}</span>
+                            <span className="fb-item-uid">👤 {f.uid}</span>
+                            <span className="fb-item-date">{f.date}</span>
+                          </div>
+                          <div className="fb-item-body">{f.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {/* 퀴즈 화면 외 플로팅 피드백 버튼 */}
+                {!(inQuiz && !done) && (
+                  <button className="fb-float-btn" onClick={()=>{ setFbOpen(true); setFbText(""); setFbType("일반 피드백"); }}>
+                    💬 피드백
+                  </button>
+                )}
+
+                {/* 수정 모달 */}
+                {editOpen && editTarget && (
+                  <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setEditOpen(false);}}>
+                    <div className="fb-modal" onClick={e=>e.stopPropagation()}>
+                      <div className="fb-modal-title">✏ 문제 수정</div>
+                      <div className="fb-modal-sub" style={{marginBottom:14,fontSize:11,color:"var(--tx3)"}}>
+                        수정 내용은 모든 이용자에게 즉시 반영됩니다.
+                      </div>
+                      <div style={{fontSize:12,color:"var(--tx2)",marginBottom:6,fontWeight:600}}>문제</div>
+                      <textarea className="fb-textarea" rows={5} value={editQ}
+                        onChange={e=>setEditQ(e.target.value)}/>
+                      <div style={{fontSize:12,color:"var(--tx2)",margin:"12px 0 6px",fontWeight:600}}>해설</div>
+                      <textarea className="fb-textarea" rows={3} value={editE}
+                        onChange={e=>setEditE(e.target.value)}/>
+                      <div className="fb-row" style={{justifyContent:"space-between"}}>
+                        <button className="fb-cancel" style={{color:"var(--er)",borderColor:"var(--er)"}}
+                          onClick={()=>resetEdit(editTarget.id)}>원복</button>
+                        <div style={{display:"flex",gap:8}}>
+                          <button className="fb-cancel" onClick={()=>setEditOpen(false)}>취소</button>
+                          <button className="fb-submit" onClick={submitEdit}>저장</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 피드백 모달 */}
+                {fbOpen && (
+                  <div className="fb-overlay" onClick={e=>{if(e.target===e.currentTarget)setFbOpen(false);}}>
+                    <div className="fb-modal">
+                      <div className="fb-modal-title">💬 피드백 작성</div>
+                      <div className="fb-modal-sub">No.{cur.id} · {getMod()?.topics.find(t=>t.key===cur.topic)?.label||cur.topic}</div>
+                      <div className="fb-qref">{(cur.question||'').split('§').pop().trim().slice(0,100)}...</div>
+                      <div style={{fontSize:11,color:"var(--tx3)",marginBottom:8}}>유형 선택</div>
+                      <div className="fb-select-row">
+                        {["오류 제보","정답 이의","해설 보완","기능 요청","기타"].map(t=>(
+                          <button key={t} className={`fb-type ${fbType===t?"sel":""}`} onClick={()=>setFbType(t)}>{t}</button>
+                        ))}
+                      </div>
+                      <textarea className="fb-textarea" rows={4}
+                        placeholder="내용을 입력해주세요..."
+                        value={fbText}
+                        onChange={e=>setFbText(e.target.value)}/>
+                      <div className="fb-row">
+                        <button className="fb-cancel" onClick={()=>setFbOpen(false)}>취소</button>
+                        <button className="fb-submit" disabled={fbLoading||!fbText.trim()}
+                          onClick={()=>submitFeedback(cur.id, activeModule)}>
+                          {fbLoading?"저장 중...":"제출"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {cfgMode === "rnd100" && answered === null && (
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:4}}>
+                    <CircleTimer timeLeft={timerLeft} />
+                  </div>
+                )}
+                <div className="ox-row">
+                  <button className={`ox o ${userAns===true?"sel-o":""}`}  onClick={()=>handleAnswer(true)}  disabled={answered!==null}>○</button>
+                  <button className={`ox x ${userAns===false?"sel-x":""}`} onClick={()=>handleAnswer(false)} disabled={answered!==null}>✕</button>
+                </div>
+                {answered !== null && (
+                  <button className="next-btn" onClick={handleNext}>{qidx+1<queue.length?"다음 문제 →":"결과 보기"}</button>
+                )}
+              </>
+            )}
+
+            {/* 완료 */}
+            {inQuiz && done && (
+              <div className="done-card">
+                <div className="done-icon">🏛</div>
+                <div className="done-title">완료!</div>
+                <div className="done-sub">{label}</div>
+                <div className="done-stats">
+                  <div className="ds c"><div className="ds-n">{sessCor}</div><div className="ds-l">정답</div></div>
+                  <div className="ds w"><div className="ds-n">{sessErr}</div><div className="ds-l">오답</div></div>
+                  <div className="ds r"><div className="ds-n">{queue.length>0?Math.round(sessCor/queue.length*100):0}%</div><div className="ds-l">정답률</div></div>
+                  <div className="ds m"><div className="ds-n">{sessMark}</div><div className="ds-l">헷갈림</div></div>
+                </div>
+                <div className="act-row">
+                  <button className="act-btn" onClick={exitQuiz}>← 설정으로</button>
+                  <button className="act-btn" onClick={()=>launchQuiz(cfgRound,cfgMode,cfgTopics)}>다시 풀기</button>
+                  {wmCnt(cfgRound)>0&&<button className="act-btn" style={{borderColor:"rgba(248,81,73,.4)",color:"var(--er)"}} onClick={()=>launchQuiz(cfgRound,"wrong+marked",[])}>오답+헷갈림 {wmCnt(cfgRound)}문제</button>}
+                  <button className="act-btn pri" onClick={()=>{setScreen("hub");exitQuiz();}}>모듈 선택</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════ 오답 아카이브 ════ */}
+        {screen==="archive" && (
+          <div className="su">
+
+            {/* ── 아카이브 전용 회독 섹션 ── */}
+            <div className="card" style={{marginBottom:16}}>
+              <div className="card-title" style={{marginBottom:12}}>🗂 오답·헷갈림 회독 풀기</div>
+              <div style={{fontSize:12,color:"var(--tx3)",marginBottom:10}}>
+                매 회독에서 틀린·헷갈린 문제가 아카이브 회독에 자동 누적됩니다.
+              </div>
+              <div className="arch-round-tabs">
+                {ROUNDS.map(r=>(
+                  <button key={r} className={`art ${archRound===r?"act":""}`} onClick={()=>{setArchRound(r);saveArchRound(r);}}>
+                    {r}회독
+                    {awTotal(r)>0&&<span className="art-cnt">{awTotal(r)}</span>}
+                  </button>
+                ))}
+              </div>
+              {awTotal(archRound)>0 ? (
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+                  {awCnt(archRound)>0&&(
+                    <button className="retry-btn" style={{flex:1,margin:0}}
+                      onClick={()=>launchQuiz(archRound,"aw_wrong",[])}>
+                      ↺ {archRound}회독 오답 {awCnt(archRound)}문제 풀기
+                    </button>
+                  )}
+                  {amCnt(archRound)>0&&(
+                    <button className="retry-btn mk" style={{flex:1,margin:0}}
+                      onClick={()=>launchQuiz(archRound,"aw_mark",[])}>
+                      ↺ {archRound}회독 헷갈림 {amCnt(archRound)}문제 풀기
+                    </button>
+                  )}
+                  <button className="retry-btn" style={{flex:1,margin:0,borderColor:"var(--gold)",color:"var(--gold)",background:"rgba(212,168,83,.08)"}}
+                    onClick={()=>launchQuiz(archRound,"aw_all",[])}>
+                    ↺ {archRound}회독 전체 ({awTotal(archRound)}문제)
+                  </button>
+                </div>
+              ) : (
+                <div style={{fontSize:13,color:"var(--tx3)",textAlign:"center",padding:"10px 0"}}>
+                  {archRound}회독 아카이브에 문제가 없습니다.
+                </div>
+              )}
+            </div>
+
+            {/* ── 메인 회독별 오답 목록 ── */}
+            {ROUNDS.map(r=>{
+              const items = archItems(r);
+              const wids = wrongMap[r]||new Set(), mids = markedMap[r]||new Set();
+              return (
+                <div key={r} style={{marginBottom:26}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,paddingBottom:7,borderBottom:"1px solid var(--bd2)"}}>
+                    <span style={{fontSize:14,fontWeight:700,color:"var(--gold)",fontFamily:"'Noto Serif KR',serif"}}>{r}회독</span>
+                    <span style={{fontSize:11,color:"var(--tx3)",fontFamily:"'IBM Plex Mono',monospace",marginLeft:"auto"}}>오답 {wCnt(r)} · 헷갈림 {mCnt(r)}</span>
+                  </div>
+                  <div className="arch-filter-row">
+                    <button className={`arch-filter ${archFilter==="wrong"?"act":""}`} onClick={()=>setArchFilter("wrong")}>오답만</button>
+                    <button className={`arch-filter purple ${archFilter==="marked"?"act purple":""}`} onClick={()=>setArchFilter("marked")}>헷갈림만</button>
+                    <button className={`arch-filter ${archFilter==="all"?"act":""}`} onClick={()=>setArchFilter("all")}>전체</button>
+                  </div>
+                  {items.length > 0 ? (
+                    <>
+                      {archFilter!=="marked"&&wCnt(r)>0&&<button className="retry-btn" onClick={()=>{setCfgRound(r);launchQuiz(r,"wrong",[]);}}>↺ {r}회독 오답 {wCnt(r)}문제 다시 풀기</button>}
+                      {archFilter!=="wrong"&&mCnt(r)>0&&<button className="retry-btn mk" onClick={()=>{setCfgRound(r);launchQuiz(r,"marked",[]);}}>↺ {r}회독 헷갈리는 문제 {mCnt(r)}문제 다시 풀기</button>}
+                      {items.map(q=>{
+                        const k=`${r}-${q.id}`;
+                        const isW=wids.has(q.id), isMk=mids.has(q.id);
+                        return (
+                          <div key={q.id} className={`arch-item ${archExp[k]?"exp":""} ${isMk&&!isW?"mk-item":""}`}
+                            onClick={()=>setArchExp(p=>({...p,[k]:!p[k]}))}>
+                            <div className="arch-q">No.{q.id} {q.question}</div>
+                            {q.star && <span className="star-badge">⭐ 중요</span>}
+                            <div className="arch-ans">정답: {q.answer?"○ 옳은 지문":"× 틀린 지문"}</div>
+                            <span className="arch-tag">{TOPIC_ICONS[q.topic]||"📌"} {getMod()?.topics.find(t=>t.key===q.topic)?.label||q.topic}</span>
+                            {isW&&<span className="arch-tag">오답</span>}
+                            {isMk&&<span className="arch-tag mk">🔖 헷갈림</span>}
+                            <div className="arch-exp">{q.explanation}</div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <div style={{fontSize:13,color:"var(--tx3)",padding:"6px 0 14px",textAlign:"center"}}>
+                      {archFilter==="wrong"?"오답 없음":archFilter==="marked"?"헷갈림 표시 없음":"기록 없음"} ✓
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ════ 관리자 ════ */}
+        {screen==="admin" && isAdmin && (
+          <div className="su">
+            {/* 유저 현황 */}
+            <div className="card">
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>👥 접속 유저 현황</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={loadAdminUsers}>🔄 새로고침</button>
+                <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>총 {adminUsers.length}명</span>
+              </div>
+              <div className="admin-note">
+                ✅ Firebase를 통해 모든 기기·브라우저에서 접속한 유저가 자동으로 표시됩니다.
+              </div>
+              {/* ID 직접 검색 */}
+              <div className="admin-search">
+                <input placeholder="유저 ID 직접 입력..." value={adminSearch}
+                  onChange={e=>setAdminSearch(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&adminSearchUser(adminSearch)}/>
+                <button onClick={()=>adminSearchUser(adminSearch)}>조회</button>
+              </div>
+              {adminResult && (
+                <div style={{background:adminResult.notFound?"var(--er-bg)":"var(--sf2)",border:`1px solid ${adminResult.notFound?"rgba(248,81,73,.3)":"var(--bd)"}`,borderRadius:10,padding:"12px 16px",marginBottom:12}}>
+                  {adminResult.notFound ? (
+                    <div style={{color:"var(--er)",fontSize:13}}>유저 '{adminResult.id}'의 기록이 없습니다.</div>
+                  ) : (
+                    <>
+                      <div style={{fontWeight:700,color:"var(--gold)",marginBottom:8}}>👤 {adminResult.id}</div>
+                      <div style={{display:"flex",gap:12,fontSize:12,flexWrap:"wrap"}}>
+                        <span style={{color:"var(--tx3)"}}>시도 <b style={{color:"var(--tx)",fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.ans}</b></span>
+                        <span style={{color:"var(--ok)"}}>정답 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.cor}</b></span>
+                        <span style={{color:"var(--er)"}}>오답 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.wrg}</b></span>
+                        <span style={{color:"var(--gold)"}}>정답률 <b style={{fontFamily:"'IBM Plex Mono',monospace"}}>{adminResult.ans>0?Math.round(adminResult.cor/adminResult.ans*100)+"%":"-"}</b></span>
+                        {(adminResult.lastDate||adminResult.last>0)&&<span style={{color:"var(--tx3)"}}>마지막 접속: <b>{adminResult.lastDate||new Date(adminResult.last).toLocaleDateString("ko-KR")}</b></span>}
+                      </div>
+                      {adminResult.modStats?.map(m=>(
+                        <div key={m.mod} style={{fontSize:11,background:"var(--bg)",border:"1px solid var(--bd2)",borderRadius:6,padding:"5px 10px",marginTop:5,color:"var(--tx3)"}}>
+                          <b style={{color:"var(--tx)"}}>{m.mod}</b> ·
+                          시도 <b style={{color:"var(--tx)"}}>{m.ans}</b> ·
+                          정답 <b style={{color:"var(--ok)"}}>{m.cor}</b> ·
+                          오답 <b style={{color:"var(--er)"}}>{m.wrg}</b> ·
+                          정답률 <b style={{color:"var(--gold)"}}>{m.pct}%</b>
+                          {m.wrongCnt>0&&<> · 오답뱅크 <b style={{color:"var(--er)"}}>{m.wrongCnt}</b></>}
+                          {m.markCnt>0&&<> · 헷갈림 <b style={{color:"var(--purple)"}}>{m.markCnt}</b></>}
+                        </div>
+                      ))}
+                      {/* PIN 초기화 버튼 */}
+                      {!adminResult.notFound && (
+                        <button style={{marginTop:10,padding:"6px 14px",fontSize:11,
+                          background:"var(--er-bg)",border:"1px solid rgba(248,81,73,.3)",
+                          color:"var(--er)",borderRadius:8,cursor:"pointer"}}
+                          onClick={async()=>{
+                            if(!confirm(`${adminResult.id}의 PIN을 초기화하시겠습니까?`)) return;
+                            const safeId = adminResult.id.replace(/[.#$[\]]/g,'_');
+                            const info = await fb.get(`users/${safeId}/info`);
+                            if(info) {
+                              const {pin:_,...rest} = info;
+                              await fb.set(`users/${safeId}/info`, rest);
+                              alert('PIN이 초기화되었습니다. 다음 로그인 시 새 PIN을 설정합니다.');
+                            }
+                          }}>
+                          🔑 PIN 초기화
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+              {adminUsers.length === 0 ? (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)"}}>아직 접속한 유저가 없습니다.</div>
+              ) : adminUsers.map(u=>(
+                <div key={u.id} className="admin-user-card" style={{flexDirection:"column",alignItems:"flex-start"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,width:"100%",flexWrap:"wrap"}}>
+                    <span className="admin-uid">👤 {u.id}</span>
+                    <div className="admin-stats" style={{flex:1}}>
+                      <span className="admin-stat">시도 <b>{u.ans}</b></span>
+                      <span className="admin-stat ok">정답 <b>{u.cor}</b></span>
+                      <span className="admin-stat er">오답 <b>{u.wrg}</b></span>
+                      <span className="admin-stat gold">정답률 <b>{u.ans>0?Math.round(u.cor/u.ans*100)+"%" :"-"}</b></span>
+                      {(u.lastDate||u.last>0)&&<span className="admin-stat">마지막 접속 <b style={{color:"var(--gold)"}}>{u.lastDate||new Date(u.last).toLocaleDateString("ko-KR")}</b></span>}
+                    </div>
+                  </div>
+                  {u.modStats && u.modStats.length > 0 && (
+                    <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap",width:"100%"}}>
+                      {u.modStats.map(m=>(
+                        <div key={m.mod} style={{fontSize:11,background:"var(--bg)",border:"1px solid var(--bd2)",borderRadius:6,padding:"4px 10px",color:"var(--tx3)"}}>
+                          <b style={{color:"var(--tx)"}}>{m.mod}</b> · 시도 {m.ans} · 정답률 {m.pct}%
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* 수정 내역 */}
+
+            {/* 피드백 목록 */}
+            <div className="card" style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>💬 피드백 목록</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}}
+                  onClick={async()=>{
+                    setAdminFbLoad(true);
+                    const data = await loadAllFeedbacks();
+                    setAdminFbs(data);
+                    setAdminFbLoad(false);
+                  }}>
+                  {adminFbLoad ? "로딩중..." : adminFbs===null ? "📥 불러오기" : "🔄 새로고침"}
+                </button>
+                {adminFbs!==null && (
+                  <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+                    총 {Object.values(adminFbs).reduce((s,a)=>s+a.length,0)}건
+                  </span>
+                )}
+              </div>
+
+              {adminFbs===null && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  불러오기 버튼을 눌러 피드백을 확인하세요.
+                </div>
+              )}
+
+              {adminFbs!==null && Object.keys(adminFbs).length===0 && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  피드백이 없습니다.
+                </div>
+              )}
+
+              {adminFbs!==null && Object.entries(adminFbs).map(([mid, items])=>(
+                <div key={mid} style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",marginBottom:8,
+                    paddingBottom:4,borderBottom:"1px solid var(--bd)"}}>
+                    {MODULE_REGISTRY.find(m=>m.id===mid)?.label || mid} ({items.length}건)
+                  </div>
+                  {items.map((item,i)=>(
+                    <div key={i} className="fb-admin-item">
+                      <div className="fb-admin-meta">
+                        <span className="fb-admin-no">#{item.qid}</span>
+                        <span className="fb-admin-type">{item.type}</span>
+                        <span className="fb-admin-uid">👤 {item.uid}</span>
+                        <span className="fb-admin-date">{item.date||new Date(item.ts).toLocaleDateString("ko-KR")}</span>
+                      </div>
+                      <div className="fb-admin-body">{item.text}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* 수정 내역 카드 */}
+            <div className="card" style={{marginTop:12}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                <div className="card-title" style={{marginBottom:0}}>✏ 수정 내역</div>
+                <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}}
+                  onClick={async()=>{
+                    setAdminEditLoad(true);
+                    const data = await loadAllEdits();
+                    setAdminEdits(data);
+                    setAdminEditLoad(false);
+                  }}>
+                  {adminEditLoad?"로딩중...":adminEdits===null?"📥 불러오기":"🔄 새로고침"}
+                </button>
+                {adminEdits!==null && (
+                  <span style={{fontSize:11,color:"var(--tx3)",marginLeft:"auto"}}>
+                    총 {Object.values(adminEdits).reduce((s,a)=>s+a.length,0)}건
+                  </span>
+                )}
+              </div>
+              {adminEdits===null && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  불러오기 버튼을 눌러 수정 내역을 확인하세요.
+                </div>
+              )}
+              {adminEdits!==null && Object.keys(adminEdits).length===0 && (
+                <div style={{textAlign:"center",padding:"20px",color:"var(--tx3)",fontSize:13}}>
+                  수정 내역이 없습니다.
+                </div>
+              )}
+              {adminEdits!==null && Object.entries(adminEdits).map(([mid,items])=>(
+                <div key={mid} style={{marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"var(--gold)",marginBottom:8,
+                    paddingBottom:4,borderBottom:"1px solid var(--bd)"}}>
+                    {MODULE_REGISTRY.find(m=>m.id===mid)?.label||mid} ({items.length}건)
+                  </div>
+                  {items.map((item,i)=>(
+                    <div key={i} className="fb-admin-item" style={{marginBottom:8}}>
+                      <div className="fb-admin-meta">
+                        <span className="fb-admin-no">#{item.qid}</span>
+                        <span className="fb-admin-uid">👤 {item.uid}</span>
+                        <span className="fb-admin-date">{item.date}</span>
+                      </div>
+                      {item.original_q&&item.original_q!==item.question&&(
+                        <div style={{fontSize:11,color:"var(--tx3)",marginBottom:4,
+                          textDecoration:"line-through",padding:"4px 8px",background:"var(--sf2)",borderRadius:4}}>
+                          {item.original_q}
+                        </div>
+                      )}
+                      <div className="fb-admin-body" style={{fontSize:12}}>{item.question}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    </div>
+    </>
+  );
 }
 
+
 /* ── 관리자: 수정 내역 컴포넌트 ─────────────────────────── */
+
 
 /* ── 로그인 화면 컴포넌트 ─────────────────────────────── */
 /* 과목 전환 — 세 과목이 각각 다른 HTML이라 전환은 페이지 이동이다.
    (한 파일에 다 담으면 문항 데이터가 수 MB라 첫 로딩이 무거워진다.)
    예전에는 로그인할 때마다 과목 고르는 화면을 한 번 더 거쳤는데,
    들어올 때마다 번거로워 헤더에서 바로 바꾸도록 옮겼다. */
-const SUBJECT_PAGES = [{
-  id: "civil",
-  label: "민사법",
-  href: "index.html"
-}, {
-  id: "criminal",
-  label: "형사법",
-  href: "criminal.html"
-}, {
-  id: "public",
-  label: "공법",
-  href: "public-law.html"
-}];
-function SubjectSwitch({
-  current
-}) {
+const SUBJECT_PAGES = [
+  { id: "civil",    label: "민사법", href: "index.html" },
+  { id: "criminal", label: "형사법", href: "criminal.html" },
+  { id: "public",   label: "공법",   href: "public-law.html" },
+];
+
+function SubjectSwitch({ current }) {
   // 드롭다운이 아니라 세 과목을 다 펼쳐 둔다. 지금 어느 과목인지 한눈에 보이고,
   // 바꿀 때도 한 번만 누르면 된다(드롭다운은 열고 고르는 두 동작이었다).
-  return /*#__PURE__*/React.createElement("div", {
-    className: "subject-tabs",
-    role: "group",
-    "aria-label": "과목 전환"
-  }, SUBJECT_PAGES.map(s => s.id === current ? /*#__PURE__*/React.createElement("span", {
-    key: s.id,
-    className: "subject-tab on",
-    "aria-current": "page"
-  }, s.label) : /*#__PURE__*/React.createElement("a", {
-    key: s.id,
-    className: "subject-tab",
-    href: s.href
-  }, s.label)));
+  return (
+    <div className="subject-tabs" role="group" aria-label="과목 전환">
+      {SUBJECT_PAGES.map(s =>
+        s.id === current
+          ? <span key={s.id} className="subject-tab on" aria-current="page">{s.label}</span>
+          : <a key={s.id} className="subject-tab" href={s.href}>{s.label}</a>)}
+    </div>
+  );
 }
 
 /* 허브로 돌아가기. 앱을 잘못 골랐을 때 주소창을 건드리지 않고 나갈 길이 필요하다. */
 function HubLink() {
-  return /*#__PURE__*/React.createElement("a", {
-    className: "hub-link",
-    href: "/",
-    title: "다른 앱 고르기"
-  }, "◀ 앱");
+  return <a className="hub-link" href="/" title="다른 앱 고르기">◀ 앱</a>;
 }
-function CircleTimer({
-  timeLeft,
-  total = 20
-}) {
-  const r = 13,
-    circ = +(2 * Math.PI * r).toFixed(2);
+
+
+function CircleTimer({ timeLeft, total = 20 }) {
+  const r = 13, circ = +(2 * Math.PI * r).toFixed(2);
   const offset = +(circ * (1 - timeLeft / total)).toFixed(2);
   const color = timeLeft <= 5 ? '#f87171' : timeLeft <= 10 ? '#fbbf24' : 'var(--gold)';
-  return /*#__PURE__*/React.createElement("svg", {
-    width: "34",
-    height: "34",
-    viewBox: "0 0 34 34"
-  }, /*#__PURE__*/React.createElement("circle", {
-    cx: "17",
-    cy: "17",
-    r: r,
-    fill: "none",
-    stroke: "rgba(255,255,255,.09)",
-    strokeWidth: "3"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "17",
-    cy: "17",
-    r: r,
-    fill: "none",
-    stroke: color,
-    strokeWidth: "3",
-    strokeDasharray: circ,
-    strokeDashoffset: offset,
-    strokeLinecap: "round",
-    style: {
-      transform: 'rotate(-90deg)',
-      transformOrigin: '17px 17px',
-      transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s'
-    }
-  }));
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34">
+      <circle cx="17" cy="17" r={r} fill="none" stroke="rgba(255,255,255,.09)" strokeWidth="3"/>
+      <circle cx="17" cy="17" r={r} fill="none" stroke={color} strokeWidth="3"
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{transform:'rotate(-90deg)',transformOrigin:'17px 17px',
+          transition:'stroke-dashoffset 0.9s linear, stroke 0.3s'}}/>
+    </svg>
+  );
 }
-function AdminFeedbacks({
-  loadAllFeedbacks
-}) {
+
+
+
+
+function AdminFeedbacks({ loadAllFeedbacks }) {
   const [data, setData] = React.useState({});
   const [loading, setLoading] = React.useState(false);
   const [filter, setFilter] = React.useState("전체");
+
   async function load() {
     setLoading(true);
     const d = await loadAllFeedbacks();
     setData(d);
     setLoading(false);
   }
-  React.useEffect(() => {
-    load();
-  }, []);
+  React.useEffect(()=>{ load(); }, []);
+
   const allItems = Object.values(data).flat();
-  const filtered = filter === "전체" ? allItems : allItems.filter(f => f.type === filter);
+  const filtered = filter==="전체" ? allItems : allItems.filter(f=>f.type===filter);
   const total = allItems.length;
-  return /*#__PURE__*/React.createElement("div", {
-    className: "card",
-    style: {
-      marginTop: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-title",
-    style: {
-      marginBottom: 0
-    }
-  }, "💬 피드백 목록 (", total, "건)"), /*#__PURE__*/React.createElement("button", {
-    className: "act-btn",
-    style: {
-      flex: "none",
-      padding: "6px 14px",
-      fontSize: 12
-    },
-    onClick: load
-  }, "🔄 새로고침")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      gap: 6,
-      flexWrap: "wrap",
-      marginBottom: 14
-    }
-  }, ["전체", "오류 제보", "정답 이의", "해설 보완", "기능 요청", "기타"].map(t => /*#__PURE__*/React.createElement("button", {
-    key: t,
-    style: {
-      padding: "4px 12px",
-      borderRadius: 14,
-      border: "1px solid var(--bd)",
-      background: filter === t ? "var(--gold)" : "var(--sf2)",
-      color: filter === t ? "#0d1117" : "var(--tx3)",
-      fontSize: 11,
-      cursor: "pointer",
-      fontWeight: filter === t ? 700 : 400
-    },
-    onClick: () => setFilter(t)
-  }, t))), loading ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: 20,
-      color: "var(--tx3)"
-    }
-  }, "불러오는 중...") : filtered.length === 0 ? /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: 20,
-      color: "var(--tx3)"
-    }
-  }, "피드백이 없습니다.") : filtered.map((f, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "fb-admin-item"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-meta"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-no"
-  }, "No.", f.qid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-type"
-  }, f.type), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-uid"
-  }, "👤 ", f.uid), /*#__PURE__*/React.createElement("span", {
-    className: "fb-admin-date"
-  }, f.date)), /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-q"
-  }, f.mid || "", " · 문항 ", f.qid), /*#__PURE__*/React.createElement("div", {
-    className: "fb-admin-body"
-  }, f.text))));
+
+  return (
+    <div className="card" style={{marginTop:16}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+        <div className="card-title" style={{marginBottom:0}}>💬 피드백 목록 ({total}건)</div>
+        <button className="act-btn" style={{flex:"none",padding:"6px 14px",fontSize:12}} onClick={load}>🔄 새로고침</button>
+      </div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
+        {["전체","오류 제보","정답 이의","해설 보완","기능 요청","기타"].map(t=>(
+          <button key={t}
+            style={{padding:"4px 12px",borderRadius:14,border:"1px solid var(--bd)",
+              background:filter===t?"var(--gold)":"var(--sf2)",
+              color:filter===t?"#0d1117":"var(--tx3)",
+              fontSize:11,cursor:"pointer",fontWeight:filter===t?700:400}}
+            onClick={()=>setFilter(t)}>{t}</button>
+        ))}
+      </div>
+      {loading ? (
+        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>불러오는 중...</div>
+      ) : filtered.length===0 ? (
+        <div style={{textAlign:"center",padding:20,color:"var(--tx3)"}}>피드백이 없습니다.</div>
+      ) : filtered.map((f,i)=>(
+        <div key={i} className="fb-admin-item">
+          <div className="fb-admin-meta">
+            <span className="fb-admin-no">No.{f.qid}</span>
+            <span className="fb-admin-type">{f.type}</span>
+            <span className="fb-admin-uid">👤 {f.uid}</span>
+            <span className="fb-admin-date">{f.date}</span>
+          </div>
+          <div className="fb-admin-q">{(f.mid||"")} · 문항 {f.qid}</div>
+          <div className="fb-admin-body">{f.text}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // 앱 마운트
