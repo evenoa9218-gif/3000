@@ -1167,6 +1167,20 @@ html.light .subject-tab.on{color:#fff;}
   .subject-tab{padding:6px 9px;font-size:11.5px;}
   .hub-link{padding:6px 8px;font-size:11.5px;}
 }
+
+/* 손가락으로 쓰는 기기에서는 반대로 키운다.
+   위 560px 규칙은 좁은 화면에서 여백을 줄여 글자를 넣으려는 것인데,
+   그 결과 과목 탭이 24px, 상단 버튼이 26px 대가 되어 손끝으로 집기 어려웠다.
+   (실측: 형사법 48x24, 공법 38x24, ◀앱 41x26, 🌙 32x32 — 권장은 44px)
+   마우스 화면은 그대로 두고 터치 기기에서만 최소 크기를 준다. */
+@media (pointer:coarse){
+  .subject-tab,.hub-link{min-height:40px;display:inline-flex;align-items:center;
+    padding-top:0;padding-bottom:0;}
+  .subject-tabs{padding:4px;}
+  .theme-toggle{width:40px;height:40px;}
+  .logout-btn{min-height:36px;padding:8px 10px;}
+  .tab{min-height:44px;display:inline-flex;align-items:center;}
+}
 .logout-btn{font-size:11px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
 .logout-btn:hover{color:var(--er);}
 
