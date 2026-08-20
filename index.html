@@ -1652,6 +1652,8 @@ html.light .subject-tab.on{color:#fff;}
   .theme-toggle{width:40px;height:40px;}
   .logout-btn{min-height:36px;padding:8px 10px;}
   .tab{min-height:44px;display:inline-flex;align-items:center;}
+  /* 버튼을 키운 만큼 상단 줄이 좁은 화면에서 넘친다 — 줄바꿈을 허용한다 */
+  .hdr-user{flex-wrap:wrap;justify-content:flex-end;row-gap:6px;}
 }
 .logout-btn{font-size:11px;color:var(--tx2);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;}
 .logout-btn:hover{color:var(--er);}
